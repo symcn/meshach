@@ -77,6 +77,7 @@ func main() {
 		//os.Exit(1)
 	} else {
 		namespace = "default"
+		//log.Error
 	}
 
 	// Get a config to talk to the apiserver
