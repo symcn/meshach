@@ -71,13 +71,12 @@ func main() {
 
 	printVersion()
 
+	// if we didn't find any namespaces configuration, for example, namespaces is a empty string,
+	// we'll use all-namespaces instead.
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
 		log.Error(err, "Failed to get watch namespace")
 		//os.Exit(1)
-	} else {
-		namespace = "default"
-		log.Info("Can not find namespaces with env variable, using default instead.")
 	}
 
 	// Get a config to talk to the apiserver
