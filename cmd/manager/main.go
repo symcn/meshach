@@ -77,6 +77,7 @@ func main() {
 		//os.Exit(1)
 	} else {
 		namespace = "default"
+		log.Info("Can not find namespaces with env variable, using default instead.")
 	}
 
 	// Get a config to talk to the apiserver
