@@ -1,0 +1,7 @@
+apiVersion: mesh.symcn.com/v1
+kind: AppMeshConfig
+metadata:
+  name: example-appmeshconfig
+spec:
+  # Add fields here
+  size: 3
