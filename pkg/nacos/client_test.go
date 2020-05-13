@@ -63,3 +63,13 @@ func TestNamingClient_SelectAllInstances(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(instances))
 }
+
+func TestNamingClient_GetAllServicesInfo(t *testing.T) {
+	client, _ := NewClient()
+	serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+		Clusters: []string{"DEFAULT"},
+	})
+	fmt.Println(utils.ToJsonString(serviceInfos))
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(serviceInfos))
+}
