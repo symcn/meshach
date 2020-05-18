@@ -3,6 +3,7 @@ package nacos
 import (
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
@@ -72,4 +73,20 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 	fmt.Println(utils.ToJsonString(serviceInfos))
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(serviceInfos))
+}
+
+func TestNamingClient_Subscribe(t *testing.T) {
+	client, _ := NewClient()
+	err := client.Subscribe(&vo.SubscribeParam{
+		Clusters:    []string{"DEFAULT"},
+		ServiceName: "DEMO",
+		SubscribeCallback: func(services []model.SubscribeService, err error) {
+			// assert.Equal(t, 0, services)
+			fmt.Println(utils.ToJsonString(services))
+		},
+	})
+
+	assert.Nil(t, err)
+
+	time.Sleep(time.Minute)
 }
