@@ -18,10 +18,9 @@
 package zookeeper
 
 import (
-	"path"
-
 	"github.com/samuel/go-zookeeper/zk"
 	"istio.io/istio/pkg/log"
+	"path"
 )
 
 type pathCacheEventType int
