@@ -21,36 +21,32 @@ spec:
           dynamic: true
           weight: 0.5
           methods:
-            - name: "userCenterOrderCount"
-            - name: "userCenterOrderList"
-          proCode: test-order
+            - userCenterOrderCount
+            - userCenterOrderList
           release: 2.7.2-SNAPSHOT
-          revision: 0.0.1-SNAPSHOT
           sdkVersion: 2.7.2
           side: provider
           timeout: 1000
           timestamp: 1589364664618
           retry: 3
           labels:                                 # 以上没有涵盖的 labels
-            - name: register
-              value: true
+            register: true
         - host: 10.11.224.13
           zone: gz01
           group: green
           dynamic: true
           weight: 0.5
           methods:
-            - name: "userCenterOrderCount"
-            - name: "userCenterOrderList"
-          proCode: test-order
+            - userCenterOrderCount
+            - userCenterOrderList
           release: 2.7.2-SNAPSHOT
-          async: true
-          revision: 0.0.1-SNAPSHOT
           sdkVersion: 2.7.2
           side: provider
           timeout: 1000
-          retry: 3
           timestamp: 1589364664618
+          retry: 3
+          labels:                                 # 以上没有涵盖的 labels
+            register: true
   policy:
     loadBalancer:
       simple: ROUND_ROBIN

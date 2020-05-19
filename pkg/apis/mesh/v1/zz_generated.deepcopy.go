@@ -5,6 +5,7 @@
 package v1
 
 import (
+	status "github.com/operator-framework/operator-sdk/pkg/status"
 	v1alpha3 "istio.io/api/networking/v1alpha3"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -113,6 +114,13 @@ func (in *AppMeshConfigStatus) DeepCopyInto(out *AppMeshConfigStatus) {
 	if in.LastUpdateTime != nil {
 		in, out := &in.LastUpdateTime, &out.LastUpdateTime
 		*out = (*in).DeepCopy()
+	}
+	if in.Conditions != nil {
+		in, out := &in.Conditions, &out.Conditions
+		*out = make(status.Conditions, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }

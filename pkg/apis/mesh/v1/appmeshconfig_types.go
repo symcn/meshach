@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/operator-framework/operator-sdk/pkg/status"
 	networking "istio.io/api/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -30,9 +31,8 @@ type Instance struct {
 	Dynamic    bool              `json:"dynamic,omitempty"`
 	Weight     string            `json:"weight,omitempty"`
 	Methods    []string          `json:"methods,omitempty"`
-	ProCode    string            `json:"pro_code,omitempty"`
 	Release    string            `json:"release,omitempty"`
-	SdkVersion string            `json:"sdk_version,omitempty"`
+	SdkVersion string            `json:"sdkVersion,omitempty"`
 	Side       string            `json:"side,omitempty"`
 	Timeout    int32             `json:"timeout,omitempty"`
 	Retry      int32             `json:"retry,omitempty"`
@@ -49,10 +49,10 @@ type Service struct {
 
 // Policy ...
 type Policy struct {
-	LoadBalancer      *networking.LoadBalancerSettings `json:"load_balancer,omitempty"`
-	MaxConnections    int32                            `json:"max_connections,omitempty"`
+	LoadBalancer      *networking.LoadBalancerSettings `json:"loadBalancer,omitempty"`
+	MaxConnections    int32                            `json:"maxConnections,omitempty"`
 	ConnectionTimeout string                           `json:"connection_timeout,omitempty"`
-	MaxRetries        int32                            `json:"max_retries,omitempty"`
+	MaxRetries        int32                            `json:"maxRetries,omitempty"`
 }
 
 // Monitor ...
@@ -81,8 +81,11 @@ const (
 type AppMeshConfigStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	LastUpdateTime *metav1.Time `json:"lastUpdateTime,omitempty"`
-	Status         ConfigStatus
+	// +optional
+	ObservedGeneration int64             `json:"observedGeneration,omitempty"`
+	LastUpdateTime     *metav1.Time      `json:"lastUpdateTime,omitempty"`
+	Status             ConfigStatus      `json:"status"`
+	Conditions         status.Conditions `json:"conditions"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

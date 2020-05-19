@@ -29,10 +29,272 @@ spec:
         metadata:
           type: object
         spec:
-          description: AppMeshConfigSpec defines the desired state of AppMeshConfig
+          description: AppMeshConfigSpec ...
+          properties:
+            inject:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file'
+              properties:
+                logLevel:
+                  type: string
+                sidecar:
+                  type: string
+              required:
+              - sidecar
+              type: object
+            policy:
+              description: Policy ...
+              properties:
+                connection_timeout:
+                  type: string
+                loadBalancer:
+                  description: "Load balancing policies to apply for a specific destination.
+                    See Envoy's load balancing [documentation](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancing)
+                    for more details. \n For example, the following rule uses a round
+                    robin load balancing policy for all traffic going to the ratings
+                    service. \n {{<tabset category-name=\"example\">}} {{<tab name=\"v1alpha3\"
+                    category-value=\"v1alpha3\">}} ```yaml apiVersion: networking.istio.io/v1alpha3
+                    kind: DestinationRule metadata:   name: bookinfo-ratings spec:
+                    \  host: ratings.prod.svc.cluster.local   trafficPolicy:     loadBalancer:
+                    \      simple: ROUND_ROBIN ``` {{</tab>}} \n {{<tab name=\"v1beta1\"
+                    category-value=\"v1beta1\">}} ```yaml apiVersion: networking.istio.io/v1beta1
+                    kind: DestinationRule metadata:   name: bookinfo-ratings spec:
+                    \  host: ratings.prod.svc.cluster.local   trafficPolicy:     loadBalancer:
+                    \      simple: ROUND_ROBIN ``` {{</tab>}} {{</tabset>}} \n The
+                    following example sets up sticky sessions for the ratings service
+                    hashing-based load balancer for the same ratings service using
+                    the the User cookie as the hash key. \n {{<tabset category-name=\"example\">}}
+                    {{<tab name=\"v1alpha3\" category-value=\"v1alpha3\">}} ```yaml
+                    \ apiVersion: networking.istio.io/v1alpha3  kind: DestinationRule
+                    \ metadata:    name: bookinfo-ratings  spec:    host: ratings.prod.svc.cluster.local
+                    \   trafficPolicy:      loadBalancer:        consistentHash:          httpCookie:
+                    \           name: user            ttl: 0s ``` {{</tab>}} \n {{<tab
+                    name=\"v1beta1\" category-value=\"v1beta1\">}} ```yaml  apiVersion:
+                    networking.istio.io/v1beta1  kind: DestinationRule  metadata:
+                    \   name: bookinfo-ratings  spec:    host: ratings.prod.svc.cluster.local
+                    \   trafficPolicy:      loadBalancer:        consistentHash:          httpCookie:
+                    \           name: user            ttl: 0s ``` {{</tab>}} {{</tabset>}}"
+                  properties:
+                    locality_lb_setting:
+                      description: Locality load balancer settings, this will override
+                        mesh wide settings in entirety, meaning no merging would be
+                        performed between this object and the object one in MeshConfig
+                      properties:
+                        distribute:
+                          description: 'Optional: only one of distribute or failover
+                            can be set. Explicitly specify loadbalancing weight across
+                            different zones and geographical locations. Refer to [Locality
+                            weighted load balancing](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/locality_weight)
+                            If empty, the locality weight is set according to the
+                            endpoints number within it.'
+                          items:
+                            description: 'Describes how traffic originating in the
+                              ''from'' zone or sub-zone is distributed over a set
+                              of ''to'' zones. Syntax for specifying a zone is {region}/{zone}/{sub-zone}
+                              and terminal wildcards are allowed on any segment of
+                              the specification. Examples: * - matches all localities
+                              us-west/* - all zones and sub-zones within the us-west
+                              region us-west/zone-1/* - all sub-zones within us-west/zone-1'
+                            properties:
+                              from:
+                                description: Originating locality, '/' separated,
+                                  e.g. 'region/zone/sub_zone'.
+                                type: string
+                              to:
+                                additionalProperties:
+                                  format: int32
+                                  type: integer
+                                description: Map of upstream localities to traffic
+                                  distribution weights. The sum of all weights should
+                                  be == 100. Any locality not assigned a weight will
+                                  receive no traffic.
+                                type: object
+                            type: object
+                          type: array
+                        enabled:
+                          description: enable locality load balancing, this is DestinationRule-level
+                            and will override mesh wide settings in entirety. e.g.
+                            true means that turn on locality load balancing for this
+                            DestinationRule no matter what mesh wide settings is.
+                          properties:
+                            value:
+                              description: The bool value.
+                              type: boolean
+                          type: object
+                        failover:
+                          description: 'Optional: only failover or distribute can
+                            be set. Explicitly specify the region traffic will land
+                            on when endpoints in local region becomes unhealthy. Should
+                            be used together with OutlierDetection to detect unhealthy
+                            endpoints. Note: if no OutlierDetection specified, this
+                            will not take effect.'
+                          items:
+                            description: Specify the traffic failover policy across
+                              regions. Since zone and sub-zone failover is supported
+                              by default this only needs to be specified for regions
+                              when the operator needs to constrain traffic failover
+                              so that the default behavior of failing over to any
+                              endpoint globally does not apply. This is useful when
+                              failing over traffic across regions would not improve
+                              service health or may need to be restricted for other
+                              reasons like regulatory controls.
+                            properties:
+                              from:
+                                description: Originating region.
+                                type: string
+                              to:
+                                description: Destination region the traffic will fail
+                                  over to when endpoints in the 'from' region becomes
+                                  unhealthy.
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                  type: object
+                maxConnections:
+                  format: int32
+                  type: integer
+                maxRetries:
+                  format: int32
+                  type: integer
+              type: object
+            services:
+              items:
+                description: Service ...
+                properties:
+                  application:
+                    type: string
+                  instances:
+                    items:
+                      description: Instance ...
+                      properties:
+                        dynamic:
+                          type: boolean
+                        group:
+                          type: string
+                        host:
+                          type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        methods:
+                          items:
+                            type: string
+                          type: array
+                        release:
+                          type: string
+                        retry:
+                          format: int32
+                          type: integer
+                        sdkVersion:
+                          type: string
+                        side:
+                          type: string
+                        timeout:
+                          format: int32
+                          type: integer
+                        timestamp:
+                          format: int64
+                          type: integer
+                        weight:
+                          type: string
+                        zone:
+                          type: string
+                      required:
+                      - group
+                      - host
+                      - zone
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  ports:
+                    items:
+                      description: Port ...
+                      properties:
+                        name:
+                          type: string
+                        port:
+                          format: int32
+                          type: integer
+                        protocol:
+                          type: string
+                      required:
+                      - name
+                      - port
+                      - protocol
+                      type: object
+                    type: array
+                required:
+                - instances
+                - name
+                - ports
+                type: object
+              type: array
+          required:
+          - inject
+          - policy
+          - services
           type: object
         status:
           description: AppMeshConfigStatus defines the observed state of AppMeshConfig
+          properties:
+            conditions:
+              description: Conditions is a set of Condition instances.
+              items:
+                description: "Condition represents an observation of an object's state.
+                  Conditions are an extension mechanism intended to be used when the
+                  details of an observation are not a priori known or would not apply
+                  to all instances of a given Kind. \n Conditions should be added
+                  to explicitly convey properties that users and components care about
+                  rather than requiring those properties to be inferred from other
+                  observations. Once defined, the meaning of a Condition can not be
+                  changed arbitrarily - it becomes part of the API, and has the same
+                  backwards- and forwards-compatibility concerns of any other part
+                  of the API."
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    description: ConditionReason is intended to be a one-word, CamelCase
+                      representation of the category of cause of the current status.
+                      It is intended to be used in concise output, such as one-line
+                      kubectl get output, and in summarizing occurrences of causes.
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    description: "ConditionType is the type of the condition and is
+                      typically a CamelCased word or short phrase. \n Condition types
+                      should indicate state in the \"abnormal-true\" polarity. For
+                      example, if the condition indicates when a policy is invalid,
+                      the \"is valid\" case is probably the norm, so the condition
+                      should be called \"Invalid\"."
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            lastUpdateTime:
+              format: date-time
+              type: string
+            observedGeneration:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file'
+              format: int64
+              type: integer
+            status:
+              type: string
+          required:
+          - conditions
+          - status
           type: object
       type: object
   version: v1
