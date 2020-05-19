@@ -1,7 +1,60 @@
 apiVersion: mesh.symcn.com/v1
 kind: AppMeshConfig
 metadata:
-  name: example-appmeshconfig
+  name: test-order-orderapi   # dubbo 中的 application 字段或 MOSN 注册时带入与 appset 关联的标识
 spec:
-  # Add fields here
-  size: 3
+  inject:                      # 注入相关设置
+    logLevel: debug            # 日志级别
+    sidecar: mosn              # sidecar 类型，mosn、envoy、all、none
+  services:
+    - name: com.test.order.service.OrderApiForAppClient
+      appCode: orderapi
+      application: test-order_orderapi
+      ports:
+        - name: dubbo
+          protocol: dubbo
+          port: 18004
+      instances:
+        - host: 10.11.224.12
+          zone: gz01
+          group: blue
+          dynamic: true
+          weight: 0.5
+          methods:
+            - name: "userCenterOrderCount"
+            - name: "userCenterOrderList"
+          proCode: test-order
+          release: 2.7.2-SNAPSHOT
+          revision: 0.0.1-SNAPSHOT
+          sdkVersion: 2.7.2
+          side: provider
+          timeout: 1000
+          timestamp: 1589364664618
+          retry: 3
+          labels:                                 # 以上没有涵盖的 labels
+            - name: register
+              value: true
+        - host: 10.11.224.13
+          zone: gz01
+          group: green
+          dynamic: true
+          weight: 0.5
+          methods:
+            - name: "userCenterOrderCount"
+            - name: "userCenterOrderList"
+          proCode: test-order
+          release: 2.7.2-SNAPSHOT
+          async: true
+          revision: 0.0.1-SNAPSHOT
+          sdkVersion: 2.7.2
+          side: provider
+          timeout: 1000
+          retry: 3
+          timestamp: 1589364664618
+  policy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    maxConnections: 100
+    connectTimeout: 30ms
+    maxRetries: 3
+status: {}
