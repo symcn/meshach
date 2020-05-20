@@ -19,9 +19,11 @@ package zookeeper
 
 import (
 	"github.com/samuel/go-zookeeper/zk"
-	"istio.io/istio/pkg/log"
 	"path"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+var log = logf.Log.WithName("path_cache")
 
 type pathCacheEventType int
 
@@ -59,7 +61,7 @@ func newPathCache(conn *zk.Conn, path string) (*pathCache, error) {
 
 	err := p.watchChildren()
 	if err != nil {
-		log.Warnf("Failed to watch zk path %s, %s", path, err)
+		log.Info("Failed to watch zk path %s, %s", path, err)
 		return nil, err
 	}
 
@@ -117,7 +119,7 @@ func (p *pathCache) watchChildren() error {
 func (p *pathCache) onChildAdd(child string) {
 	err := p.watch(child)
 	if err != nil {
-		log.Warnf("Failed to watch child %s, the err is %s", child, err)
+		log.Info("Failed to watch child %s, the err is %s", child, err)
 		return
 	}
 	p.cached[child] = true
