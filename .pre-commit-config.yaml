@@ -4,7 +4,7 @@
     - id: go-build
     - id: go-fmt
     - id: go-lint
-    - id: go-unit-tests
+    # - id: go-unit-tests
     - id: validate-toml
     - id: no-go-testing
     - id: golangci-lint
