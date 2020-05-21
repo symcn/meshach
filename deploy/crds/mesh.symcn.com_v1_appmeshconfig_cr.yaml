@@ -31,6 +31,9 @@ spec:
         - name: blue
           labels:
             group: blue
+          policy:
+            timeout: 10ms
+            maxRetries: 2
         - name: green
           labels:
             group: green
