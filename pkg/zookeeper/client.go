@@ -1,13 +1,12 @@
 package zookeeper
 
 import (
+	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"net/url"
 	"path"
 	"strings"
 )
-
-var zkServersUrl = "10.12.210.70"
 
 type Client struct {
 	conn     *zk.Conn
@@ -84,28 +83,31 @@ func (c *Client) Stop() {
 }
 
 func (c *Client) Start() error {
-	cache, err := newPathCache(c.conn, c.root)
+	// create a cache for all services
+	scache, err := newPathCache(c.conn, c.root)
 	if err != nil {
 		return err
 	}
-	c.scache = cache
+	c.scache = scache
 	go c.eventLoop()
 	return nil
 }
 
+// eventLoop Creating the caches for every provider
 func (c *Client) eventLoop() {
 	for event := range c.scache.events() {
 		switch event.eventType {
 		case pathCacheEventAdded:
 			hostname := path.Base(event.path)
-			ppath := path.Join(event.path, "providers")
-			cache, err := newPathCache(c.conn, ppath)
+			ppath := path.Join(event.path, providersPath)
+			pcache, err := newPathCache(c.conn, ppath)
 			if err != nil {
+				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
 				continue
 			}
-			c.pcaches[hostname] = cache
+			c.pcaches[hostname] = pcache
 			go func() {
-				for event := range cache.events() {
+				for event := range pcache.events() {
 					switch event.eventType {
 					case pathCacheEventAdded:
 						c.addInstance(hostname, path.Base(event.path))
@@ -116,6 +118,7 @@ func (c *Client) eventLoop() {
 			}()
 		case pathCacheEventDeleted:
 			// In fact, this snippet always won't be executed.
+			// At least one empty node of this service exists.
 			hostname := path.Base(event.path)
 			c.deleteService(hostname)
 		}

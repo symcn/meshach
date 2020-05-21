@@ -18,12 +18,15 @@
 package zookeeper
 
 import (
+	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"path"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var log = logf.Log.WithName("path_cache")
+var (
+	dubboRootPath = "/dubbo"
+	providersPath = "providers"
+)
 
 type pathCacheEventType int
 
@@ -48,11 +51,12 @@ const (
 )
 
 func newPathCache(conn *zk.Conn, path string) (*pathCache, error) {
-	p := &pathCache{
-		conn:   conn,
-		path:   path,
-		cached: make(map[string]bool),
+	fmt.Printf("Create a cache for path: %s\n", path)
 
+	p := &pathCache{
+		conn:       conn,
+		path:       path,
+		cached:     make(map[string]bool),
 		watchCh:    make(chan zk.Event),
 		notifyCh:   make(chan pathCacheEvent),
 		addChildCh: make(chan string),
@@ -61,7 +65,7 @@ func newPathCache(conn *zk.Conn, path string) (*pathCache, error) {
 
 	err := p.watchChildren()
 	if err != nil {
-		log.Info("Failed to watch zk path %s, %s", path, err)
+		fmt.Printf("Failed to watch zk path %s, %s\n", path, err)
 		return nil, err
 	}
 
@@ -102,6 +106,8 @@ func (p *pathCache) watch(path string) error {
 }
 
 func (p *pathCache) watchChildren() error {
+	fmt.Printf("Watch the children for path: %s\n", p.path)
+
 	children, _, ch, err := p.conn.ChildrenW(p.path)
 	if err != nil {
 		return err
@@ -116,13 +122,16 @@ func (p *pathCache) watchChildren() error {
 	return nil
 }
 
+// onChildAdd watch this added child, and inform the client immediately.
 func (p *pathCache) onChildAdd(child string) {
 	err := p.watch(child)
 	if err != nil {
-		log.Info("Failed to watch child %s, the err is %s", child, err)
+		fmt.Printf("Failed to watch child %s, the err is %s\n", child, err)
 		return
 	}
+
 	p.cached[child] = true
+
 	event := pathCacheEvent{
 		eventType: pathCacheEventAdded,
 		path:      child,
