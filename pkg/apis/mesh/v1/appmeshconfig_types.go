@@ -2,7 +2,6 @@ package v1
 
 import (
 	"github.com/operator-framework/operator-sdk/pkg/status"
-	networking "istio.io/api/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,35 +23,42 @@ type Port struct {
 
 // Instance ...
 type Instance struct {
-	Host       string            `json:"host"`
-	Zone       string            `json:"zone"`
-	Group      string            `json:"group"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	Dynamic    bool              `json:"dynamic,omitempty"`
-	Weight     string            `json:"weight,omitempty"`
-	Methods    []string          `json:"methods,omitempty"`
-	Release    string            `json:"release,omitempty"`
-	SdkVersion string            `json:"sdkVersion,omitempty"`
-	Side       string            `json:"side,omitempty"`
-	Timeout    int32             `json:"timeout,omitempty"`
-	Retry      int32             `json:"retry,omitempty"`
-	Timestamp  int64             `json:"timestamp,omitempty"`
+	Host   string            `json:"host"`
+	Zone   string            `json:"zone"`
+	Group  string            `json:"group"`
+	Labels map[string]string `json:"labels,omitempty"`
+	Port   *Port             `json:"port"`
+}
+
+// Subset ...
+type Subset struct {
+	Name   string            `json:"name"`
+	labels map[string]string `json:"labels"`
 }
 
 // Service ...
 type Service struct {
-	Name        string      `json:"name"`
-	Application string      `json:"application,omitempty"`
-	Ports       []*Port     `json:"ports"`
-	Instances   []*Instance `json:"instances"`
+	Name      string      `json:"name,omitempty"`
+	AppName   string      `json:"appName,omitempty"`
+	Ports     []*Port     `json:"ports,omitempty"`
+	Instances []*Instance `json:"instances,omitempty"`
+	Policy    *Policy     `json:"policy,omitempty"`
+	Subsets   []*Subset   `json:"subsets,omitempty"`
+}
+
+// Destination ...
+type Destination struct {
+	Subset string `json:"subset,omitempty"`
+	Weight string `json:"weight,omitempty"`
 }
 
 // Policy ...
 type Policy struct {
-	LoadBalancer      *networking.LoadBalancerSettings `json:"loadBalancer,omitempty"`
-	MaxConnections    int32                            `json:"maxConnections,omitempty"`
-	ConnectionTimeout string                           `json:"connection_timeout,omitempty"`
-	MaxRetries        int32                            `json:"maxRetries,omitempty"`
+	LoadBalancer   map[string]string `json:"loadBalancer,omitempty"`
+	MaxConnections int32             `json:"maxConnections,omitempty"`
+	Timeout        string            `json:"timeout,omitempty"`
+	MaxRetries     int32             `json:"maxRetries,omitempty"`
+	Route          []*Destination    `json:"route,omitempty"`
 }
 
 // Monitor ...
@@ -68,8 +74,10 @@ type AppMeshConfigSpec struct {
 	Policy   *Policy    `json:"policy"`
 }
 
+// ConfigStatus ...
 type ConfigStatus string
 
+// ConfigStatus enumerations
 const (
 	ConfigStatusUndistributed ConfigStatus = "Undistributed"
 	ConfigStatusDistributed   ConfigStatus = "Distributed"
@@ -82,10 +90,11 @@ type AppMeshConfigStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// +optional
-	ObservedGeneration int64             `json:"observedGeneration,omitempty"`
-	LastUpdateTime     *metav1.Time      `json:"lastUpdateTime,omitempty"`
-	Status             ConfigStatus      `json:"status"`
-	Conditions         status.Conditions `json:"conditions"`
+	ObservedGeneration int64                   `json:"observedGeneration,omitempty"`
+	LastUpdateTime     *metav1.Time            `json:"lastUpdateTime,omitempty"`
+	Status             ConfigStatus            `json:"status"`
+	XdsStatus          map[string]ConfigStatus `json:"xdsStatus"`
+	Conditions         status.Conditions       `json:"conditions"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

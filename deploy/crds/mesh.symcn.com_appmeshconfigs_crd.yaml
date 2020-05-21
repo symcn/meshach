@@ -46,111 +46,9 @@ spec:
             policy:
               description: Policy ...
               properties:
-                connection_timeout:
-                  type: string
                 loadBalancer:
-                  description: "Load balancing policies to apply for a specific destination.
-                    See Envoy's load balancing [documentation](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancing)
-                    for more details. \n For example, the following rule uses a round
-                    robin load balancing policy for all traffic going to the ratings
-                    service. \n {{<tabset category-name=\"example\">}} {{<tab name=\"v1alpha3\"
-                    category-value=\"v1alpha3\">}} ```yaml apiVersion: networking.istio.io/v1alpha3
-                    kind: DestinationRule metadata:   name: bookinfo-ratings spec:
-                    \  host: ratings.prod.svc.cluster.local   trafficPolicy:     loadBalancer:
-                    \      simple: ROUND_ROBIN ``` {{</tab>}} \n {{<tab name=\"v1beta1\"
-                    category-value=\"v1beta1\">}} ```yaml apiVersion: networking.istio.io/v1beta1
-                    kind: DestinationRule metadata:   name: bookinfo-ratings spec:
-                    \  host: ratings.prod.svc.cluster.local   trafficPolicy:     loadBalancer:
-                    \      simple: ROUND_ROBIN ``` {{</tab>}} {{</tabset>}} \n The
-                    following example sets up sticky sessions for the ratings service
-                    hashing-based load balancer for the same ratings service using
-                    the the User cookie as the hash key. \n {{<tabset category-name=\"example\">}}
-                    {{<tab name=\"v1alpha3\" category-value=\"v1alpha3\">}} ```yaml
-                    \ apiVersion: networking.istio.io/v1alpha3  kind: DestinationRule
-                    \ metadata:    name: bookinfo-ratings  spec:    host: ratings.prod.svc.cluster.local
-                    \   trafficPolicy:      loadBalancer:        consistentHash:          httpCookie:
-                    \           name: user            ttl: 0s ``` {{</tab>}} \n {{<tab
-                    name=\"v1beta1\" category-value=\"v1beta1\">}} ```yaml  apiVersion:
-                    networking.istio.io/v1beta1  kind: DestinationRule  metadata:
-                    \   name: bookinfo-ratings  spec:    host: ratings.prod.svc.cluster.local
-                    \   trafficPolicy:      loadBalancer:        consistentHash:          httpCookie:
-                    \           name: user            ttl: 0s ``` {{</tab>}} {{</tabset>}}"
-                  properties:
-                    locality_lb_setting:
-                      description: Locality load balancer settings, this will override
-                        mesh wide settings in entirety, meaning no merging would be
-                        performed between this object and the object one in MeshConfig
-                      properties:
-                        distribute:
-                          description: 'Optional: only one of distribute or failover
-                            can be set. Explicitly specify loadbalancing weight across
-                            different zones and geographical locations. Refer to [Locality
-                            weighted load balancing](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/locality_weight)
-                            If empty, the locality weight is set according to the
-                            endpoints number within it.'
-                          items:
-                            description: 'Describes how traffic originating in the
-                              ''from'' zone or sub-zone is distributed over a set
-                              of ''to'' zones. Syntax for specifying a zone is {region}/{zone}/{sub-zone}
-                              and terminal wildcards are allowed on any segment of
-                              the specification. Examples: * - matches all localities
-                              us-west/* - all zones and sub-zones within the us-west
-                              region us-west/zone-1/* - all sub-zones within us-west/zone-1'
-                            properties:
-                              from:
-                                description: Originating locality, '/' separated,
-                                  e.g. 'region/zone/sub_zone'.
-                                type: string
-                              to:
-                                additionalProperties:
-                                  format: int32
-                                  type: integer
-                                description: Map of upstream localities to traffic
-                                  distribution weights. The sum of all weights should
-                                  be == 100. Any locality not assigned a weight will
-                                  receive no traffic.
-                                type: object
-                            type: object
-                          type: array
-                        enabled:
-                          description: enable locality load balancing, this is DestinationRule-level
-                            and will override mesh wide settings in entirety. e.g.
-                            true means that turn on locality load balancing for this
-                            DestinationRule no matter what mesh wide settings is.
-                          properties:
-                            value:
-                              description: The bool value.
-                              type: boolean
-                          type: object
-                        failover:
-                          description: 'Optional: only failover or distribute can
-                            be set. Explicitly specify the region traffic will land
-                            on when endpoints in local region becomes unhealthy. Should
-                            be used together with OutlierDetection to detect unhealthy
-                            endpoints. Note: if no OutlierDetection specified, this
-                            will not take effect.'
-                          items:
-                            description: Specify the traffic failover policy across
-                              regions. Since zone and sub-zone failover is supported
-                              by default this only needs to be specified for regions
-                              when the operator needs to constrain traffic failover
-                              so that the default behavior of failing over to any
-                              endpoint globally does not apply. This is useful when
-                              failing over traffic across regions would not improve
-                              service health or may need to be restricted for other
-                              reasons like regulatory controls.
-                            properties:
-                              from:
-                                description: Originating region.
-                                type: string
-                              to:
-                                description: Destination region the traffic will fail
-                                  over to when endpoints in the 'from' region becomes
-                                  unhealthy.
-                                type: string
-                            type: object
-                          type: array
-                      type: object
+                  additionalProperties:
+                    type: string
                   type: object
                 maxConnections:
                   format: int32
@@ -158,19 +56,29 @@ spec:
                 maxRetries:
                   format: int32
                   type: integer
+                route:
+                  items:
+                    description: Destination ...
+                    properties:
+                      subset:
+                        type: string
+                      weight:
+                        type: string
+                    type: object
+                  type: array
+                timeout:
+                  type: string
               type: object
             services:
               items:
                 description: Service ...
                 properties:
-                  application:
+                  appName:
                     type: string
                   instances:
                     items:
                       description: Instance ...
                       properties:
-                        dynamic:
-                          type: boolean
                         group:
                           type: string
                         host:
@@ -179,37 +87,58 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
-                        methods:
-                          items:
-                            type: string
-                          type: array
-                        release:
-                          type: string
-                        retry:
-                          format: int32
-                          type: integer
-                        sdkVersion:
-                          type: string
-                        side:
-                          type: string
-                        timeout:
-                          format: int32
-                          type: integer
-                        timestamp:
-                          format: int64
-                          type: integer
-                        weight:
-                          type: string
+                        port:
+                          description: Port ...
+                          properties:
+                            name:
+                              type: string
+                            port:
+                              format: int32
+                              type: integer
+                            protocol:
+                              type: string
+                          required:
+                          - name
+                          - port
+                          - protocol
+                          type: object
                         zone:
                           type: string
                       required:
                       - group
                       - host
+                      - port
                       - zone
                       type: object
                     type: array
                   name:
                     type: string
+                  policy:
+                    description: Policy ...
+                    properties:
+                      loadBalancer:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      maxConnections:
+                        format: int32
+                        type: integer
+                      maxRetries:
+                        format: int32
+                        type: integer
+                      route:
+                        items:
+                          description: Destination ...
+                          properties:
+                            subset:
+                              type: string
+                            weight:
+                              type: string
+                          type: object
+                        type: array
+                      timeout:
+                        type: string
+                    type: object
                   ports:
                     items:
                       description: Port ...
@@ -227,10 +156,21 @@ spec:
                       - protocol
                       type: object
                     type: array
-                required:
-                - instances
-                - name
-                - ports
+                  subsets:
+                    items:
+                      description: Subset ...
+                      properties:
+                        labels:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        name:
+                          type: string
+                      required:
+                      - labels
+                      - name
+                      type: object
+                    type: array
                 type: object
               type: array
           required:
@@ -292,9 +232,14 @@ spec:
               type: integer
             status:
               type: string
+            xdsStatus:
+              additionalProperties:
+                type: string
+              type: object
           required:
           - conditions
           - status
+          - xdsStatus
           type: object
       type: object
   version: v1
