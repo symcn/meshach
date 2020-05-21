@@ -33,7 +33,8 @@ type Instance struct {
 // Subset ...
 type Subset struct {
 	Name   string            `json:"name"`
-	labels map[string]string `json:"labels"`
+	Labels map[string]string `json:"labels"`
+	Policy *Policy           `json:"policy,omitempty"`
 }
 
 // Service ...
