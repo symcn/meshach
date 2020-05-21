@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func Test_StartController(t *testing.T) {
+func Test_Start(t *testing.T) {
 	adapter, err := NewAdapter("10.12.210.70:2181", "")
 
 	if err != nil {

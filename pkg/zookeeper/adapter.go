@@ -7,13 +7,9 @@ import (
 	"time"
 )
 
-type serviceHandler func()
-type instanceHandler func()
-
 type Adapter struct {
-	client          *Client
-	serviceHandlers []serviceHandler
-	instanceHandler []instanceHandler
+	client        *Client
+	eventHandlers []EventHandler
 }
 
 func NewAdapter(address string, root string) (*Adapter, error) {
@@ -24,8 +20,12 @@ func NewAdapter(address string, root string) (*Adapter, error) {
 	}
 
 	client := NewClient(dubboRootPath, conn)
+	eventHandlers := []EventHandler{}
+	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "testHandler"})
+	eventHandlers = append(eventHandlers, &CRDEventHandler{})
 	adapter := &Adapter{
-		client: client,
+		client:        client,
+		eventHandlers: eventHandlers,
 	}
 	return adapter, nil
 }
@@ -41,13 +41,21 @@ func (a *Adapter) Run(stop <-chan struct{}) {
 		case event := <-a.client.Events():
 			switch event.EventType {
 			case ServiceAdded:
-				fmt.Printf("Adding a service\n%v\n", event.Service)
+				for _, h := range a.eventHandlers {
+					h.AddService(event)
+				}
 			case ServiceDeleted:
-				fmt.Printf("Deleting a service\n%v\n", event.Service)
+				for _, h := range a.eventHandlers {
+					h.DeleteService(event)
+				}
 			case ServiceInstanceAdded:
-				fmt.Printf("Adding an instance\n%v\n", event.Instance)
+				for _, h := range a.eventHandlers {
+					h.AddInstance(event)
+				}
 			case ServiceInstanceDeleted:
-				fmt.Printf("Deleting an instance\n%v\n", event.Instance)
+				for _, h := range a.eventHandlers {
+					h.DeleteInstance(event)
+				}
 			}
 		case <-stop:
 			a.client.Stop()
