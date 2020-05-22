@@ -8,8 +8,8 @@ import (
 
 func Test_Start(t *testing.T) {
 	opt := Option{
-		Address: "10.12.210.70:2181",
-		Root:    "",
+		Address: []string{"10.12.210.70:2181"},
+		Root:    dubboRootPath,
 		Timeout: 15,
 	}
 	adapter, err := NewAdapter(&opt)

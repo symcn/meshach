@@ -24,7 +24,7 @@ type Option struct {
 func DefaultOption() *Option {
 	return &Option{
 		Timeout: 15,
-		Root:    "/dubbo",
+		Root:    dubboRootPath,
 	}
 }
 
@@ -35,9 +35,9 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 		return nil, err
 	}
 
-	client := NewClient(opt.Root, conn)
+	zkClient := NewClient(opt.Root, conn)
 	eventHandlers := []EventHandler{}
-	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "testHandler"})
+	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
 	eventHandlers = append(eventHandlers, &CRDEventHandler{})
 	adapter := &Adapter{
 		zkClient:      zkClient,
