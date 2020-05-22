@@ -34,8 +34,12 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	if err != nil {
 		return nil, err
 	}
+	rootPath := dubboRootPath
+	if opt.Root != "" {
+		rootPath = opt.Root
+	}
+	zkClient := NewClient(rootPath, conn)
 
-	zkClient := NewClient(opt.Root, conn)
 	eventHandlers := []EventHandler{}
 	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
 	eventHandlers = append(eventHandlers, &CRDEventHandler{})
