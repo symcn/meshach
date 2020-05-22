@@ -2,24 +2,40 @@ package zookeeper
 
 import (
 	"fmt"
-	"github.com/samuel/go-zookeeper/zk"
-	"strings"
 	"time"
+
+	"github.com/samuel/go-zookeeper/zk"
 )
 
+// Adapter ...
 type Adapter struct {
 	zkClient      *ZkClient
 	eventHandlers []EventHandler
 }
 
-func NewAdapter(address string, root string) (*Adapter, error) {
-	servers := strings.Split(address, ",")
-	conn, _, err := zk.Connect(servers, 15*time.Second)
+// Option ...
+type Option struct {
+	Address []string
+	Root    string
+	Timeout int64
+}
+
+// DefaultOption ...
+func DefaultOption() *Option {
+	return &Option{
+		Timeout: 15,
+		Root:    "/dubbo",
+	}
+}
+
+// NewAdapter ...
+func NewAdapter(opt *Option) (*Adapter, error) {
+	conn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
 		return nil, err
 	}
 
-	zkClient := NewClient(dubboRootPath, conn)
+	client := NewClient(opt.Root, conn)
 	eventHandlers := []EventHandler{}
 	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "testHandler"})
 	eventHandlers = append(eventHandlers, &CRDEventHandler{})
@@ -30,6 +46,7 @@ func NewAdapter(address string, root string) (*Adapter, error) {
 	return adapter, nil
 }
 
+// Run ...
 func (a *Adapter) Run(stop <-chan struct{}) {
 	if err := a.zkClient.Start(); err != nil {
 		fmt.Printf("Start client has an error %v\n", err)

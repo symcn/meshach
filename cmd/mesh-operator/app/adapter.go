@@ -17,18 +17,32 @@ limitations under the License.
 package app
 
 import (
+	"time"
+
+	zk "github.com/mesh-operator/pkg/zookeeper"
 	"github.com/spf13/cobra"
 )
 
 // NewAdapterCmd ...
 func NewAdapterCmd() *cobra.Command {
+	opt := zk.DefaultOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
 		Aliases: []string{"adapter"},
 		Short:   "Adapters configured for different registry center",
 		Run: func(cmd *cobra.Command, args []string) {
 			PrintFlags(cmd.Flags())
+			adapter, _ := zk.NewAdapter(opt)
+			stop := make(chan struct{})
+			adapter.Run(stop)
+
+			time.Sleep(30 * time.Minute)
+			stop <- struct{}{}
+			time.Sleep(5 * time.Second)
 		},
 	}
+	cmd.PersistentFlags().StringArrayVar(&opt.Address, "zk-addr", opt.Address, "the zookeeper address pool")
+	cmd.PersistentFlags().StringVar(&opt.Root, "zk-root", opt.Root, "the zookeeper root")
+	cmd.PersistentFlags().Int64Var(&opt.Timeout, "zk-timeout", opt.Timeout, "the zookeeper session timeout second")
 	return cmd
 }

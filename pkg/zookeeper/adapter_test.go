@@ -7,7 +7,12 @@ import (
 )
 
 func Test_Start(t *testing.T) {
-	adapter, err := NewAdapter("10.12.210.70:2181", "")
+	opt := Option{
+		Address: "10.12.210.70:2181",
+		Root:    "",
+		Timeout: 15,
+	}
+	adapter, err := NewAdapter(&opt)
 
 	if err != nil {
 		fmt.Sprintf("Start a controller has an error: %v\n", err)
