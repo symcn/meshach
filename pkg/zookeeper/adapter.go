@@ -8,7 +8,7 @@ import (
 )
 
 type Adapter struct {
-	client        *Client
+	zkClient      *ZkClient
 	eventHandlers []EventHandler
 }
 
@@ -19,26 +19,26 @@ func NewAdapter(address string, root string) (*Adapter, error) {
 		return nil, err
 	}
 
-	client := NewClient(dubboRootPath, conn)
+	zkClient := NewClient(dubboRootPath, conn)
 	eventHandlers := []EventHandler{}
 	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "testHandler"})
 	eventHandlers = append(eventHandlers, &CRDEventHandler{})
 	adapter := &Adapter{
-		client:        client,
+		zkClient:      zkClient,
 		eventHandlers: eventHandlers,
 	}
 	return adapter, nil
 }
 
 func (a *Adapter) Run(stop <-chan struct{}) {
-	if err := a.client.Start(); err != nil {
+	if err := a.zkClient.Start(); err != nil {
 		fmt.Printf("Start client has an error %v\n", err)
 		return
 	}
 
 	for {
 		select {
-		case event := <-a.client.Events():
+		case event := <-a.zkClient.Events():
 			switch event.EventType {
 			case ServiceAdded:
 				for _, h := range a.eventHandlers {
@@ -58,7 +58,7 @@ func (a *Adapter) Run(stop <-chan struct{}) {
 				}
 			}
 		case <-stop:
-			a.client.Stop()
+			a.zkClient.Stop()
 			return
 		}
 	}

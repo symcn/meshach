@@ -7,6 +7,7 @@ import (
 
 // CRDEventHandler it used for handling the event which has been send from the adapter client.
 type CRDEventHandler struct {
+	//cleint
 }
 
 func (ceh *CRDEventHandler) AddService(e ServiceEvent) {
