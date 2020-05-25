@@ -18,7 +18,7 @@ func Test_Start(t *testing.T) {
 	}
 
 	stop := make(chan struct{})
-	adapter.Run(stop)
+	adapter.Start(stop)
 
 	time.Sleep(30 * time.Minute)
 

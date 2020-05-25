@@ -22,7 +22,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog"
 )
 
@@ -40,23 +39,6 @@ func PrintFlags(flags *pflag.FlagSet) {
 
 func runHelp(cmd *cobra.Command, args []string) {
 	cmd.Help()
-}
-
-// RootOption ...
-type RootOption struct {
-	Kubeconfig       string
-	ConfigContext    string
-	Namespace        string
-	DefaultNamespace string
-	DevelopmentMode  bool
-}
-
-// DefaultRootOption ...
-func DefaultRootOption() *RootOption {
-	return &RootOption{
-		Namespace:       corev1.NamespaceAll,
-		DevelopmentMode: true,
-	}
 }
 
 // GetRootCmd returns the root of the cobra command-tree.
@@ -85,8 +67,9 @@ func GetRootCmd(args []string) *cobra.Command {
 	flag.Set("logtostderr", "true")
 
 	AddFlags(rootCmd)
+	cli := NewDksCli(opt)
 
-	rootCmd.AddCommand(NewAdapterCmd())
+	rootCmd.AddCommand(NewAdapterCmd(cli))
 	rootCmd.AddCommand(NewControllerCmd())
 	rootCmd.AddCommand(NewCmdVersion())
 	return rootCmd

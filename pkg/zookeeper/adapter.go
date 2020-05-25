@@ -4,20 +4,27 @@ import (
 	"fmt"
 	"time"
 
+	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/samuel/go-zookeeper/zk"
+	"k8s.io/klog"
 )
 
 // Adapter ...
 type Adapter struct {
 	zkClient      *ZkClient
 	eventHandlers []EventHandler
+	opt           *Option
+	K8sMgr        *k8smanager.ClusterManager
 }
 
 // Option ...
 type Option struct {
-	Address []string
-	Root    string
-	Timeout int64
+	Address          []string
+	Root             string
+	Timeout          int64
+	ClusterOwner     string
+	ClusterNamespace string
+	MasterCli        k8smanager.MasterClient
 }
 
 // DefaultOption ...
@@ -30,6 +37,24 @@ func DefaultOption() *Option {
 
 // NewAdapter ...
 func NewAdapter(opt *Option) (*Adapter, error) {
+	// TODO init health check handler
+	// TODO init router
+
+	// init multi k8s cluster manager
+	klog.Info("start init multi cluster manager ... ")
+	labels := map[string]string{
+		"ClusterOwner": opt.ClusterOwner,
+	}
+	mgrOpt := k8smanager.DefaultClusterManagerOption(false, labels)
+	if opt.ClusterNamespace != "" {
+		mgrOpt.Namespace = opt.ClusterNamespace
+	}
+	k8sMgr, err := k8smanager.NewManager(opt.MasterCli, mgrOpt)
+	if err != nil {
+		klog.Fatalf("unable to new k8s manager err: %v", err)
+	}
+
+	// init adapter
 	conn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -42,19 +67,24 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 
 	eventHandlers := []EventHandler{}
 	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
-	eventHandlers = append(eventHandlers, &CRDEventHandler{})
+	eventHandlers = append(eventHandlers, &CRDEventHandler{k8sMgr: k8sMgr})
+
 	adapter := &Adapter{
 		zkClient:      zkClient,
 		eventHandlers: eventHandlers,
+		opt:           opt,
+		K8sMgr:        k8sMgr,
 	}
+
+	// TODO init informer, registry resource
 	return adapter, nil
 }
 
-// Run ...
-func (a *Adapter) Run(stop <-chan struct{}) {
+// Start ...
+func (a *Adapter) Start(stop <-chan struct{}) error {
 	if err := a.zkClient.Start(); err != nil {
 		fmt.Printf("Start client has an error %v\n", err)
-		return
+		return err
 	}
 
 	for {
@@ -80,7 +110,7 @@ func (a *Adapter) Run(stop <-chan struct{}) {
 			}
 		case <-stop:
 			a.zkClient.Stop()
-			return
+			return nil
 		}
 	}
 
