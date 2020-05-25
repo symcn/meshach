@@ -166,6 +166,32 @@ spec:
                           type: object
                         name:
                           type: string
+                        policy:
+                          description: Policy ...
+                          properties:
+                            loadBalancer:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            maxConnections:
+                              format: int32
+                              type: integer
+                            maxRetries:
+                              format: int32
+                              type: integer
+                            route:
+                              items:
+                                description: Destination ...
+                                properties:
+                                  subset:
+                                    type: string
+                                  weight:
+                                    type: string
+                                type: object
+                              type: array
+                            timeout:
+                              type: string
+                          type: object
                       required:
                       - labels
                       - name
@@ -231,9 +257,11 @@ spec:
               format: int64
               type: integer
             status:
+              description: ConfigStatus ...
               type: string
             xdsStatus:
               additionalProperties:
+                description: ConfigStatus ...
                 type: string
               type: object
           required:
