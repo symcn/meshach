@@ -247,6 +247,7 @@ linters:
     - errcheck
     - unused
     - maligned
+    - bodyclose
     - prealloc
   disable-all: false
   presets:
