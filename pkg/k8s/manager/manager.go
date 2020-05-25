@@ -142,7 +142,6 @@ func (m *ClusterManager) getClusterConfigmap() ([]*corev1.ConfigMap, error) {
 
 	} else {
 		cmList, err := m.KubeCli.CoreV1().ConfigMaps(m.Opt.Namespace).List(
-			context.Background(),
 			metav1.ListOptions{
 				LabelSelector: labels.SelectorFromSet(m.Opt.LabelSelector).String(),
 			},
@@ -315,7 +314,6 @@ func (m *ClusterManager) preStart() error {
 		if m.Opt.IsAPI {
 			// add field pod nodeName index must before cache start
 			if err := c.Mgr.GetFieldIndexer().IndexField(
-				context.Background(),
 				&corev1.Pod{},
 				"spec.nodeName",
 				func(rawObj runtime.Object) []string {
@@ -329,7 +327,6 @@ func (m *ClusterManager) preStart() error {
 
 			// add field event pod name index must before cache start
 			if err := c.Mgr.GetFieldIndexer().IndexField(
-				context.Background(),
 				&corev1.Event{},
 				"podName",
 				func(rawObj runtime.Object) []string {
@@ -347,7 +344,6 @@ func (m *ClusterManager) preStart() error {
 
 		// add field event type index must before cache start
 		if err := c.Mgr.GetFieldIndexer().IndexField(
-			context.Background(),
 			&corev1.Event{},
 			"type",
 			func(rawObj runtime.Object) []string {

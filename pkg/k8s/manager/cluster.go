@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"context"
 	"strings"
 	"time"
 
@@ -114,8 +113,7 @@ func (c *Cluster) initK8SClients() error {
 }
 
 func (c *Cluster) healthCheck() bool {
-	ctx := context.Background()
-	body, err := c.KubeCli.Discovery().RESTClient().Get().AbsPath("/healthz").Do(ctx).Raw()
+	body, err := c.KubeCli.Discovery().RESTClient().Get().AbsPath("/healthz").Do().Raw()
 	if err != nil {
 		runtime.HandleError(errors.Wrapf(err, "Failed to do cluster health check for cluster %q", c.Name))
 		c.Status = ClusterOffline
