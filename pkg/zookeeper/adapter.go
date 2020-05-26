@@ -30,8 +30,10 @@ type Option struct {
 // DefaultOption ...
 func DefaultOption() *Option {
 	return &Option{
-		Timeout: 15,
-		Root:    dubboRootPath,
+		Timeout:          15,
+		Root:             dubboRootPath,
+		ClusterOwner:     "sym-admin",
+		ClusterNamespace: "sym-admin",
 	}
 }
 
@@ -45,7 +47,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	labels := map[string]string{
 		"ClusterOwner": opt.ClusterOwner,
 	}
-	mgrOpt := k8smanager.DefaultClusterManagerOption(false, labels)
+	mgrOpt := k8smanager.DefaultClusterManagerOption(opt.ClusterNamespace, labels)
 	if opt.ClusterNamespace != "" {
 		mgrOpt.Namespace = opt.ClusterNamespace
 	}
