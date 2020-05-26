@@ -43,7 +43,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	// TODO init router
 
 	// init multi k8s cluster manager
-	klog.Info("start init multi cluster manager ... ")
+	klog.Info("start to initializing multiple cluster managers ... ")
 	labels := map[string]string{
 		"ClusterOwner": opt.ClusterOwner,
 	}
@@ -53,8 +53,9 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	}
 	k8sMgr, err := k8smanager.NewManager(opt.MasterCli, mgrOpt)
 	if err != nil {
-		klog.Fatalf("unable to new k8s manager err: %v", err)
+		klog.Fatalf("unable to create a new k8s manager, err: %v", err)
 	}
+	//k8sMgr.GetAll()
 
 	// init adapter
 	conn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
@@ -85,7 +86,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 // Start ...
 func (a *Adapter) Start(stop <-chan struct{}) error {
 	if err := a.zkClient.Start(); err != nil {
-		fmt.Printf("Start client has an error %v\n", err)
+		fmt.Printf("Start zookeeper client has an error %v\n", err)
 		return err
 	}
 
