@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The dks authors.
+Copyright 2020 The symcn authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package app
 import (
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -43,22 +42,9 @@ func DefaultRootOption() *RootOption {
 	}
 }
 
-// DksCli ...
-type DksCli struct {
-	RootCmd *cobra.Command
-	Opt     *RootOption
-}
-
-// NewDksCli ...
-func NewDksCli(opt *RootOption) *DksCli {
-	return &DksCli{
-		Opt: opt,
-	}
-}
-
 // GetK8sConfig ...
-func (c *DksCli) GetK8sConfig() (*rest.Config, error) {
-	config, err := k8sclient.GetConfigWithContext(c.Opt.Kubeconfig, c.Opt.ConfigContext)
+func (r *RootOption) GetK8sConfig() (*rest.Config, error) {
+	config, err := k8sclient.GetConfigWithContext(r.Kubeconfig, r.ConfigContext)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get k8s config")
 	}
@@ -67,8 +53,8 @@ func (c *DksCli) GetK8sConfig() (*rest.Config, error) {
 }
 
 // GetKubeInterface ...
-func (c *DksCli) GetKubeInterface() (kubernetes.Interface, error) {
-	cfg, err := c.GetK8sConfig()
+func (r *RootOption) GetKubeInterface() (kubernetes.Interface, error) {
+	cfg, err := r.GetK8sConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get k8s config")
 	}
@@ -82,8 +68,8 @@ func (c *DksCli) GetKubeInterface() (kubernetes.Interface, error) {
 }
 
 // GetKubeInterfaceOrDie ...
-func (c *DksCli) GetKubeInterfaceOrDie() kubernetes.Interface {
-	kubeCli, err := c.GetKubeInterface()
+func (r *RootOption) GetKubeInterfaceOrDie() kubernetes.Interface {
+	kubeCli, err := r.GetKubeInterface()
 	if err != nil {
 		klog.Fatalf("unable to get kube interface err: %v", err)
 	}

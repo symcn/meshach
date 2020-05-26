@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The dks authors.
+Copyright 2020 The symcn authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import (
 )
 
 // NewAdapterCmd ...
-func NewAdapterCmd(cli *DksCli) *cobra.Command {
+func NewAdapterCmd(ropt *RootOption) *cobra.Command {
 	opt := zk.DefaultOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
@@ -38,7 +38,7 @@ func NewAdapterCmd(cli *DksCli) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			PrintFlags(cmd.Flags())
 
-			cfg, err := cli.GetK8sConfig()
+			cfg, err := ropt.GetK8sConfig()
 			if err != nil {
 				klog.Fatalf("unable to get kubeconfig err: %v", err)
 			}
@@ -56,7 +56,7 @@ func NewAdapterCmd(cli *DksCli) *cobra.Command {
 			}
 
 			opt.MasterCli = k8smanager.MasterClient{
-				KubeCli: cli.GetKubeInterfaceOrDie(),
+				KubeCli: ropt.GetKubeInterfaceOrDie(),
 				Manager: mgr,
 			}
 

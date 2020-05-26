@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The dks authors.
+Copyright 2020 The symcn authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,22 +24,6 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/klog"
 )
-
-// AddFlags ...
-func AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-}
-
-// PrintFlags logs the flags in the flagset
-func PrintFlags(flags *pflag.FlagSet) {
-	flags.VisitAll(func(flag *pflag.Flag) {
-		klog.Infof("FLAG: --%s=%q", flag.Name, flag.Value)
-	})
-}
-
-func runHelp(cmd *cobra.Command, args []string) {
-	cmd.Help()
-}
 
 // GetRootCmd returns the root of the cobra command-tree.
 func GetRootCmd(args []string) *cobra.Command {
@@ -67,10 +51,24 @@ func GetRootCmd(args []string) *cobra.Command {
 	flag.Set("logtostderr", "true")
 
 	AddFlags(rootCmd)
-	cli := NewDksCli(opt)
-
-	rootCmd.AddCommand(NewAdapterCmd(cli))
-	rootCmd.AddCommand(NewControllerCmd())
+	rootCmd.AddCommand(NewAdapterCmd(opt))
+	rootCmd.AddCommand(NewControllerCmd(opt))
 	rootCmd.AddCommand(NewCmdVersion())
 	return rootCmd
+}
+
+// AddFlags ...
+func AddFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
+}
+
+// PrintFlags logs the flags in the flagset
+func PrintFlags(flags *pflag.FlagSet) {
+	flags.VisitAll(func(flag *pflag.Flag) {
+		klog.Infof("FLAG: --%s=%q", flag.Name, flag.Value)
+	})
+}
+
+func runHelp(cmd *cobra.Command, args []string) {
+	cmd.Help()
 }
