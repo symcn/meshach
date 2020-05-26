@@ -96,8 +96,9 @@ func (c *Cluster) initK8SClients() error {
 	klog.V(5).Infof("##### cluster [%s] NewClientCli. time taken: %v. ", c.Name, time.Since(startTime))
 	c.KubeCli = kubecli
 	o := manager.Options{
-		Scheme:     k8sclient.GetScheme(),
-		SyncPeriod: &c.SyncPeriod,
+		Scheme:             k8sclient.GetScheme(),
+		SyncPeriod:         &c.SyncPeriod,
+		MetricsBindAddress: "0",
 	}
 
 	mgr, err := manager.New(c.RestConfig, o)
