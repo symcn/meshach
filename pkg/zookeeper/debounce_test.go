@@ -12,7 +12,7 @@ type MockRequest struct {
 }
 
 func (mr *MockRequest) Merge(request Request) Request {
-	fmt.Printf("Merging request:%v\n", mr.Index)
+	fmt.Printf("Merging request:%v to request:%v\n", request, mr.Index)
 	return request
 }
 
@@ -23,16 +23,16 @@ func Test_start(t *testing.T) {
 		fmt.Printf("Pushing request: %v\n", req)
 	}
 
-	d := New(time.Duration(20)*time.Second, 30*time.Second, pushFn)
+	d := New(time.Duration(5)*time.Second, 30*time.Second, pushFn)
 	go func() {
-		for i := 1; i < 10; i++ {
+		for i := 0; i < 100; i++ {
 			d.Put(&MockRequest{Index: i})
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Second)
 		}
 	}()
 
-	d.Start()
+	//d.start()
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(30 * time.Minute)
 
 }
