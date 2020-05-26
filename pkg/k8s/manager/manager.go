@@ -39,7 +39,6 @@ const (
 type ClusterManagerOption struct {
 	Namespace     string
 	LabelSelector map[string]string
-	IsAPI         bool
 }
 
 // MasterClient ...
@@ -307,38 +306,6 @@ func (m *ClusterManager) preStart() error {
 		if !c.healthCheck() {
 			klog.Errorf("cluster: %s check offline", cm.Name)
 			continue
-		}
-
-		// TODO(haidong): add index for adapter
-		if m.Opt.IsAPI {
-			// add field pod nodeName index must before cache start
-			if err := c.Mgr.GetFieldIndexer().IndexField(
-				&corev1.Pod{},
-				"spec.nodeName",
-				func(rawObj runtime.Object) []string {
-					pod := rawObj.(*corev1.Pod)
-					return []string{pod.Spec.NodeName}
-				}); err != nil {
-				klog.Warningf("cluster[%s] add field index pod spec.nodeName, err: %#v", c.Name, err)
-			} else {
-				klog.Infof("cluster[%s] add field index pod spec.nodeName successfully", c.Name)
-			}
-
-			// add field event pod name index must before cache start
-			if err := c.Mgr.GetFieldIndexer().IndexField(
-				&corev1.Event{},
-				"podName",
-				func(rawObj runtime.Object) []string {
-					event := rawObj.(*corev1.Event)
-					if event.InvolvedObject.Kind != "Pod" {
-						return []string{}
-					}
-					return []string{event.InvolvedObject.Name}
-				}); err != nil {
-				klog.Warningf("cluster[%s] add field index event podName, err: %#v", c.Name, err)
-			} else {
-				klog.Infof("cluster[%s] add field index envet podName successfully", c.Name)
-			}
 		}
 
 		// add field event type index must before cache start

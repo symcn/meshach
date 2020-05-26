@@ -65,7 +65,7 @@ func NewCluster(name string, kubeconfig []byte, log logr.Logger) (*Cluster, erro
 		Started:         false,
 	}
 
-	err := cluster.initK8SClients()
+	err := cluster.initK8sClients()
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not re-init k8s clients name:%s", name)
 	}
@@ -78,7 +78,7 @@ func (c *Cluster) GetName() string {
 	return c.Name
 }
 
-func (c *Cluster) initK8SClients() error {
+func (c *Cluster) initK8sClients() error {
 	startTime := time.Now()
 	cfg, err := k8sclient.NewClientConfig(c.RawKubeconfig)
 	if err != nil {

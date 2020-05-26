@@ -75,10 +75,35 @@ func NewAdapterCmd(cli *DksCli) *cobra.Command {
 			}
 		},
 	}
-	cmd.PersistentFlags().StringArrayVar(&opt.Address, "zk-addr", opt.Address, "the zookeeper address pool")
-	cmd.PersistentFlags().StringVar(&opt.Root, "zk-root", opt.Root, "the zookeeper root")
-	cmd.PersistentFlags().Int64Var(&opt.Timeout, "zk-timeout", opt.Timeout, "the zookeeper session timeout second")
-	cmd.PersistentFlags().StringVar(&opt.ClusterOwner, "cluster-owner", opt.ClusterOwner, "the labels that multiple cluster manager used for select clusters")
-	cmd.PersistentFlags().StringVar(&opt.ClusterNamespace, "cluster-namespace", opt.ClusterNamespace, "the namesapce that multiple cluster manager uses when selecting the cluster configmaps")
+
+	cmd.PersistentFlags().StringArrayVar(
+		&opt.Address,
+		"zk-addr",
+		opt.Address,
+		"the zookeeper address pool")
+
+	cmd.PersistentFlags().StringVar(
+		&opt.Root,
+		"zk-root",
+		opt.Root,
+		"the zookeeper root")
+
+	cmd.PersistentFlags().Int64Var(
+		&opt.Timeout,
+		"zk-timeout",
+		opt.Timeout,
+		"the zookeeper session timeout second")
+
+	cmd.PersistentFlags().StringVar(
+		&opt.ClusterOwner,
+		"cluster-owner",
+		opt.ClusterOwner,
+		"the labels that multiple cluster manager used for select clusters")
+
+	cmd.PersistentFlags().StringVar(
+		&opt.ClusterNamespace,
+		"cluster-namespace",
+		opt.ClusterNamespace,
+		"the namesapce that multiple cluster manager uses when selecting the cluster configmaps")
 	return cmd
 }

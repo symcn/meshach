@@ -32,7 +32,6 @@ func init() {
 	_ = apiextensionsv1beta1.AddToScheme(scheme)
 	_ = meshv1.AddToScheme(scheme)
 	// _ = kruisev1alpha1.AddToScheme(scheme)
-
 	// _ = monitorv1.AddToScheme(scheme)
 	// _ = networkingv1alpha3.AddToScheme(scheme)
 	// _ = configv1alpha2.AddToScheme(scheme)
