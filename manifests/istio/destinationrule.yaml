@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: dubbo-app-ds
+spec:
+  host: mosn.io.dubbo.DemoService.workload
+  trafficPolicy:
+    loadBalancer:
+      simple: RANDOM
+  subsets:
+  - name: blue
+    labels:
+      group: blue
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+  - name: green
+    labels:
+      group: green
