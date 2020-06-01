@@ -23,6 +23,7 @@ type Port struct {
 
 // Instance ...
 type Instance struct {
+	Weight uint32            `json:"weight"`
 	Host   string            `json:"host"`
 	Zone   string            `json:"zone"`
 	Group  string            `json:"group"`

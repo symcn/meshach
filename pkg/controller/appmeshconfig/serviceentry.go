@@ -91,7 +91,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 
 	return &networkingv1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      svc.Name,
+			Name:      svc.Name + "-se",
 			Namespace: cr.Namespace,
 			Labels: map[string]string{
 				"app": svc.AppName,
@@ -106,7 +106,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 			WorkloadSelector: &v1beta1.WorkloadSelector{
 				Labels: map[string]string{
 					"app":     svc.AppName,
-					"service": svc.Name,
+					"service": svc.Name + ".workload",
 				},
 			},
 		},

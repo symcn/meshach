@@ -139,6 +139,10 @@ func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile
 	}
 
 	for _, svc := range instance.Spec.Services {
+		if err := r.reconcileWorkloadEntry(instance, svc); err != nil {
+			return reconcile.Result{}, err
+		}
+
 		if err := r.reconcileServiceEntry(instance, svc); err != nil {
 			return reconcile.Result{}, err
 		}
