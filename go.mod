@@ -19,6 +19,7 @@ require (
 	go.opencensus.io v0.22.2
 	google.golang.org/grpc v1.28.1
 	istio.io/api v0.0.0-20200521171657-32375f234cc1
+	istio.io/client-go v0.0.0-20200518164621-ef682e2929e5
 	istio.io/istio v0.0.0-20200525040124-4ed2c700a1d9
 	k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver v0.18.0

@@ -92,14 +92,14 @@ spec:
                           properties:
                             name:
                               type: string
-                            port:
+                            number:
                               format: int32
                               type: integer
                             protocol:
                               type: string
                           required:
                           - name
-                          - port
+                          - number
                           - protocol
                           type: object
                         zone:
@@ -145,14 +145,14 @@ spec:
                       properties:
                         name:
                           type: string
-                        port:
+                        number:
                           format: int32
                           type: integer
                         protocol:
                           type: string
                       required:
                       - name
-                      - port
+                      - number
                       - protocol
                       type: object
                     type: array

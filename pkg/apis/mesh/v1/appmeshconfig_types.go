@@ -18,7 +18,7 @@ type Inject struct {
 type Port struct {
 	Name     string `json:"name"`
 	Protocol string `json:"protocol"`
-	Port     int32  `json:"port"`
+	Number   uint32 `json:"number"`
 }
 
 // Instance ...
