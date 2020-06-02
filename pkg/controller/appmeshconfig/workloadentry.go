@@ -87,15 +87,6 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig
 }
 
 func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
-	var ports []*v1beta1.Port
-	for _, port := range svc.Ports {
-		ports = append(ports, &v1beta1.Port{
-			Number:   port.Number,
-			Protocol: port.Protocol,
-			Name:     port.Name,
-		})
-	}
-
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svc.Name + "-we-" + ins.Host,

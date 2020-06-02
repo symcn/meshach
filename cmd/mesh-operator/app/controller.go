@@ -39,39 +39,9 @@ var (
 	logger = logf.KBLog.WithName("controller")
 )
 
-// ControllerOption ...
-type ControllerOption struct {
-	HTTPAddress             string
-	MetricsEnabled          bool
-	SyncPeriod              int32
-	LeaderElectionNamespace string
-	LeaderElectionID        string
-	EnableLeaderElection    bool
-	GinLogEnabled           bool
-	GinLogSkipPath          []string
-	PprofEnabled            bool
-	GoroutineThreshold      int
-}
-
-// DefaultControllerOption ...
-func DefaultControllerOption() *ControllerOption {
-	return &ControllerOption{
-		HTTPAddress:             ":8080",
-		SyncPeriod:              120,
-		MetricsEnabled:          true,
-		GinLogEnabled:           true,
-		GinLogSkipPath:          []string{"/ready", "/live"},
-		EnableLeaderElection:    true,
-		LeaderElectionID:        "mesh-operator-lock",
-		LeaderElectionNamespace: "sym-admin",
-		PprofEnabled:            true,
-		GoroutineThreshold:      1000,
-	}
-}
-
 // NewControllerCmd ...
 func NewControllerCmd(ropt *RootOption) *cobra.Command {
-	opt := DefaultControllerOption()
+	opt := utils.DefaultControllerOption()
 	cmd := &cobra.Command{
 		Use:     "controller",
 		Aliases: []string{"ctl"},
@@ -134,7 +104,7 @@ func NewControllerCmd(ropt *RootOption) *cobra.Command {
 			}
 
 			// Setup all Controllers
-			if err := controller.AddToManager(mgr); err != nil {
+			if err := controller.AddToManager(mgr, opt); err != nil {
 				klog.Fatalf("unable to register controllers to the manager err: %v", err)
 			}
 

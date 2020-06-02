@@ -51,7 +51,7 @@ type Service struct {
 // Destination ...
 type Destination struct {
 	Subset string `json:"subset,omitempty"`
-	Weight string `json:"weight,omitempty"`
+	Weight int32  `json:"weight,omitempty"`
 }
 
 // Policy ...

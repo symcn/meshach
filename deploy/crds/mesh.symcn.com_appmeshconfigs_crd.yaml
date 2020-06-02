@@ -63,7 +63,8 @@ spec:
                       subset:
                         type: string
                       weight:
-                        type: string
+                        format: int32
+                        type: integer
                     type: object
                   type: array
                 timeout:
@@ -102,12 +103,16 @@ spec:
                           - number
                           - protocol
                           type: object
+                        weight:
+                          format: int32
+                          type: integer
                         zone:
                           type: string
                       required:
                       - group
                       - host
                       - port
+                      - weight
                       - zone
                       type: object
                     type: array
@@ -133,7 +138,8 @@ spec:
                             subset:
                               type: string
                             weight:
-                              type: string
+                              format: int32
+                              type: integer
                           type: object
                         type: array
                       timeout:
@@ -186,7 +192,8 @@ spec:
                                   subset:
                                     type: string
                                   weight:
-                                    type: string
+                                    format: int32
+                                    type: integer
                                 type: object
                               type: array
                             timeout:

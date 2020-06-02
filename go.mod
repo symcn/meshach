@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-logr/logr v0.1.0
 	github.com/gofrs/uuid v3.3.0+incompatible
+	github.com/gogo/protobuf v1.3.1
 	github.com/nacos-group/nacos-sdk-go v0.3.2
 	github.com/operator-framework/operator-sdk v0.17.1
 	github.com/pkg/errors v0.9.1
