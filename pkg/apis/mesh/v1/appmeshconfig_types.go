@@ -18,11 +18,12 @@ type Inject struct {
 type Port struct {
 	Name     string `json:"name"`
 	Protocol string `json:"protocol"`
-	Port     int32  `json:"port"`
+	Number   uint32 `json:"number"`
 }
 
 // Instance ...
 type Instance struct {
+	Weight uint32            `json:"weight"`
 	Host   string            `json:"host"`
 	Zone   string            `json:"zone"`
 	Group  string            `json:"group"`
@@ -50,7 +51,7 @@ type Service struct {
 // Destination ...
 type Destination struct {
 	Subset string `json:"subset,omitempty"`
-	Weight string `json:"weight,omitempty"`
+	Weight int32  `json:"weight,omitempty"`
 }
 
 // Policy ...

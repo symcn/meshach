@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The dks authors.
+Copyright 2020 The symcn authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,12 +19,17 @@ package app
 import (
 	"time"
 
+	k8sclient "github.com/mesh-operator/pkg/k8s/client"
+	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	zk "github.com/mesh-operator/pkg/zookeeper"
 	"github.com/spf13/cobra"
+	"k8s.io/klog"
+	"k8s.io/sample-controller/pkg/signals"
+	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // NewAdapterCmd ...
-func NewAdapterCmd() *cobra.Command {
+func NewAdapterCmd(ropt *RootOption) *cobra.Command {
 	opt := zk.DefaultOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
@@ -32,17 +37,73 @@ func NewAdapterCmd() *cobra.Command {
 		Short:   "Adapters configured for different registry center",
 		Run: func(cmd *cobra.Command, args []string) {
 			PrintFlags(cmd.Flags())
-			adapter, _ := zk.NewAdapter(opt)
-			stop := make(chan struct{})
-			adapter.Run(stop)
 
-			time.Sleep(30 * time.Minute)
-			stop <- struct{}{}
-			time.Sleep(5 * time.Second)
+			cfg, err := ropt.GetK8sConfig()
+			if err != nil {
+				klog.Fatalf("unable to get kubeconfig err: %v", err)
+			}
+
+			rp := time.Second * 120
+			mgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
+				Scheme:             k8sclient.GetScheme(),
+				MetricsBindAddress: "0",
+				LeaderElection:     false,
+				// Port:               9443,
+				SyncPeriod: &rp,
+			})
+			if err != nil {
+				klog.Fatalf("unable to new manager err: %v", err)
+			}
+
+			opt.MasterCli = k8smanager.MasterClient{
+				KubeCli: ropt.GetKubeInterfaceOrDie(),
+				Manager: mgr,
+			}
+
+			adapter, err := zk.NewAdapter(opt)
+			if err != nil {
+				klog.Fatalf("unable to NewAdapter err: %v", err)
+			}
+
+			stopCh := signals.SetupSignalHandler()
+			mgr.Add(adapter)
+			mgr.Add(adapter.K8sMgr)
+
+			klog.Info("starting manager")
+			if err := mgr.Start(stopCh); err != nil {
+				klog.Fatalf("problem start running manager err: %v", err)
+			}
 		},
 	}
-	cmd.PersistentFlags().StringArrayVar(&opt.Address, "zk-addr", opt.Address, "the zookeeper address pool")
-	cmd.PersistentFlags().StringVar(&opt.Root, "zk-root", opt.Root, "the zookeeper root")
-	cmd.PersistentFlags().Int64Var(&opt.Timeout, "zk-timeout", opt.Timeout, "the zookeeper session timeout second")
+
+	cmd.PersistentFlags().StringArrayVar(
+		&opt.Address,
+		"zk-addr",
+		opt.Address,
+		"the zookeeper address pool")
+
+	cmd.PersistentFlags().StringVar(
+		&opt.Root,
+		"zk-root",
+		opt.Root,
+		"the zookeeper root")
+
+	cmd.PersistentFlags().Int64Var(
+		&opt.Timeout,
+		"zk-timeout",
+		opt.Timeout,
+		"the zookeeper session timeout second")
+
+	cmd.PersistentFlags().StringVar(
+		&opt.ClusterOwner,
+		"cluster-owner",
+		opt.ClusterOwner,
+		"the labels that multiple cluster manager used for select clusters")
+
+	cmd.PersistentFlags().StringVar(
+		&opt.ClusterNamespace,
+		"cluster-namespace",
+		opt.ClusterNamespace,
+		"the namesapce that multiple cluster manager uses when selecting the cluster configmaps")
 	return cmd
 }

@@ -1,3 +1,5 @@
+cmd/manager
+__debug_bin
 # Compiled class file
 *.class
 

@@ -1,0 +1,90 @@
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: provider-1
+spec:
+  address: 1.1.1.1
+  ports:
+    dubbo-http: 20881
+  labels:
+    app: mosn.io.dubbo.DemoService.workload
+    group: blue
+  weight: 10
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: provider-2
+spec:
+  address: 1.1.1.2
+  ports:
+    dubbo-http: 20882
+  labels:
+    app: mosn.io.dubbo.DemoService.workload
+    group: green
+  weight: 20
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: dubbo-app-se
+spec:
+  hosts:
+    - mosn.io.dubbo.DemoService.workload
+  ports:
+    - number: 20882
+      name: dubbo-http
+      protocol: HTTP
+  location: MESH_INTERNAL
+  resolution: STATIC
+  workloadSelector:
+    labels:
+      app: mosn.io.dubbo.DemoService.workload
+
+###############################
+# proxy define
+###############################
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: proxy-1
+spec:
+  address: 3.3.3.1
+  ports:
+    proxy: 20881
+  labels:
+    app: mosn.io.dubbo.proxy
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: proxy-2
+spec:
+  address: 3.3.3.2
+  ports:
+    proxy: 20880
+  labels:
+    app: mosn.io.dubbo.proxy
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: dubbo-proxy
+spec:
+  hosts:
+    - mosn.io.dubbo.proxy
+  ports:
+    - number: 20882
+      name: proxy
+      protocol: TCP
+  location: MESH_INTERNAL
+  resolution: STATIC
+  workloadSelector:
+    labels:
+      app: mosn.io.dubbo.proxy
