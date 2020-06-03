@@ -39,6 +39,11 @@ var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 }
 
 func (r *ReconcileAppMeshConfig) reconcileDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+	// Skip if the service's subset is none
+	if len(svc.Subsets) == 0 {
+		return nil
+	}
+
 	dr := buildDestinationRule(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, dr, r.scheme); err != nil {

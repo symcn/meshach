@@ -32,7 +32,7 @@ import (
 )
 
 func (r *ReconcileAppMeshConfig) reconcileVirtualService(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
-	// skip if the service's subset is none
+	// Skip if the service's subset is none
 	if len(svc.Subsets) == 0 {
 		return nil
 	}
