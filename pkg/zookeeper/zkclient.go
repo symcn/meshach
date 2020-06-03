@@ -228,5 +228,7 @@ func (c *ZkClient) notify(event ServiceEvent) {
 }
 
 func makeHostname(hostname string, instance *Instance) string {
-	return hostname + ":" + instance.Labels["version"]
+	return hostname
+	// We don't need version for the moment.
+	// + ":" + instance.Labels["version"]
 }
