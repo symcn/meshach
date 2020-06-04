@@ -73,7 +73,6 @@ func (ceh *CRDEventHandler) AddInstance(ie ServiceEvent) {
 	}
 
 	fmt.Printf("Create or update an AppMeshConfig CR after an instance has beed added:\n%v\n", amc.Name)
-
 }
 
 // DeleteInstance ...
@@ -81,6 +80,7 @@ func (ceh *CRDEventHandler) DeleteInstance(e ServiceEvent) {
 	fmt.Printf("Don't be supported yet\n")
 }
 
+// CreateAmc
 func (ceh *CRDEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
 	// TODO
 	cluster, _ := ceh.k8sMgr.Get("tcc-gz01-bj5-test")
@@ -91,6 +91,7 @@ func (ceh *CRDEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
 	}
 }
 
+// UpdateAmc
 func (ceh *CRDEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
 	// TODO
 	cluster, _ := ceh.k8sMgr.Get("tcc-gz01-bj5-test")
@@ -101,6 +102,7 @@ func (ceh *CRDEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
 	}
 }
 
+// GetAmc
 func (ceh *CRDEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig, error) {
 	cluster, _ := ceh.k8sMgr.Get("tcc-gz01-bj5-test")
 	key, _ := client.ObjectKeyFromObject(config)
@@ -111,15 +113,10 @@ func (ceh *CRDEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig,
 // putService Put a service derived from a service event into the application mesh config.
 func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 	// Ports
-	port, _ := strconv.ParseInt(se.Service.ports[0].Port, 10, 32)
-	portInt := uint32(port)
-	ports := []*v1.Port{}
-	ports = append(ports, &v1.Port{
-		Protocol: se.Service.ports[0].Protocol,
-		Number:   portInt,
-	})
-	// Instances
-	//for _,i :=range e.Instance
+	var ports []*v1.Port
+	for _, p := range se.Service.ports {
+		ports = append(ports, convertPort(p))
+	}
 
 	s := &v1.Service{
 		Name:    se.Service.name,
@@ -131,13 +128,13 @@ func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 	}
 
 	if amc.Spec.Services == nil {
-		services := []*v1.Service{}
+		var services []*v1.Service
 		services = append(services, s)
 		amc.Spec.Services = services
 	} else {
 		var hasExist = false
-		for _, amcs := range amc.Spec.Services {
-			if amcs.Name == s.Name {
+		for _, as := range amc.Spec.Services {
+			if as.Name == s.Name {
 				hasExist = true
 				//TODO should we update the details of this service without instances
 				break
@@ -155,40 +152,31 @@ func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 	i := &v1.Instance{}
 	i.Host = removePort(ie.Instance.Host)
-	port, _ := strconv.ParseInt(ie.Instance.Port.Port, 10, 32)
-	i.Port = &v1.Port{
-		Name:     ie.Instance.Port.Port,
-		Protocol: ie.Instance.Port.Protocol,
-		Number:   uint32(port),
-	}
+	i.Port = convertPort(ie.Instance.Port)
 
 	var s *v1.Service
 	// Ports
-	sport, _ := strconv.ParseInt(ie.Instance.Service.ports[0].Port, 10, 32)
-	portInt := uint32(sport)
-	ports := []*v1.Port{}
-	ports = append(ports, &v1.Port{
-		Protocol: ie.Instance.Service.ports[0].Protocol,
-		Number:   portInt,
-	})
-
+	var ports []*v1.Port
+	for _, p := range ie.Instance.Service.ports {
+		ports = append(ports, convertPort(p))
+	}
 	s = &v1.Service{
 		Name:    ie.Instance.Service.name,
 		AppName: "foo",
 		Ports:   ports,
 	}
 
-	//Put service
+	// Put the service if it is not present
 	if amc.Spec.Services == nil {
-		services := []*v1.Service{}
+		var services []*v1.Service
 		services = append(services, s)
 		amc.Spec.Services = services
 	} else {
 		var hasExist = false
-		for _, amcs := range amc.Spec.Services {
-			if amcs.Name == s.Name {
+		for _, as := range amc.Spec.Services {
+			if as.Name == s.Name {
 				hasExist = true
-				s = amcs
+				s = as
 				//TODO should we update the details of this service without instances
 				break
 			}
@@ -199,9 +187,9 @@ func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 		}
 	}
 
-	// Put instance
+	// Put the instance if it is present.
 	if s.Instances == nil {
-		instances := []*v1.Instance{}
+		var instances []*v1.Instance
 		instances = append(instances, i)
 		s.Instances = instances
 	} else {
@@ -230,4 +218,19 @@ func removePort(addressWithPort string) string {
 		return addressWithPort
 	}
 	return host
+}
+
+// toInt32 Convert a string variable to integer with 32 bit size.
+func toUint32(portStr string) uint32 {
+	port, _ := strconv.ParseInt(portStr, 10, 32)
+	return uint32(port)
+}
+
+// convertPort Convert the port which has been defined in zookeeper library to the one that belongs to CRD.
+func convertPort(port *Port) *v1.Port {
+	return &v1.Port{
+		Name:     port.Port,
+		Protocol: port.Protocol,
+		Number:   toUint32(port.Port),
+	}
 }
