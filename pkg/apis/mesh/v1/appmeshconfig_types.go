@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"github.com/operator-framework/operator-sdk/pkg/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -76,27 +75,37 @@ type AppMeshConfigSpec struct {
 	Policy   *Policy    `json:"policy"`
 }
 
-// ConfigStatus ...
-type ConfigStatus string
+// ConfigPhase ...
+type ConfigPhase string
 
 // ConfigStatus enumerations
 const (
-	ConfigStatusUndistributed ConfigStatus = "Undistributed"
-	ConfigStatusDistributed   ConfigStatus = "Distributed"
-	ConfigStatusUpdating      ConfigStatus = "Updating"
-	ConfigStatusUnknown       ConfigStatus = "Unknown"
+	ConfigStatusUndistributed ConfigPhase = "Undistributed"
+	ConfigStatusDistributed   ConfigPhase = "Distributed"
+	ConfigStatusDistributing  ConfigPhase = "Distributing"
+	ConfigStatusUnknown       ConfigPhase = "Unknown"
 )
+
+// SubStatus ...
+type SubStatus struct {
+	Desired       int  `json:"desired"`
+	Distributed   *int `json:"distributed"`
+	Undistributed *int `json:"undistributed"`
+}
+
+// Status ...
+type Status struct {
+	ServiceEntry    *SubStatus `json:"serviceEntry"`
+	WorkloadEntry   *SubStatus `json:"workloadEntry"`
+	VirtualService  *SubStatus `json:"virtualService"`
+	DestinationRule *SubStatus `json:"destinationRule"`
+}
 
 // AppMeshConfigStatus defines the observed state of AppMeshConfig
 type AppMeshConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// +optional
-	ObservedGeneration int64                   `json:"observedGeneration,omitempty"`
-	LastUpdateTime     *metav1.Time            `json:"lastUpdateTime,omitempty"`
-	Status             ConfigStatus            `json:"status"`
-	XdsStatus          map[string]ConfigStatus `json:"xdsStatus"`
-	Conditions         status.Conditions       `json:"conditions"`
+	LastUpdateTime *metav1.Time `json:"lastUpdateTime,omitempty"`
+	Phase          ConfigPhase  `json:"phase"`
+	Status         *Status      `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

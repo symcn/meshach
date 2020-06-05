@@ -64,8 +64,8 @@ status:
   observedGeneration: 2
   lastUpdateTime: 2020-05-20T00:00:00
   status: Distributed
-  xdsStatus:
-    lds: Distributed
-    rds: Distributed
-    cds: Distributed
-    eds: Distributed
+  subStatus:
+    virtualservice: Distributed
+    workloadentry: Distributed
+    serviceentry: Distributed
+    destinationrule: Distributed
