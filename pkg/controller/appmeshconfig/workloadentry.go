@@ -20,6 +20,7 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -31,43 +32,45 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	for _, ins := range svc.Instances {
 		we := buildWorkloadEntry(cr.Namespace, svc, ins)
 
 		// Set AppMeshConfig instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, we, r.scheme); err != nil {
+			klog.Errorf("SetControllerReference error: %v", err)
 			return err
 		}
 		// Check if this WorkloadEntry already exists
 		found := &networkingv1beta1.WorkloadEntry{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{
+		err := r.client.Get(ctx, types.NamespacedName{
 			Name:      we.Name,
 			Namespace: we.Namespace},
 			found)
 		if err != nil && errors.IsNotFound(err) {
-			klog.Info("Creating a new WorkloadEntry", "Namespace",
-				we.Namespace, "Name", we.Name)
-			err = r.client.Create(context.TODO(), we)
+			klog.Info("Creating a new WorkloadEntry, ", "Namespace: ", we.Namespace, "Name: ", we.Name)
+			err = r.client.Create(ctx, we)
 			if err != nil {
+				klog.Errorf("Create WorkloadEntry error: %+v", err)
 				return err
 			}
 
 			// WorkloadEntry created successfully - don't requeue
 			return nil
 		} else if err != nil {
+			klog.Errorf("Get WorkloadEntry error: %+v", err)
 			return err
 		}
 
 		// Update WorkloadEntry
-		klog.Info("Update WorkloadEntry", "Namespace", found.Namespace, "Name", found.Name)
 		if compareWorkloadEntry(we, found) {
+			klog.Info("Update WorkloadEntry, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				we.Spec.DeepCopyInto(&found.Spec)
 				found.Finalizers = we.Finalizers
 				found.Labels = we.ObjectMeta.Labels
 
-				updateErr := r.client.Update(context.TODO(), found)
+				updateErr := r.client.Update(ctx, found)
 				if updateErr == nil {
 					klog.V(4).Infof("%s/%s update WorkloadEntry successfully",
 						we.Namespace, we.Name)
@@ -89,8 +92,11 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig
 func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      svc.Name + "-we-" + ins.Host,
+			Name:      utils.FormatToDNS1123(svc.Name + "." + ins.Host),
 			Namespace: namespace,
+			Labels: map[string]string{
+				"app": svc.AppName,
+			},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
@@ -98,8 +104,7 @@ func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Insta
 				ins.Port.Name: ins.Port.Number,
 			},
 			Labels: map[string]string{
-				"app":     svc.AppName,
-				"service": svc.Name + ".workload",
+				"service": svc.Name,
 				"group":   ins.Group,
 				"zone":    ins.Zone,
 			},

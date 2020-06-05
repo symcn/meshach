@@ -1,4 +1,4 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: appmeshconfigs.mesh.symcn.com
@@ -10,275 +10,287 @@ spec:
     plural: appmeshconfigs
     singular: appmeshconfig
   scope: Namespaced
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: AppMeshConfig is the Schema for the appmeshconfigs API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: AppMeshConfigSpec ...
-          properties:
-            inject:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file'
-              properties:
-                logLevel:
-                  type: string
-                sidecar:
-                  type: string
-              required:
-              - sidecar
-              type: object
-            policy:
-              description: Policy ...
-              properties:
-                loadBalancer:
-                  additionalProperties:
-                    type: string
-                  type: object
-                maxConnections:
-                  format: int32
-                  type: integer
-                maxRetries:
-                  format: int32
-                  type: integer
-                route:
-                  items:
-                    description: Destination ...
-                    properties:
-                      subset:
-                        type: string
-                      weight:
-                        format: int32
-                        type: integer
-                    type: object
-                  type: array
-                timeout:
-                  type: string
-              type: object
-            services:
-              items:
-                description: Service ...
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: AppMeshConfig is the Schema for the appmeshconfigs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AppMeshConfigSpec ...
+            properties:
+              inject:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "operator-sdk generate k8s" to regenerate code after
+                  modifying this file'
                 properties:
-                  appName:
+                  logLevel:
                     type: string
-                  instances:
+                  sidecar:
+                    type: string
+                required:
+                - sidecar
+                type: object
+              policy:
+                description: Policy ...
+                properties:
+                  loadBalancer:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  maxConnections:
+                    format: int32
+                    type: integer
+                  maxRetries:
+                    format: int32
+                    type: integer
+                  route:
                     items:
-                      description: Instance ...
+                      description: Destination ...
                       properties:
-                        group:
+                        subset:
                           type: string
-                        host:
-                          type: string
-                        labels:
-                          additionalProperties:
-                            type: string
-                          type: object
-                        port:
-                          description: Port ...
-                          properties:
-                            name:
-                              type: string
-                            number:
-                              format: int32
-                              type: integer
-                            protocol:
-                              type: string
-                          required:
-                          - name
-                          - number
-                          - protocol
-                          type: object
                         weight:
                           format: int32
                           type: integer
-                        zone:
-                          type: string
-                      required:
-                      - group
-                      - host
-                      - port
-                      - weight
-                      - zone
                       type: object
                     type: array
-                  name:
+                  timeout:
                     type: string
-                  policy:
-                    description: Policy ...
-                    properties:
-                      loadBalancer:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      maxConnections:
-                        format: int32
-                        type: integer
-                      maxRetries:
-                        format: int32
-                        type: integer
-                      route:
-                        items:
-                          description: Destination ...
-                          properties:
-                            subset:
+                type: object
+              services:
+                items:
+                  description: Service ...
+                  properties:
+                    appName:
+                      type: string
+                    instances:
+                      items:
+                        description: Instance ...
+                        properties:
+                          group:
+                            type: string
+                          host:
+                            type: string
+                          labels:
+                            additionalProperties:
                               type: string
-                            weight:
-                              format: int32
-                              type: integer
-                          type: object
-                        type: array
-                      timeout:
-                        type: string
-                    type: object
-                  ports:
-                    items:
-                      description: Port ...
+                            type: object
+                          port:
+                            description: Port ...
+                            properties:
+                              name:
+                                type: string
+                              number:
+                                format: int32
+                                type: integer
+                              protocol:
+                                type: string
+                            required:
+                            - name
+                            - number
+                            - protocol
+                            type: object
+                          weight:
+                            format: int32
+                            type: integer
+                          zone:
+                            type: string
+                        required:
+                        - group
+                        - host
+                        - port
+                        - weight
+                        - zone
+                        type: object
+                      type: array
+                    name:
+                      type: string
+                    policy:
+                      description: Policy ...
                       properties:
-                        name:
-                          type: string
-                        number:
-                          format: int32
-                          type: integer
-                        protocol:
-                          type: string
-                      required:
-                      - name
-                      - number
-                      - protocol
-                      type: object
-                    type: array
-                  subsets:
-                    items:
-                      description: Subset ...
-                      properties:
-                        labels:
+                        loadBalancer:
                           additionalProperties:
                             type: string
                           type: object
-                        name:
-                          type: string
-                        policy:
-                          description: Policy ...
-                          properties:
-                            loadBalancer:
-                              additionalProperties:
+                        maxConnections:
+                          format: int32
+                          type: integer
+                        maxRetries:
+                          format: int32
+                          type: integer
+                        route:
+                          items:
+                            description: Destination ...
+                            properties:
+                              subset:
                                 type: string
-                              type: object
-                            maxConnections:
-                              format: int32
-                              type: integer
-                            maxRetries:
-                              format: int32
-                              type: integer
-                            route:
-                              items:
-                                description: Destination ...
-                                properties:
-                                  subset:
-                                    type: string
-                                  weight:
-                                    format: int32
-                                    type: integer
-                                type: object
-                              type: array
-                            timeout:
-                              type: string
-                          type: object
-                      required:
-                      - labels
-                      - name
+                              weight:
+                                format: int32
+                                type: integer
+                            type: object
+                          type: array
+                        timeout:
+                          type: string
                       type: object
-                    type: array
-                type: object
-              type: array
-          required:
-          - inject
-          - policy
-          - services
-          type: object
-        status:
-          description: AppMeshConfigStatus defines the observed state of AppMeshConfig
-          properties:
-            conditions:
-              description: Conditions is a set of Condition instances.
-              items:
-                description: "Condition represents an observation of an object's state.
-                  Conditions are an extension mechanism intended to be used when the
-                  details of an observation are not a priori known or would not apply
-                  to all instances of a given Kind. \n Conditions should be added
-                  to explicitly convey properties that users and components care about
-                  rather than requiring those properties to be inferred from other
-                  observations. Once defined, the meaning of a Condition can not be
-                  changed arbitrarily - it becomes part of the API, and has the same
-                  backwards- and forwards-compatibility concerns of any other part
-                  of the API."
-                properties:
-                  lastTransitionTime:
-                    format: date-time
-                    type: string
-                  message:
-                    type: string
-                  reason:
-                    description: ConditionReason is intended to be a one-word, CamelCase
-                      representation of the category of cause of the current status.
-                      It is intended to be used in concise output, such as one-line
-                      kubectl get output, and in summarizing occurrences of causes.
-                    type: string
-                  status:
-                    type: string
-                  type:
-                    description: "ConditionType is the type of the condition and is
-                      typically a CamelCased word or short phrase. \n Condition types
-                      should indicate state in the \"abnormal-true\" polarity. For
-                      example, if the condition indicates when a policy is invalid,
-                      the \"is valid\" case is probably the norm, so the condition
-                      should be called \"Invalid\"."
-                    type: string
-                required:
-                - status
-                - type
-                type: object
-              type: array
-            lastUpdateTime:
-              format: date-time
-              type: string
-            observedGeneration:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "operator-sdk generate k8s" to regenerate
-                code after modifying this file'
-              format: int64
-              type: integer
-            status:
-              description: ConfigStatus ...
-              type: string
-            xdsStatus:
-              additionalProperties:
-                description: ConfigStatus ...
+                    ports:
+                      items:
+                        description: Port ...
+                        properties:
+                          name:
+                            type: string
+                          number:
+                            format: int32
+                            type: integer
+                          protocol:
+                            type: string
+                        required:
+                        - name
+                        - number
+                        - protocol
+                        type: object
+                      type: array
+                    subsets:
+                      items:
+                        description: Subset ...
+                        properties:
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          name:
+                            type: string
+                          policy:
+                            description: Policy ...
+                            properties:
+                              loadBalancer:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              maxConnections:
+                                format: int32
+                                type: integer
+                              maxRetries:
+                                format: int32
+                                type: integer
+                              route:
+                                items:
+                                  description: Destination ...
+                                  properties:
+                                    subset:
+                                      type: string
+                                    weight:
+                                      format: int32
+                                      type: integer
+                                  type: object
+                                type: array
+                              timeout:
+                                type: string
+                            type: object
+                        required:
+                        - labels
+                        - name
+                        type: object
+                      type: array
+                  type: object
+                type: array
+            required:
+            - inject
+            - policy
+            - services
+            type: object
+          status:
+            description: AppMeshConfigStatus defines the observed state of AppMeshConfig
+            properties:
+              lastUpdateTime:
+                format: date-time
                 type: string
-              type: object
-          required:
-          - conditions
-          - status
-          - xdsStatus
-          type: object
-      type: object
-  version: v1
-  versions:
-  - name: v1
+              phase:
+                description: ConfigPhase ...
+                type: string
+              status:
+                description: Status ...
+                properties:
+                  destinationRule:
+                    description: SubStatus ...
+                    properties:
+                      desired:
+                        type: integer
+                      distributed:
+                        type: integer
+                      undistributed:
+                        type: integer
+                    required:
+                    - desired
+                    - distributed
+                    - undistributed
+                    type: object
+                  serviceEntry:
+                    description: SubStatus ...
+                    properties:
+                      desired:
+                        type: integer
+                      distributed:
+                        type: integer
+                      undistributed:
+                        type: integer
+                    required:
+                    - desired
+                    - distributed
+                    - undistributed
+                    type: object
+                  virtualService:
+                    description: SubStatus ...
+                    properties:
+                      desired:
+                        type: integer
+                      distributed:
+                        type: integer
+                      undistributed:
+                        type: integer
+                    required:
+                    - desired
+                    - distributed
+                    - undistributed
+                    type: object
+                  workloadEntry:
+                    description: SubStatus ...
+                    properties:
+                      desired:
+                        type: integer
+                      distributed:
+                        type: integer
+                      undistributed:
+                        type: integer
+                    required:
+                    - desired
+                    - distributed
+                    - undistributed
+                    type: object
+                required:
+                - destinationRule
+                - serviceEntry
+                - virtualService
+                - workloadEntry
+                type: object
+            required:
+            - phase
+            - status
+            type: object
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}

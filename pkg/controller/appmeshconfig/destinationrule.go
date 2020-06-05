@@ -20,6 +20,7 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -38,7 +39,7 @@ var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 	"PASSTHROUGH": v1beta1.LoadBalancerSettings_PASSTHROUGH,
 }
 
-func (r *ReconcileAppMeshConfig) reconcileDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	// Skip if the service's subset is none
 	if len(svc.Subsets) == 0 {
 		return nil
@@ -47,34 +48,37 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(cr *meshv1.AppMeshConf
 	dr := buildDestinationRule(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, dr, r.scheme); err != nil {
+		klog.Errorf("SetControllerReference error: %v", err)
 		return err
 	}
 
 	// Check if this DestinationRule already exists
 	found := &networkingv1beta1.DestinationRule{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dr.Name, Namespace: dr.Namespace}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Name: dr.Name, Namespace: dr.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new DestinationRule", "Namespace", dr.Namespace, "Name", dr.Name)
-		err = r.client.Create(context.TODO(), dr)
+		klog.Info("Creating a new DestinationRule, ", "Namespace: ", dr.Namespace, "Name: ", dr.Name)
+		err = r.client.Create(ctx, dr)
 		if err != nil {
+			klog.Errorf("Create DestinationRule error: %+v", err)
 			return err
 		}
 
 		// DestinationRule created successfully - don't requeue
 		return nil
 	} else if err != nil {
+		klog.Errorf("Get DestinationRule error: %+v", err)
 		return err
 	}
 
 	// Update DestinationRule
-	klog.Info("Update DestinationRule", "Namespace", found.Namespace, "Name", found.Name)
 	if compareDestinationRule(dr, found) {
+		klog.Info("Update DestinationRule, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			dr.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = dr.Finalizers
 			found.Labels = dr.ObjectMeta.Labels
 
-			updateErr := r.client.Update(context.TODO(), found)
+			updateErr := r.client.Update(ctx, found)
 			if updateErr == nil {
 				klog.V(4).Infof("%s/%s update DestinationRule successfully", dr.Namespace, dr.Name)
 				return nil
@@ -108,7 +112,7 @@ func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networ
 	}
 	return &networkingv1beta1.DestinationRule{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      svc.Name + "-dr",
+			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
 		},
 		Spec: v1beta1.DestinationRule{

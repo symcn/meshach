@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileVirtualService(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	// Skip if the service's subset is none
 	if len(svc.Subsets) == 0 {
 		return nil
@@ -40,34 +40,37 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(cr *meshv1.AppMeshConfi
 	vs := r.buildVirtualService(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, vs, r.scheme); err != nil {
+		klog.Errorf("SetControllerReference error: %v", err)
 		return err
 	}
 
 	// Check if this VirtualService already exists
 	found := &networkingv1beta1.VirtualService{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: vs.Name, Namespace: vs.Namespace}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Name: vs.Name, Namespace: vs.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new VirtualService", "Namespace", vs.Namespace, "Name", vs.Name)
-		err = r.client.Create(context.TODO(), vs)
+		klog.Info("Creating a new VirtualService, ", "Namespace: ", vs.Namespace, "Name: ", vs.Name)
+		err = r.client.Create(ctx, vs)
 		if err != nil {
+			klog.Errorf("Create VirtualService error: %+v", err)
 			return err
 		}
 
 		// VirtualService created successfully - don't requeue
 		return nil
 	} else if err != nil {
+		klog.Errorf("Get VirtualService error: %+v", err)
 		return err
 	}
 
 	// Update VirtualService
-	klog.Info("Update VirtualService", "Namespace", found.Namespace, "Name", found.Name)
 	if compareVirtualService(vs, found) {
+		klog.Info("Update VirtualService, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			vs.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = vs.Finalizers
 			found.Labels = vs.ObjectMeta.Labels
 
-			updateErr := r.client.Update(context.TODO(), found)
+			updateErr := r.client.Update(ctx, found)
 			if updateErr == nil {
 				klog.V(4).Infof("%s/%s update VirtualService successfully", vs.Namespace, vs.Name)
 				return nil
@@ -89,8 +92,9 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 	proxy := r.buildProxyRoute()
 	return &networkingv1beta1.VirtualService{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      svc.Name + "-vs",
+			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
+			Labels:    map[string]string{"app": cr.Name},
 		},
 		Spec: v1beta1.VirtualService{
 			Hosts: []string{svc.Name},

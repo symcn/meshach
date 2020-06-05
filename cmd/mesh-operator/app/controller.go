@@ -29,6 +29,7 @@ import (
 	"github.com/mesh-operator/pkg/utils"
 	"github.com/mesh-operator/pkg/version"
 	"github.com/spf13/cobra"
+	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/klog"
 	"k8s.io/sample-controller/pkg/signals"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -99,13 +100,15 @@ func NewControllerCmd(ropt *RootOption) *cobra.Command {
 
 			// Setup Scheme for all resources
 			if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-				klog.Error(err, "")
-				os.Exit(1)
+				klog.Fatalf("add AppMeshConfig to scheme error: %+v", err)
+			}
+			if err := networkingv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+				klog.Fatalf("add istio CRDs to scheme error: %+v", err)
 			}
 
 			// Setup all Controllers
 			if err := controller.AddToManager(mgr, opt); err != nil {
-				klog.Fatalf("unable to register controllers to the manager err: %v", err)
+				klog.Fatalf("unable to register controllers to the manager err: %+v", err)
 			}
 
 			stopCh := signals.SetupSignalHandler()

@@ -8,8 +8,8 @@ import (
 	"k8s.io/klog"
 )
 
-// FormatClusterName converts the cluster name to lower case and replaces the underscore
-func FormatClusterName(name string) string {
+// FormatToDNS1123 converts the object name to lower case and replaces the underscore
+func FormatToDNS1123(name string) string {
 	return strings.ToLower(strings.ReplaceAll(name, "_", "-"))
 }
 
