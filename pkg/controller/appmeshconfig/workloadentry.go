@@ -20,6 +20,7 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -46,10 +47,10 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 			Namespace: we.Namespace},
 			found)
 		if err != nil && errors.IsNotFound(err) {
-			klog.Info("Creating a new WorkloadEntry", "Namespace",
-				we.Namespace, "Name", we.Name)
+			klog.Info("Creating a new WorkloadEntry, ", "Namespace: ", we.Namespace, "Name: ", we.Name)
 			err = r.client.Create(ctx, we)
 			if err != nil {
+				klog.Errorf("Create WorkloadEntry error: %+v", err)
 				return err
 			}
 
@@ -61,7 +62,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 
 		// Update WorkloadEntry
 		if compareWorkloadEntry(we, found) {
-			klog.Info("Update WorkloadEntry", "Namespace", found.Namespace, "Name", found.Name)
+			klog.Info("Update WorkloadEntry, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				we.Spec.DeepCopyInto(&found.Spec)
 				found.Finalizers = we.Finalizers
@@ -89,7 +90,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      svc.Name + "-we-" + ins.Host,
+			Name:      utils.FormatToDNS1123(svc.Name + "." + ins.Host),
 			Namespace: namespace,
 			Labels: map[string]string{
 				"app": svc.AppName,
@@ -101,7 +102,7 @@ func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Insta
 				ins.Port.Name: ins.Port.Number,
 			},
 			Labels: map[string]string{
-				"service": svc.Name + ".workload",
+				"service": svc.Name,
 				"group":   ins.Group,
 				"zone":    ins.Zone,
 			},

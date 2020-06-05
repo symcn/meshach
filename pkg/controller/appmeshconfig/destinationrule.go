@@ -20,6 +20,7 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -108,7 +109,7 @@ func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networ
 	}
 	return &networkingv1beta1.DestinationRule{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      svc.Name + "-dr",
+			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
 		},
 		Spec: v1beta1.DestinationRule{

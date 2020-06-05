@@ -89,7 +89,7 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 	proxy := r.buildProxyRoute()
 	return &networkingv1beta1.VirtualService{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      svc.Name + "-vs",
+			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
 			Labels:    map[string]string{"app": cr.Name},
 		},

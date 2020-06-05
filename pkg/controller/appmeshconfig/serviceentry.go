@@ -20,6 +20,7 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -91,7 +92,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 
 	return &networkingv1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      svc.Name + "-se",
+			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
 			Labels: map[string]string{
 				"app": svc.AppName,
@@ -105,7 +106,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 			Resolution: v1beta1.ServiceEntry_STATIC,
 			WorkloadSelector: &v1beta1.WorkloadSelector{
 				Labels: map[string]string{
-					"service": svc.Name + ".workload",
+					"service": svc.Name,
 				},
 			},
 		},
