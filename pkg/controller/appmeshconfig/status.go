@@ -62,6 +62,17 @@ func (r *ReconcileAppMeshConfig) getWorkloadEntryStatus(ctx context.Context, cr 
 
 func (r *ReconcileAppMeshConfig) getVirtualServiceStatus(ctx context.Context, cr *meshv1.AppMeshConfig) *meshv1.SubStatus {
 	svcCount := len(cr.Spec.Services)
+
+	// Skip if the service's subset is none
+	if len(cr.Spec.Services[0].Subsets) == 0 {
+		svcCount = 0
+		return &meshv1.SubStatus{
+			Desired:       svcCount,
+			Distributed:   &svcCount,
+			Undistributed: &svcCount,
+		}
+	}
+
 	list := &networkingv1beta1.VirtualServiceList{}
 	count := r.count(ctx, cr, list)
 	status := &meshv1.SubStatus{Desired: svcCount, Distributed: count}
@@ -76,6 +87,17 @@ func (r *ReconcileAppMeshConfig) getVirtualServiceStatus(ctx context.Context, cr
 
 func (r *ReconcileAppMeshConfig) getDestinationRuleStatus(ctx context.Context, cr *meshv1.AppMeshConfig) *meshv1.SubStatus {
 	svcCount := len(cr.Spec.Services)
+
+	// Skip if the service's subset is none
+	if len(cr.Spec.Services[0].Subsets) == 0 {
+		svcCount = 0
+		return &meshv1.SubStatus{
+			Desired:       svcCount,
+			Distributed:   &svcCount,
+			Undistributed: &svcCount,
+		}
+	}
+
 	list := &networkingv1beta1.DestinationRuleList{}
 	count := r.count(ctx, cr, list)
 	status := &meshv1.SubStatus{Desired: svcCount, Distributed: count}
