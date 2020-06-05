@@ -36,6 +36,7 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 	se := buildServiceEntry(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, se, r.scheme); err != nil {
+		klog.Errorf("SetControllerReference error: %v", err)
 		return err
 	}
 
@@ -43,21 +44,23 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 	found := &networkingv1beta1.ServiceEntry{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: se.Name, Namespace: se.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new ServiceEntry", "Namespace", se.Namespace, "Name", se.Name)
+		klog.Info("Creating a new ServiceEntry, ", "Namespace: ", se.Namespace, "Name: ", se.Name)
 		err = r.client.Create(ctx, se)
 		if err != nil {
+			klog.Errorf("Create ServiceEntry error: %+v", err)
 			return err
 		}
 
 		// ServiceEntry created successfully - don't requeue
 		return nil
 	} else if err != nil {
+		klog.Errorf("Get ServiceEntry error: %+v", err)
 		return err
 	}
 
 	// Update ServiceEntry
 	if compareServiceEntry(se, found) {
-		klog.Info("Update ServiceEntry", "Namespace", found.Namespace, "Name", found.Name)
+		klog.Info("Update ServiceEntry, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			se.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = se.Finalizers

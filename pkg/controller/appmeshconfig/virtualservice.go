@@ -40,6 +40,7 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 	vs := r.buildVirtualService(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, vs, r.scheme); err != nil {
+		klog.Errorf("SetControllerReference error: %v", err)
 		return err
 	}
 
@@ -47,21 +48,23 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 	found := &networkingv1beta1.VirtualService{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: vs.Name, Namespace: vs.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new VirtualService", "Namespace", vs.Namespace, "Name", vs.Name)
+		klog.Info("Creating a new VirtualService, ", "Namespace: ", vs.Namespace, "Name: ", vs.Name)
 		err = r.client.Create(ctx, vs)
 		if err != nil {
+			klog.Errorf("Create VirtualService error: %+v", err)
 			return err
 		}
 
 		// VirtualService created successfully - don't requeue
 		return nil
 	} else if err != nil {
+		klog.Errorf("Get VirtualService error: %+v", err)
 		return err
 	}
 
 	// Update VirtualService
 	if compareVirtualService(vs, found) {
-		klog.Info("Update VirtualService", "Namespace", found.Namespace, "Name", found.Name)
+		klog.Info("Update VirtualService, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			vs.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = vs.Finalizers

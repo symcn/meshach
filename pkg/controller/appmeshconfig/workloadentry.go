@@ -38,6 +38,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 
 		// Set AppMeshConfig instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, we, r.scheme); err != nil {
+			klog.Errorf("SetControllerReference error: %v", err)
 			return err
 		}
 		// Check if this WorkloadEntry already exists
@@ -57,6 +58,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 			// WorkloadEntry created successfully - don't requeue
 			return nil
 		} else if err != nil {
+			klog.Errorf("Get WorkloadEntry error: %+v", err)
 			return err
 		}
 

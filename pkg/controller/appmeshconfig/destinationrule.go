@@ -48,6 +48,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 	dr := buildDestinationRule(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, dr, r.scheme); err != nil {
+		klog.Errorf("SetControllerReference error: %v", err)
 		return err
 	}
 
@@ -55,21 +56,23 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 	found := &networkingv1beta1.DestinationRule{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: dr.Name, Namespace: dr.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new DestinationRule", "Namespace", dr.Namespace, "Name", dr.Name)
+		klog.Info("Creating a new DestinationRule, ", "Namespace: ", dr.Namespace, "Name: ", dr.Name)
 		err = r.client.Create(ctx, dr)
 		if err != nil {
+			klog.Errorf("Create DestinationRule error: %+v", err)
 			return err
 		}
 
 		// DestinationRule created successfully - don't requeue
 		return nil
 	} else if err != nil {
+		klog.Errorf("Get DestinationRule error: %+v", err)
 		return err
 	}
 
 	// Update DestinationRule
 	if compareDestinationRule(dr, found) {
-		klog.Info("Update DestinationRule", "Namespace", found.Namespace, "Name", found.Name)
+		klog.Info("Update DestinationRule, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			dr.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = dr.Finalizers
