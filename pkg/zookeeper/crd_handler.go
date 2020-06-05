@@ -5,6 +5,7 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 
@@ -35,7 +36,7 @@ func (ceh *CRDEventHandler) AddService(se ServiceEvent) {
 	_, err := ceh.GetAmc(amc)
 	putService(&se, amc)
 	if err != nil {
-		fmt.Printf("Can not get an exist amc :%v\n", err)
+		fmt.Printf("Can not find an exist amc :%v\n", err)
 		ceh.CreateAmc(amc)
 	} else {
 		ceh.UpdateAmc(amc)
@@ -44,9 +45,47 @@ func (ceh *CRDEventHandler) AddService(se ServiceEvent) {
 	fmt.Printf("Create or update an AppMeshConfig CR after a service has beed created:\n%v\n", amc.Name)
 }
 
-// DeleteService ...
-func (ceh *CRDEventHandler) DeleteService(e ServiceEvent) {
-	fmt.Printf("Don't be supported yet\n")
+// DeleteService we assume we need to remove the service Spec part of AppMeshConfig
+// after received a service deleted notification.
+func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
+	fmt.Printf("CRD event handler: Deleting a service - %s\n", se.Service.name)
+
+	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
+	appName := "foo"
+
+	amc := &v1.AppMeshConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: "default",
+		},
+	}
+
+	_, err := ceh.GetAmc(amc)
+	if err != nil {
+		fmt.Printf("amc can not be found, ignore it")
+		return
+	} else {
+		if amc.Spec.Services != nil && len(amc.Spec.Services) > 0 {
+			for i, s := range amc.Spec.Services {
+				if s.Name == se.Service.name {
+					result := DeleteInSlice(amc.Spec.Services, i)
+					amc.Spec.Services = result.([]*v1.Service)
+					break
+					// TODO break? Can I assume there is no duplicate services in a same amc?
+				}
+			}
+
+			if len(amc.Spec.Services) <= 0 {
+				amc.Spec.Services = nil
+			}
+
+			ceh.UpdateAmc(amc)
+		} else {
+			fmt.Printf("The services list belongs to this amc is empty, ignore it")
+			return
+		}
+	}
+
 }
 
 // AddInstance ...
@@ -233,4 +272,16 @@ func convertPort(port *Port) *v1.Port {
 		Protocol: port.Protocol,
 		Number:   toUint32(port.Port),
 	}
+}
+
+// Delete an element from a Slice with an index.
+func DeleteInSlice(arr interface{}, index int) interface{} {
+	value := reflect.ValueOf(arr)
+	if value.Kind() == reflect.Slice {
+		//|| value.Kind() == reflect.Array {
+		result := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, value.Len()))
+
+		return result.Interface()
+	}
+	return arr
 }
