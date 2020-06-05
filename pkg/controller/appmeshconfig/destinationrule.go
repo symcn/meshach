@@ -38,7 +38,7 @@ var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 	"PASSTHROUGH": v1beta1.LoadBalancerSettings_PASSTHROUGH,
 }
 
-func (r *ReconcileAppMeshConfig) reconcileDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	// Skip if the service's subset is none
 	if len(svc.Subsets) == 0 {
 		return nil
@@ -52,10 +52,10 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(cr *meshv1.AppMeshConf
 
 	// Check if this DestinationRule already exists
 	found := &networkingv1beta1.DestinationRule{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dr.Name, Namespace: dr.Namespace}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Name: dr.Name, Namespace: dr.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		klog.Info("Creating a new DestinationRule", "Namespace", dr.Namespace, "Name", dr.Name)
-		err = r.client.Create(context.TODO(), dr)
+		err = r.client.Create(ctx, dr)
 		if err != nil {
 			return err
 		}
@@ -67,14 +67,14 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(cr *meshv1.AppMeshConf
 	}
 
 	// Update DestinationRule
-	klog.Info("Update DestinationRule", "Namespace", found.Namespace, "Name", found.Name)
 	if compareDestinationRule(dr, found) {
+		klog.Info("Update DestinationRule", "Namespace", found.Namespace, "Name", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			dr.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = dr.Finalizers
 			found.Labels = dr.ObjectMeta.Labels
 
-			updateErr := r.client.Update(context.TODO(), found)
+			updateErr := r.client.Update(ctx, found)
 			if updateErr == nil {
 				klog.V(4).Infof("%s/%s update DestinationRule successfully", dr.Namespace, dr.Name)
 				return nil

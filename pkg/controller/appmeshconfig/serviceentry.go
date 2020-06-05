@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	se := buildServiceEntry(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, se, r.scheme); err != nil {
@@ -40,10 +40,10 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(cr *meshv1.AppMeshConfig,
 
 	// Check if this ServiceEntry already exists
 	found := &networkingv1beta1.ServiceEntry{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: se.Name, Namespace: se.Namespace}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Name: se.Name, Namespace: se.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		klog.Info("Creating a new ServiceEntry", "Namespace", se.Namespace, "Name", se.Name)
-		err = r.client.Create(context.TODO(), se)
+		err = r.client.Create(ctx, se)
 		if err != nil {
 			return err
 		}
@@ -55,14 +55,14 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(cr *meshv1.AppMeshConfig,
 	}
 
 	// Update ServiceEntry
-	klog.Info("Update ServiceEntry", "Namespace", found.Namespace, "Name", found.Name)
 	if compareServiceEntry(se, found) {
+		klog.Info("Update ServiceEntry", "Namespace", found.Namespace, "Name", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			se.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = se.Finalizers
 			found.Labels = se.ObjectMeta.Labels
 
-			updateErr := r.client.Update(context.TODO(), found)
+			updateErr := r.client.Update(ctx, found)
 			if updateErr == nil {
 				klog.V(4).Infof("%s/%s update ServiceEntry successfully", se.Namespace, se.Name)
 				return nil
@@ -105,7 +105,6 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 			Resolution: v1beta1.ServiceEntry_STATIC,
 			WorkloadSelector: &v1beta1.WorkloadSelector{
 				Labels: map[string]string{
-					"app":     svc.AppName,
 					"service": svc.Name + ".workload",
 				},
 			},

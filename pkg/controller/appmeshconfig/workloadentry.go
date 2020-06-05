@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	for _, ins := range svc.Instances {
 		we := buildWorkloadEntry(cr.Namespace, svc, ins)
 
@@ -41,14 +41,14 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig
 		}
 		// Check if this WorkloadEntry already exists
 		found := &networkingv1beta1.WorkloadEntry{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{
+		err := r.client.Get(ctx, types.NamespacedName{
 			Name:      we.Name,
 			Namespace: we.Namespace},
 			found)
 		if err != nil && errors.IsNotFound(err) {
 			klog.Info("Creating a new WorkloadEntry", "Namespace",
 				we.Namespace, "Name", we.Name)
-			err = r.client.Create(context.TODO(), we)
+			err = r.client.Create(ctx, we)
 			if err != nil {
 				return err
 			}
@@ -60,14 +60,14 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig
 		}
 
 		// Update WorkloadEntry
-		klog.Info("Update WorkloadEntry", "Namespace", found.Namespace, "Name", found.Name)
 		if compareWorkloadEntry(we, found) {
+			klog.Info("Update WorkloadEntry", "Namespace", found.Namespace, "Name", found.Name)
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				we.Spec.DeepCopyInto(&found.Spec)
 				found.Finalizers = we.Finalizers
 				found.Labels = we.ObjectMeta.Labels
 
-				updateErr := r.client.Update(context.TODO(), found)
+				updateErr := r.client.Update(ctx, found)
 				if updateErr == nil {
 					klog.V(4).Infof("%s/%s update WorkloadEntry successfully",
 						we.Namespace, we.Name)
@@ -91,6 +91,9 @@ func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Insta
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svc.Name + "-we-" + ins.Host,
 			Namespace: namespace,
+			Labels: map[string]string{
+				"app": svc.AppName,
+			},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
@@ -98,7 +101,6 @@ func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Insta
 				ins.Port.Name: ins.Port.Number,
 			},
 			Labels: map[string]string{
-				"app":     svc.AppName,
 				"service": svc.Name + ".workload",
 				"group":   ins.Group,
 				"zone":    ins.Zone,

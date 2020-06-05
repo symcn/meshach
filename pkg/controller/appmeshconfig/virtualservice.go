@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileVirtualService(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	// Skip if the service's subset is none
 	if len(svc.Subsets) == 0 {
 		return nil
@@ -45,10 +45,10 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(cr *meshv1.AppMeshConfi
 
 	// Check if this VirtualService already exists
 	found := &networkingv1beta1.VirtualService{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: vs.Name, Namespace: vs.Namespace}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Name: vs.Name, Namespace: vs.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		klog.Info("Creating a new VirtualService", "Namespace", vs.Namespace, "Name", vs.Name)
-		err = r.client.Create(context.TODO(), vs)
+		err = r.client.Create(ctx, vs)
 		if err != nil {
 			return err
 		}
@@ -60,14 +60,14 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(cr *meshv1.AppMeshConfi
 	}
 
 	// Update VirtualService
-	klog.Info("Update VirtualService", "Namespace", found.Namespace, "Name", found.Name)
 	if compareVirtualService(vs, found) {
+		klog.Info("Update VirtualService", "Namespace", found.Namespace, "Name", found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			vs.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = vs.Finalizers
 			found.Labels = vs.ObjectMeta.Labels
 
-			updateErr := r.client.Update(context.TODO(), found)
+			updateErr := r.client.Update(ctx, found)
 			if updateErr == nil {
 				klog.V(4).Infof("%s/%s update VirtualService successfully", vs.Namespace, vs.Name)
 				return nil
@@ -91,6 +91,7 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 		ObjectMeta: v1.ObjectMeta{
 			Name:      svc.Name + "-vs",
 			Namespace: cr.Namespace,
+			Labels:    map[string]string{"app": cr.Name},
 		},
 		Spec: v1beta1.VirtualService{
 			Hosts: []string{svc.Name},
