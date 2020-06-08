@@ -71,7 +71,7 @@ func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
 					result := DeleteInSlice(amc.Spec.Services, i)
 					amc.Spec.Services = result.([]*v1.Service)
 					break
-					// TODO break? Can I assume there is no duplicate services in a same amc?
+					// TODO break? Can I assume there is no duplicate services belongs to a same amc?
 				}
 			}
 
@@ -115,8 +115,25 @@ func (ceh *CRDEventHandler) AddInstance(ie ServiceEvent) {
 }
 
 // DeleteInstance ...
-func (ceh *CRDEventHandler) DeleteInstance(e ServiceEvent) {
-	fmt.Printf("Don't be supported yet\n")
+func (ceh *CRDEventHandler) DeleteInstance(ie ServiceEvent) {
+	fmt.Printf("CRD event handler: deleting an instance\n%v\n", ie.Instance.Host)
+
+	appName := "foo"
+	amc := &v1.AppMeshConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: "default",
+		},
+	}
+	_, err := ceh.GetAmc(amc)
+	if err != nil {
+		fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appName)
+		return
+	} else {
+		deleteInstance(&ie, amc)
+	}
+
+	ceh.UpdateAmc(amc)
 }
 
 // CreateAmc
@@ -244,7 +261,43 @@ func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 			s.Instances = append(s.Instances, i)
 		}
 	}
+}
 
+// deleteInstance
+func deleteInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
+	instance := &v1.Instance{
+		Host: removePort(ie.Instance.Host),
+		Port: convertPort(ie.Instance.Port),
+	}
+
+	if amc.Spec.Services == nil || len(amc.Spec.Services) <= 0 {
+		fmt.Printf("The List of services who will be changed by removing an instance is empty.")
+		return
+	}
+
+	for _, s := range amc.Spec.Services {
+		// Can not find a service name in an instance.
+		//if s.Name != ie.Instance.Service.name {
+		//	continue
+		//}
+
+		if s.Instances == nil || len(s.Instances) <= 0 {
+			fmt.Printf("The list of instances who will be change by removing an instance is empty.")
+		}
+
+		for index, i := range s.Instances {
+			if i.Host == instance.Host && i.Port.Number == instance.Port.Number {
+				result := DeleteInSlice(s.Instances, index)
+				s.Instances = result.([]*v1.Instance)
+				// TODO Can I assume there is not duplicate instances belongs to a same service.
+				break
+			}
+		}
+
+		if len(s.Instances) <= 0 {
+			s.Instances = nil
+		}
+	}
 }
 
 // Removing the port part of a service name is necessary due to istio requirement.
@@ -275,13 +328,15 @@ func convertPort(port *Port) *v1.Port {
 }
 
 // Delete an element from a Slice with an index.
-func DeleteInSlice(arr interface{}, index int) interface{} {
-	value := reflect.ValueOf(arr)
+// return the original parameter as the result instead if it is not a slice.
+func DeleteInSlice(s interface{}, index int) interface{} {
+	value := reflect.ValueOf(s)
 	if value.Kind() == reflect.Slice {
 		//|| value.Kind() == reflect.Array {
 		result := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, value.Len()))
-
 		return result.Interface()
+	} else {
+		fmt.Printf("Only a slice can be passed into this method for deleting an element of it.")
+		return s
 	}
-	return arr
 }
