@@ -22,12 +22,12 @@ type Port struct {
 
 // Instance ...
 type Instance struct {
-	Weight uint32            `json:"weight"`
 	Host   string            `json:"host"`
 	Zone   string            `json:"zone"`
 	Group  string            `json:"group"`
 	Labels map[string]string `json:"labels,omitempty"`
 	Port   *Port             `json:"port"`
+	Weight uint32            `json:"weight"`
 }
 
 // Subset ...
@@ -40,7 +40,6 @@ type Subset struct {
 // Service ...
 type Service struct {
 	Name      string      `json:"name,omitempty"`
-	AppName   string      `json:"appName,omitempty"`
 	Ports     []*Port     `json:"ports,omitempty"`
 	Instances []*Instance `json:"instances,omitempty"`
 	Policy    *Policy     `json:"policy,omitempty"`
@@ -70,6 +69,7 @@ type Policy struct {
 type AppMeshConfigSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
+	AppName  string     `json:"appName,omitempty"`
 	Inject   *Inject    `json:"inject"`
 	Services []*Service `json:"services"`
 	Policy   *Policy    `json:"policy"`

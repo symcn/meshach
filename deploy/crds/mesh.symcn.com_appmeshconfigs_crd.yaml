@@ -31,10 +31,13 @@ spec:
           spec:
             description: AppMeshConfigSpec ...
             properties:
-              inject:
+              appName:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "operator-sdk generate k8s" to regenerate code after
                   modifying this file'
+                type: string
+              inject:
+                description: Inject ...
                 properties:
                   logLevel:
                     type: string
@@ -74,8 +77,6 @@ spec:
                 items:
                   description: Service ...
                   properties:
-                    appName:
-                      type: string
                     instances:
                       items:
                         description: Instance ...
