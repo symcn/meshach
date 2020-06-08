@@ -57,8 +57,8 @@ func newPathCache(conn *zk.Conn, path string) (*pathCache, error) {
 		conn:       conn,
 		path:       path,
 		cached:     make(map[string]bool),
-		watchCh:    make(chan zk.Event),
-		notifyCh:   make(chan pathCacheEvent),
+		watchCh:    make(chan zk.Event),       // The zookeeper events will be forwarded to this channel.
+		notifyCh:   make(chan pathCacheEvent), // The notified events will be send into this channel.
 		addChildCh: make(chan string),
 		stopCh:     make(chan bool),
 	}
@@ -96,23 +96,36 @@ func (p *pathCache) stop() {
 	}()
 }
 
+// watch watch a specified path to make the node changed event can be handle by path cache.
 func (p *pathCache) watch(path string) error {
+	fmt.Printf("Watch path[%s]\n", path)
+
 	_, _, ch, err := p.conn.GetW(path)
 	if err != nil {
+		fmt.Printf("Watching node[%s] has an error: %v.\n", path, err)
 		return err
 	}
 	go p.forward(ch)
 	return nil
 }
 
+// watchChildren
+// 1.watch the node's children
+// 2.forward the events which has been send by zookeeper
+// 3.cache every child
 func (p *pathCache) watchChildren() error {
-	fmt.Printf("Watch the children for path: %s\n", p.path)
+	fmt.Printf("Watch the children for path[%s]\n", p.path)
 
 	children, _, ch, err := p.conn.ChildrenW(p.path)
 	if err != nil {
+		fmt.Printf("Watching node[%s]'s children has an error: %v.\n", p.path, err)
 		return err
 	}
+
+	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)
+
+	// cache every child into a map
 	for _, child := range children {
 		fp := path.Join(p.path, child)
 		if ok := p.cached[fp]; !ok {
@@ -126,7 +139,7 @@ func (p *pathCache) watchChildren() error {
 func (p *pathCache) onChildAdd(child string) {
 	err := p.watch(child)
 	if err != nil {
-		fmt.Printf("Failed to watch child %s, the err is %s\n", child, err)
+		fmt.Printf("Failed to watch child %s, error：%s\n", child, err)
 		return
 	}
 
@@ -145,9 +158,12 @@ func (p *pathCache) onEvent(event *zk.Event) {
 		p.watchChildren()
 	case zk.EventNodeDeleted:
 		p.onChildDeleted(event.Path)
+	default:
+		fmt.Printf("Event[%v] has not been supported yet", event)
 	}
 }
 
+//
 func (p *pathCache) onChildDeleted(child string) {
 	vent := pathCacheEvent{
 		eventType: pathCacheEventDeleted,

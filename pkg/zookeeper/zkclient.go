@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 )
 
 type ZkClient struct {
@@ -89,6 +90,19 @@ func (c *ZkClient) Start() error {
 		return err
 	}
 	c.scache = scache
+
+	// TODO observe the status of the root path cache.
+	go func() {
+		tick := time.Tick(10 * time.Second)
+		for {
+			select {
+			case <-tick:
+				fmt.Printf("Observing root pach cache :%v\n%v\n", scache.path, scache.cached)
+				//spew.Dump(scache)
+			}
+		}
+	}()
+
 	go c.eventLoop()
 	return nil
 }
@@ -119,6 +133,7 @@ func (c *ZkClient) eventLoop() {
 		case pathCacheEventDeleted:
 			// In fact, this snippet always won't be executed.
 			// At least one empty node of this service exists.
+			// Especially a service node may be deleted by someone manually.
 			hostname := path.Base(event.path)
 			c.deleteService(hostname)
 		}

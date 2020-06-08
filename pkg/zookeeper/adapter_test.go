@@ -52,8 +52,8 @@ func Test_Start(t *testing.T) {
 	}
 
 	opt := Option{
-		Address:          []string{"10.12.210.70:2181"},
-		Timeout:          15,
+		Address:          servers,
+		Timeout:          15 * 1000,
 		ClusterNamespace: "sym-admin",
 		ClusterOwner:     "sym-admin",
 	}
@@ -71,15 +71,18 @@ func Test_Start(t *testing.T) {
 
 	adapter, err := NewAdapter(&opt)
 	if err != nil {
-		fmt.Sprintf("Start an adaptor has an error: %v\n", err)
+		fmt.Sprintf("Create an adapter has an error: %v\n", err)
+		return
 	}
 
 	stop := make(chan struct{})
-	adapter.Start(stop)
+	err = adapter.Start(stop)
+	if err != nil {
+		fmt.Sprintf("Start an adaptor has an error: %v\n", err)
+		return
+	}
 
 	time.Sleep(30 * time.Minute)
-
 	stop <- struct{}{}
 	time.Sleep(5 * time.Second)
-
 }

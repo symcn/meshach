@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-var servers = []string{"10.12.210.70:2181"}
+var servers = []string{
+	//"10.12.210.70:2181",
+	"10.248.224.37:2181",
+}
 
 func Test_connect(t *testing.T) {
 	conn, _, err := zk.Connect(servers, 15*time.Second)

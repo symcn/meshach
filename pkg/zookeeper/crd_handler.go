@@ -42,13 +42,13 @@ func (ceh *CRDEventHandler) AddService(se ServiceEvent) {
 		ceh.UpdateAmc(amc)
 	}
 
-	fmt.Printf("Create or update an AppMeshConfig CR after a service has beed created:\n%v\n", amc.Name)
+	fmt.Printf("Create or update an AppMeshConfig CR after a service has beed created:%s\n", amc.Name)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
 func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
-	fmt.Printf("CRD event handler: Deleting a service - %s\n", se.Service.name)
+	fmt.Printf("CRD event handler: Deleting a service: %s\n", se.Service.name)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
 	appName := "foo"
@@ -111,12 +111,12 @@ func (ceh *CRDEventHandler) AddInstance(ie ServiceEvent) {
 		ceh.UpdateAmc(amc)
 	}
 
-	fmt.Printf("Create or update an AppMeshConfig CR after an instance has beed added:\n%v\n", amc.Name)
+	fmt.Printf("Create or update an AppMeshConfig CR after an instance has beed added:%s\n", amc.Name)
 }
 
 // DeleteInstance ...
 func (ceh *CRDEventHandler) DeleteInstance(ie ServiceEvent) {
-	fmt.Printf("CRD event handler: deleting an instance\n%v\n", ie.Instance.Host)
+	fmt.Printf("CRD event handler: deleting an instance\n%v\n", ie.Instance)
 
 	appName := "foo"
 	amc := &v1.AppMeshConfig{
@@ -305,7 +305,7 @@ func deleteInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 func removePort(addressWithPort string) string {
 	host, _, err := net.SplitHostPort(addressWithPort)
 	if err != nil {
-		fmt.Printf("Split host and port for a service name has an errt:%v", err)
+		fmt.Printf("Split host and port for a service name has an error:%v\n", err)
 		// returning the original address instead if the address has a incorrect format
 		return addressWithPort
 	}
