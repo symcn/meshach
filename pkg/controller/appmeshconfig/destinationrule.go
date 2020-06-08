@@ -56,7 +56,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 	found := &networkingv1beta1.DestinationRule{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: dr.Name, Namespace: dr.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new DestinationRule, ", "Namespace: ", dr.Namespace, "Name: ", dr.Name)
+		klog.Infof("Creating a new DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
 		err = r.client.Create(ctx, dr)
 		if err != nil {
 			klog.Errorf("Create DestinationRule error: %+v", err)
@@ -72,7 +72,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 
 	// Update DestinationRule
 	if compareDestinationRule(dr, found) {
-		klog.Info("Update DestinationRule, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
+		klog.Infof("Update DestinationRule, Namespace: %s, Name: %s", found.Namespace, found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			dr.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = dr.Finalizers
@@ -114,6 +114,7 @@ func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networ
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
+			Labels:    map[string]string{"app": cr.Spec.AppName},
 		},
 		Spec: v1beta1.DestinationRule{
 			Host: svc.Name,

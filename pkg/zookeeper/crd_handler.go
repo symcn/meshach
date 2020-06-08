@@ -3,11 +3,12 @@ package zookeeper
 import (
 	"context"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
@@ -175,9 +176,8 @@ func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 	}
 
 	s := &v1.Service{
-		Name:    se.Service.name,
-		AppName: "foo",
-		Ports:   ports,
+		Name:  se.Service.name,
+		Ports: ports,
 		//Instances: e.Service.instances,
 		//Policy:  nil,
 		//Subsets: nil,
@@ -217,9 +217,8 @@ func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 		ports = append(ports, convertPort(p))
 	}
 	s = &v1.Service{
-		Name:    ie.Instance.Service.name,
-		AppName: "foo",
-		Ports:   ports,
+		Name:  ie.Instance.Service.name,
+		Ports: ports,
 	}
 
 	// Put the service if it is not present
