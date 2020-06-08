@@ -133,9 +133,13 @@ func (c *ZkClient) eventLoop() {
 		case pathCacheEventDeleted:
 			// In fact, this snippet always won't be executed.
 			// At least one empty node of this service exists.
-			// Especially a service node may be deleted by someone manually.
 			hostname := path.Base(event.path)
 			c.deleteService(hostname)
+
+			// Especially a service node may be deleted by someone manually,
+			// we should avoid to maintain a service's path cache as true without the associated service node.
+			// It is very essential to clear the cache flag for this path by setting it as false.
+			c.scache.cached[event.path] = false
 		}
 	}
 }

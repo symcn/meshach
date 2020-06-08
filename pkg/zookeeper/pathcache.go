@@ -121,6 +121,7 @@ func (p *pathCache) watchChildren() error {
 		fmt.Printf("Watching node[%s]'s children has an error: %v.\n", p.path, err)
 		return err
 	}
+	fmt.Printf("The children of the watched path[%s]:\n%v\n", p.path, children)
 
 	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)
@@ -165,6 +166,8 @@ func (p *pathCache) onEvent(event *zk.Event) {
 
 //
 func (p *pathCache) onChildDeleted(child string) {
+	fmt.Printf("Received an deletion event by zookeeper: %v\n", child)
+
 	vent := pathCacheEvent{
 		eventType: pathCacheEventDeleted,
 		path:      child,
