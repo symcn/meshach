@@ -94,7 +94,7 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels:    map[string]string{"app": cr.Name},
+			Labels:    map[string]string{"app": cr.Spec.AppName},
 		},
 		Spec: v1beta1.VirtualService{
 			Hosts: []string{svc.Name},

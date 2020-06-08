@@ -97,9 +97,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels: map[string]string{
-				"app": svc.AppName,
-			},
+			Labels:    map[string]string{"app": cr.Spec.AppName},
 			// Finalizers: nil,
 		},
 		Spec: v1beta1.ServiceEntry{

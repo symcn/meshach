@@ -34,7 +34,7 @@ import (
 
 func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
 	for _, ins := range svc.Instances {
-		we := buildWorkloadEntry(cr.Namespace, svc, ins)
+		we := buildWorkloadEntry(cr.Spec.AppName, cr.Namespace, svc, ins)
 
 		// Set AppMeshConfig instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, we, r.scheme); err != nil {
@@ -89,14 +89,12 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 	return nil
 }
 
-func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
+func buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name + "." + ins.Host),
 			Namespace: namespace,
-			Labels: map[string]string{
-				"app": svc.AppName,
-			},
+			Labels:    map[string]string{"app": appName},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,

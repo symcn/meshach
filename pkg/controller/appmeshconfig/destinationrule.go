@@ -114,6 +114,7 @@ func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networ
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
+			Labels:    map[string]string{"app": cr.Spec.AppName},
 		},
 		Spec: v1beta1.DestinationRule{
 			Host: svc.Name,
