@@ -48,7 +48,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 			Namespace: we.Namespace},
 			found)
 		if err != nil && errors.IsNotFound(err) {
-			klog.Info("Creating a new WorkloadEntry, ", "Namespace: ", we.Namespace, "Name: ", we.Name)
+			klog.Infof("Creating a new WorkloadEntry, Namespace: %s, Name: %s", we.Namespace, we.Name)
 			err = r.client.Create(ctx, we)
 			if err != nil {
 				klog.Errorf("Create WorkloadEntry error: %+v", err)
@@ -64,7 +64,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 
 		// Update WorkloadEntry
 		if compareWorkloadEntry(we, found) {
-			klog.Info("Update WorkloadEntry, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
+			klog.Infof("Update WorkloadEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				we.Spec.DeepCopyInto(&found.Spec)
 				found.Finalizers = we.Finalizers

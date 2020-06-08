@@ -44,7 +44,7 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 	found := &networkingv1beta1.ServiceEntry{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: se.Name, Namespace: se.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new ServiceEntry, ", "Namespace: ", se.Namespace, "Name: ", se.Name)
+		klog.Infof("Creating a new ServiceEntry, Namespace: %s, Name: %s", se.Namespace, se.Name)
 		err = r.client.Create(ctx, se)
 		if err != nil {
 			klog.Errorf("Create ServiceEntry error: %+v", err)
@@ -60,7 +60,7 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 
 	// Update ServiceEntry
 	if compareServiceEntry(se, found) {
-		klog.Info("Update ServiceEntry, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
+		klog.Infof("Update ServiceEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			se.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = se.Finalizers

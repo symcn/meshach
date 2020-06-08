@@ -48,7 +48,7 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 	found := &networkingv1beta1.VirtualService{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: vs.Name, Namespace: vs.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		klog.Info("Creating a new VirtualService, ", "Namespace: ", vs.Namespace, "Name: ", vs.Name)
+		klog.Infof("Creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
 		err = r.client.Create(ctx, vs)
 		if err != nil {
 			klog.Errorf("Create VirtualService error: %+v", err)
@@ -64,7 +64,7 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 
 	// Update VirtualService
 	if compareVirtualService(vs, found) {
-		klog.Info("Update VirtualService, ", "Namespace: ", found.Namespace, "Name: ", found.Name)
+		klog.Infof("Update VirtualService, Namespace: %s, Name: %s", found.Namespace, found.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			vs.Spec.DeepCopyInto(&found.Spec)
 			found.Finalizers = vs.Finalizers
