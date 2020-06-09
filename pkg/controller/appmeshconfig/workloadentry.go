@@ -18,10 +18,10 @@ package appmeshconfig
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	"github.com/mesh-operator/pkg/utils"
+	utils "github.com/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -100,11 +100,10 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 }
 
 func buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
-	name := utils.FormatToDNS1123(strings.Join([]string{
-		svc.Name, ins.Host, string(ins.Port.Number)}, "."))
+	name := fmt.Sprintf("%s.%s.%d", svc.Name, ins.Host, ins.Port.Number)
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      utils.FormatToDNS1123(name),
 			Namespace: namespace,
 			Labels:    map[string]string{"app": appName},
 		},
