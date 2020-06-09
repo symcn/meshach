@@ -54,32 +54,29 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 			klog.Errorf("Create ServiceEntry error: %+v", err)
 			return err
 		}
+	} else {
+		// Update ServiceEntry
+		if compareServiceEntry(se, found) {
+			klog.Infof("Update ServiceEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
+			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				se.Spec.DeepCopyInto(&found.Spec)
+				found.Finalizers = se.Finalizers
+				found.Labels = se.ObjectMeta.Labels
 
-		// ServiceEntry created successfully - don't requeue
-		return nil
-	}
-	delete(foundMap, se.Name)
+				updateErr := r.client.Update(ctx, found)
+				if updateErr == nil {
+					klog.V(4).Infof("%s/%s update ServiceEntry successfully", se.Namespace, se.Name)
+					return nil
+				}
+				return updateErr
+			})
 
-	// Update ServiceEntry
-	if compareServiceEntry(se, found) {
-		klog.Infof("Update ServiceEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			se.Spec.DeepCopyInto(&found.Spec)
-			found.Finalizers = se.Finalizers
-			found.Labels = se.ObjectMeta.Labels
-
-			updateErr := r.client.Update(ctx, found)
-			if updateErr == nil {
-				klog.V(4).Infof("%s/%s update ServiceEntry successfully", se.Namespace, se.Name)
-				return nil
+			if err != nil {
+				klog.Warningf("Update ServiceEntry [%s] spec failed, err: %+v", se.Name, err)
+				return err
 			}
-			return updateErr
-		})
-
-		if err != nil {
-			klog.Warningf("Update ServiceEntry [%s] spec failed, err: %+v", se.Name, err)
-			return err
 		}
+		delete(foundMap, se.Name)
 	}
 
 	// Delete old ServiceEntry
