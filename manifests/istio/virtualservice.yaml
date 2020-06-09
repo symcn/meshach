@@ -4,61 +4,70 @@ metadata:
   name: dubbo-app-vs
 spec:
   hosts:
-  - mosn.io.dubbo.DemoService.workload
+    - mosn.io.dubbo.DemoService
   http:
-  - match:
-    - headers:
-        zone:
-          exact: gz01
-    route:
-    - destination:
-        host: mosn.io.dubbo.DemoService.workload
-        subset: green
-      weight: 20
-    - destination:
-        host: mosn.io.dubbo.DemoService.workload
-        subset: blue
-      weight: 80
-    retries:
-      attempts: 2
-      perTryTimeout: 3s
-      retryOn: gateway-error,connect-failure,refused-stream
-  - route:
-    - destination:
-        host: mosn.io.dubbo.proxy
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
-      retryOn: gateway-error,connect-failure,refused-stream
-    
+    - match:
+        - headers:
+            zone:
+              exact: gz01
+          sourceLabels:
+            group: blue
+      route:
+        - destination:
+            host: mosn.io.dubbo.DemoService
+            subset: blue
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: gateway-error,connect-failure,refused-stream
+    - match:
+        - headers:
+            zone:
+              exact: gz02
+          sourceLabels:
+            group: green
+      route:
+        - destination:
+            host: mosn.io.dubbo.DemoService
+            subset: green
+      retries:
+        attempts: 2
+        perTryTimeout: 3s
+        retryOn: gateway-error,connect-failure,refused-stream
+    - route:
+        - destination:
+            host: mosn.io.dubbo.proxy
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: gateway-error,connect-failure,refused-stream
+
 #####
 
 ---
-
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: dubbo-app-vs
 spec:
   hosts:
-  - mosn.io.dubbo.DemoService.workload
+    - mosn.io.dubbo.DemoService.workload
   http:
-  - match:
-    - headers:
-        zone:
-          exact: gz01
-    route:
-    - destination:
-        host: mosn.io.dubbo.DemoService.workload
-    retries:
-      attempts: 2
-      perTryTimeout: 3s
-      retryOn: gateway-error,connect-failure,refused-stream
-  - route:
-    - destination:
-        host: mosn.io.dubbo.proxy
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
-      retryOn: gateway-error,connect-failure,refused-stream
-    
+    - match:
+        - headers:
+            zone:
+              exact: gz01
+      route:
+        - destination:
+            host: mosn.io.dubbo.DemoService.workload
+      retries:
+        attempts: 2
+        perTryTimeout: 3s
+        retryOn: gateway-error,connect-failure,refused-stream
+    - route:
+        - destination:
+            host: mosn.io.dubbo.proxy
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: gateway-error,connect-failure,refused-stream
