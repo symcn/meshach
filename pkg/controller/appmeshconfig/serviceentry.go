@@ -24,15 +24,20 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+	foundMap, err := r.getServiceEntriesMap(ctx, cr)
+	if err != nil {
+		klog.Errorf("%s/%s get ServiceEntries error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		return err
+	}
+
 	se := buildServiceEntry(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, se, r.scheme); err != nil {
@@ -41,41 +46,45 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 	}
 
 	// Check if this ServiceEntry already exists
-	found := &networkingv1beta1.ServiceEntry{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: se.Name, Namespace: se.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
+	found, ok := foundMap[se.Name]
+	if !ok {
 		klog.Infof("Creating a new ServiceEntry, Namespace: %s, Name: %s", se.Namespace, se.Name)
 		err = r.client.Create(ctx, se)
 		if err != nil {
 			klog.Errorf("Create ServiceEntry error: %+v", err)
 			return err
 		}
+	} else {
+		// Update ServiceEntry
+		if compareServiceEntry(se, found) {
+			klog.Infof("Update ServiceEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
+			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				se.Spec.DeepCopyInto(&found.Spec)
+				found.Finalizers = se.Finalizers
+				found.Labels = se.ObjectMeta.Labels
 
-		// ServiceEntry created successfully - don't requeue
-		return nil
-	} else if err != nil {
-		klog.Errorf("Get ServiceEntry error: %+v", err)
-		return err
+				updateErr := r.client.Update(ctx, found)
+				if updateErr == nil {
+					klog.V(4).Infof("%s/%s update ServiceEntry successfully", se.Namespace, se.Name)
+					return nil
+				}
+				return updateErr
+			})
+
+			if err != nil {
+				klog.Warningf("Update ServiceEntry [%s] spec failed, err: %+v", se.Name, err)
+				return err
+			}
+		}
+		delete(foundMap, se.Name)
 	}
 
-	// Update ServiceEntry
-	if compareServiceEntry(se, found) {
-		klog.Infof("Update ServiceEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			se.Spec.DeepCopyInto(&found.Spec)
-			found.Finalizers = se.Finalizers
-			found.Labels = se.ObjectMeta.Labels
-
-			updateErr := r.client.Update(ctx, found)
-			if updateErr == nil {
-				klog.V(4).Infof("%s/%s update ServiceEntry successfully", se.Namespace, se.Name)
-				return nil
-			}
-			return updateErr
-		})
-
+	// Delete old ServiceEntry
+	for name, se := range foundMap {
+		klog.V(4).Infof("Delete unused ServiceEntry: %s", name)
+		err := r.client.Delete(ctx, se)
 		if err != nil {
-			klog.Warningf("update ServiceEntry [%s] spec failed, err: %+v", se.Name, err)
+			klog.Errorf("Delete unused ServiceEntry error: %+v", err)
 			return err
 		}
 	}
@@ -98,7 +107,6 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
 			Labels:    map[string]string{"app": cr.Spec.AppName},
-			// Finalizers: nil,
 		},
 		Spec: v1beta1.ServiceEntry{
 			Hosts:      []string{svc.Name},
@@ -127,4 +135,22 @@ func compareServiceEntry(new, old *networkingv1beta1.ServiceEntry) bool {
 		return true
 	}
 	return false
+}
+
+func (r *ReconcileAppMeshConfig) getServiceEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.ServiceEntry, error) {
+	list := &networkingv1beta1.ServiceEntryList{}
+	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	opts := &client.ListOptions{Namespace: cr.Namespace}
+	labels.ApplyToList(opts)
+
+	err := r.client.List(ctx, list, opts)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]*networkingv1beta1.ServiceEntry)
+	for i := range list.Items {
+		item := list.Items[i]
+		m[item.Name] = &item
+	}
+	return m, nil
 }

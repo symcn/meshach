@@ -88,7 +88,7 @@ func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
 				}
 			}
 
-			if len(amc.Spec.Services) <= 0 {
+			if len(amc.Spec.Services) == 0 {
 				amc.Spec.Services = nil
 			}
 
@@ -282,7 +282,7 @@ func deleteInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 		Port: convertPort(ie.Instance.Port),
 	}
 
-	if amc.Spec.Services == nil || len(amc.Spec.Services) <= 0 {
+	if amc.Spec.Services == nil || len(amc.Spec.Services) == 0 {
 		fmt.Printf("The List of services who will be changed by removing an instance is empty.")
 		return
 	}
@@ -293,7 +293,7 @@ func deleteInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 		//	continue
 		//}
 
-		if s.Instances == nil || len(s.Instances) <= 0 {
+		if s.Instances == nil || len(s.Instances) == 0 {
 			fmt.Printf("The list of instances who will be change by removing an instance is empty.")
 		}
 
@@ -306,7 +306,7 @@ func deleteInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 			}
 		}
 
-		if len(s.Instances) <= 0 {
+		if len(s.Instances) == 0 {
 			s.Instances = nil
 		}
 	}
@@ -381,7 +381,7 @@ func findValidInstance(e *ServiceEvent) *Instance {
 		return e.Instance
 	}
 
-	if e.Service == nil || e.Service.instances == nil || len(e.Service.instances) <= 0 {
+	if e.Service == nil || e.Service.instances == nil || len(e.Service.instances) == 0 {
 		fmt.Printf("The instances list of this service is nil or empty when start to find valid instance from it.\n")
 		return nil
 	}
