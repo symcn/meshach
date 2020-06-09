@@ -18,6 +18,7 @@ package appmeshconfig
 
 import (
 	"context"
+	"strings"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	"github.com/mesh-operator/pkg/utils"
@@ -95,9 +96,11 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 }
 
 func buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
+	name := utils.FormatToDNS1123(strings.Join([]string{
+		svc.Name, ins.Host, string(ins.Port.Number)}, "."))
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.FormatToDNS1123(svc.Name + "." + ins.Host),
+			Name:      name,
 			Namespace: namespace,
 			Labels:    map[string]string{"app": appName},
 		},
