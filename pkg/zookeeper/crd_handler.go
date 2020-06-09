@@ -186,7 +186,6 @@ func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 	for _, p := range se.Service.ports {
 		ports = append(ports, convertPort(p))
 	}
-
 	s := &v1.Service{
 		Name:  se.Service.name,
 		Ports: ports,
@@ -213,7 +212,6 @@ func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 			amc.Spec.Services = append(amc.Spec.Services, s)
 		}
 	}
-
 }
 
 // putInstance put an instance into the application mesh config
@@ -221,6 +219,7 @@ func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 	i := &v1.Instance{}
 	i.Host = removePort(ie.Instance.Host)
 	i.Port = convertPort(ie.Instance.Port)
+	i.Labels = ie.Instance.Labels
 
 	var s *v1.Service
 	// Ports
@@ -261,10 +260,12 @@ func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 		s.Instances = instances
 	} else {
 		var hasExist = false
-		for _, ins := range s.Instances {
+		for index, ins := range s.Instances {
 			if ins.Host == i.Host && ins.Port.Number == i.Port.Number {
 				hasExist = true
-				fmt.Printf("Instance %v has been exist in a service\n", i)
+				// replace the current instance by the newest one.
+				s.Instances[index] = i
+				fmt.Printf("Instance %v has exist in a service\n", i)
 				break
 			}
 		}

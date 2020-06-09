@@ -97,7 +97,7 @@ func (c *ZkClient) Start() error {
 		for {
 			select {
 			case <-tick:
-				fmt.Printf("Observing root pach cache :%v\n%v\n", scache.path, scache.cached)
+				fmt.Printf("Observing root pach cache :%v\n%v\n%v\n", scache.path, scache.cached, c.services)
 				//spew.Dump(scache)
 			}
 		}

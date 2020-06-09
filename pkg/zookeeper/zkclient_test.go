@@ -8,8 +8,13 @@ import (
 )
 
 var servers = []string{
+	// local
 	//"10.12.210.70:2181",
+	// dev
 	"10.248.224.37:2181",
+	// dev - dsf
+	//"10.248.224.25:2181",
+
 }
 
 func Test_connect(t *testing.T) {
