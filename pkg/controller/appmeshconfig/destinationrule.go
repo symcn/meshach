@@ -31,6 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+const (
+	loadBalanceSimple = "simple"
+)
+
 var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 	"ROUND_ROBIN": v1beta1.LoadBalancerSettings_ROUND_ROBIN,
 	"LEAST_CONN":  v1beta1.LoadBalancerSettings_LEAST_CONN,
@@ -111,7 +115,7 @@ func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networ
 			subset.TrafficPolicy = &v1beta1.TrafficPolicy{
 				LoadBalancer: &v1beta1.LoadBalancerSettings{
 					LbPolicy: &v1beta1.LoadBalancerSettings_Simple{
-						Simple: getlb(sub.Policy.LoadBalancer["simple"]),
+						Simple: getlb(sub.Policy.LoadBalancer[loadBalanceSimple]),
 					},
 				},
 			}
@@ -122,14 +126,14 @@ func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networ
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels:    map[string]string{"app": cr.Spec.AppName},
+			Labels:    map[string]string{appLabelKey: cr.Spec.AppName},
 		},
 		Spec: v1beta1.DestinationRule{
 			Host: svc.Name,
 			TrafficPolicy: &v1beta1.TrafficPolicy{
 				LoadBalancer: &v1beta1.LoadBalancerSettings{
 					LbPolicy: &v1beta1.LoadBalancerSettings_Simple{
-						Simple: getlb(svc.Policy.LoadBalancer["simple"]),
+						Simple: getlb(svc.Policy.LoadBalancer[loadBalanceSimple]),
 					},
 				},
 			},
@@ -163,7 +167,7 @@ func getlb(s string) v1beta1.LoadBalancerSettings_SimpleLB {
 
 func (r *ReconcileAppMeshConfig) getDestinationRuleMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.DestinationRule, error) {
 	list := &networkingv1beta1.DestinationRuleList{}
-	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

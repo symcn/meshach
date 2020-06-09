@@ -39,7 +39,14 @@ import (
 )
 
 const (
-	controllerName = "appMeshConfig-controller"
+	controllerName         = "appMeshConfig-controller"
+	appLabelKey            = "app"
+	matchLabelKey          = "sym-zone"
+	workloadSelectLabelKey = "service"
+	workloadGroupLabelKey  = "sym-group"
+	workloadZoneLabelKey   = "sym-zone"
+	httpRouteName          = "dubbo-http-route"
+	proxyRouteName         = "dubbo-proxy-route"
 )
 
 var log = logf.Log.WithName(controllerName)

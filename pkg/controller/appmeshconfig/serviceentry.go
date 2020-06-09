@@ -106,7 +106,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels:    map[string]string{"app": cr.Spec.AppName},
+			Labels:    map[string]string{appLabelKey: cr.Spec.AppName},
 		},
 		Spec: v1beta1.ServiceEntry{
 			Hosts:      []string{svc.Name},
@@ -115,7 +115,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 			Resolution: v1beta1.ServiceEntry_STATIC,
 			WorkloadSelector: &v1beta1.WorkloadSelector{
 				Labels: map[string]string{
-					"service": svc.Name,
+					workloadSelectLabelKey: svc.Name,
 				},
 			},
 		},
@@ -139,7 +139,7 @@ func compareServiceEntry(new, old *networkingv1beta1.ServiceEntry) bool {
 
 func (r *ReconcileAppMeshConfig) getServiceEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.ServiceEntry, error) {
 	list := &networkingv1beta1.ServiceEntryList{}
-	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

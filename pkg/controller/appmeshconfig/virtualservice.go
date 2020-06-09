@@ -75,7 +75,7 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 				})
 
 				if err != nil {
-					klog.Warningf("update VirtualService [%s] spec failed, err: %+v", vs.Name, err)
+					klog.Warningf("Update VirtualService [%s] spec failed, err: %+v", vs.Name, err)
 					return err
 				}
 			}
@@ -102,7 +102,7 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels:    map[string]string{"app": cr.Spec.AppName},
+			Labels:    map[string]string{appLabelKey: cr.Spec.AppName},
 		},
 		Spec: v1beta1.VirtualService{
 			Hosts: []string{svc.Name},
@@ -113,7 +113,7 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 
 func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service) *v1beta1.HTTPRoute {
 	m := make(map[string]*v1beta1.StringMatch)
-	m["sym-zone"] = &v1beta1.StringMatch{
+	m[matchLabelKey] = &v1beta1.StringMatch{
 		MatchType: &v1beta1.StringMatch_Exact{
 			Exact: r.opt.Zone,
 		},
@@ -133,7 +133,7 @@ func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service) *v1beta1.HT
 	}
 
 	return &v1beta1.HTTPRoute{
-		Name:    "dubbo-http-route",
+		Name:    httpRouteName,
 		Match:   []*v1beta1.HTTPMatchRequest{match},
 		Route:   routes,
 		Timeout: utils.StringToDuration(svc.Policy.Timeout),
@@ -150,7 +150,7 @@ func (r *ReconcileAppMeshConfig) buildProxyRoute() *v1beta1.HTTPRoute {
 			Host: r.opt.ProxyHost,
 		}}
 	return &v1beta1.HTTPRoute{
-		Name:  "dubbo-proxy-route",
+		Name:  proxyRouteName,
 		Route: []*v1beta1.HTTPRouteDestination{route},
 		Retries: &v1beta1.HTTPRetry{
 			Attempts:      r.opt.ProxyAttempts,
@@ -177,7 +177,7 @@ func compareVirtualService(new, old *networkingv1beta1.VirtualService) bool {
 
 func (r *ReconcileAppMeshConfig) getVirtualServicesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.VirtualService, error) {
 	list := &networkingv1beta1.VirtualServiceList{}
-	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

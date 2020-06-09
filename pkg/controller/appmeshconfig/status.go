@@ -112,7 +112,7 @@ func (r *ReconcileAppMeshConfig) getDestinationRuleStatus(ctx context.Context, c
 
 func (r *ReconcileAppMeshConfig) count(ctx context.Context, cr *meshv1.AppMeshConfig, list runtime.Object) *int {
 	var c int
-	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

@@ -105,7 +105,7 @@ func buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *mes
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(name),
 			Namespace: namespace,
-			Labels:    map[string]string{"app": appName},
+			Labels:    map[string]string{appLabelKey: appName},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
@@ -113,12 +113,10 @@ func buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *mes
 				ins.Port.Name: ins.Port.Number,
 			},
 			Labels: map[string]string{
-				"service":   svc.Name,
-				"sym-group": ins.Group,
-				"sym-zone":  ins.Zone,
+				workloadSelectLabelKey: svc.Name,
+				workloadGroupLabelKey:  ins.Group,
+				workloadZoneLabelKey:   ins.Zone,
 			},
-			// Network:        ins.Zone,
-			// Locality:       "",
 			Weight: ins.Weight,
 		},
 	}
@@ -141,7 +139,7 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 
 func (r *ReconcileAppMeshConfig) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.WorkloadEntry, error) {
 	list := &networkingv1beta1.WorkloadEntryList{}
-	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 
