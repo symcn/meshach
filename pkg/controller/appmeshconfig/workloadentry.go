@@ -24,15 +24,21 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+	// Get all workloadEntry of this AppMeshConfig
+	foundMap, err := r.getWorkloadEntriesMap(ctx, cr)
+	if err != nil {
+		klog.Errorf("%s/%s get WorkloadEntries error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		return err
+	}
+
 	for _, ins := range svc.Instances {
 		we := buildWorkloadEntry(cr.Spec.AppName, cr.Namespace, svc, ins)
 
@@ -41,26 +47,19 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 			klog.Errorf("SetControllerReference error: %v", err)
 			return err
 		}
+
 		// Check if this WorkloadEntry already exists
-		found := &networkingv1beta1.WorkloadEntry{}
-		err := r.client.Get(ctx, types.NamespacedName{
-			Name:      we.Name,
-			Namespace: we.Namespace},
-			found)
-		if err != nil && errors.IsNotFound(err) {
+		found, ok := foundMap[we.Name]
+		if !ok {
 			klog.Infof("Creating a new WorkloadEntry, Namespace: %s, Name: %s", we.Namespace, we.Name)
 			err = r.client.Create(ctx, we)
 			if err != nil {
 				klog.Errorf("Create WorkloadEntry error: %+v", err)
 				return err
 			}
-
-			// WorkloadEntry created successfully - don't requeue
-			return nil
-		} else if err != nil {
-			klog.Errorf("Get WorkloadEntry error: %+v", err)
-			return err
+			continue
 		}
+		delete(foundMap, we.Name)
 
 		// Update WorkloadEntry
 		if compareWorkloadEntry(we, found) {
@@ -80,11 +79,17 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 			})
 
 			if err != nil {
-				klog.Warningf("update WorkloadEntry [%s] spec failed, err: %+v",
+				klog.Warningf("Update WorkloadEntry [%s] spec failed, err: %+v",
 					we.Name, err)
 				return err
 			}
 		}
+	}
+
+	// Delete old WorkloadEntries
+	for name, we := range foundMap {
+		klog.V(4).Infof("Delete unused WorkloadEntry: %s", name)
+		r.client.Delete(ctx, we)
 	}
 	return nil
 }
@@ -126,4 +131,22 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 		return true
 	}
 	return false
+}
+
+func (r *ReconcileAppMeshConfig) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.WorkloadEntry, error) {
+	list := &networkingv1beta1.WorkloadEntryList{}
+	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	opts := &client.ListOptions{Namespace: cr.Namespace}
+	labels.ApplyToList(opts)
+
+	err := r.client.List(ctx, list, opts)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]*networkingv1beta1.WorkloadEntry)
+	for i := range list.Items {
+		item := list.Items[i]
+		m[item.Name] = &item
+	}
+	return m, nil
 }

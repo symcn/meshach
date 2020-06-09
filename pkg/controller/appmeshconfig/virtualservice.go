@@ -23,65 +23,69 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+	foundMap, err := r.getVirtualServicesMap(ctx, cr)
+	if err != nil {
+		klog.Errorf("%s/%s get VirtualService error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		return err
+	}
 	// Skip if the service's subset is none
-	if len(svc.Subsets) == 0 {
-		return nil
-	}
-
-	vs := r.buildVirtualService(cr, svc)
-	// Set AppMeshConfig instance as the owner and controller
-	if err := controllerutil.SetControllerReference(cr, vs, r.scheme); err != nil {
-		klog.Errorf("SetControllerReference error: %v", err)
-		return err
-	}
-
-	// Check if this VirtualService already exists
-	found := &networkingv1beta1.VirtualService{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: vs.Name, Namespace: vs.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		klog.Infof("Creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
-		err = r.client.Create(ctx, vs)
-		if err != nil {
-			klog.Errorf("Create VirtualService error: %+v", err)
+	if len(svc.Subsets) != 0 {
+		vs := r.buildVirtualService(cr, svc)
+		// Set AppMeshConfig instance as the owner and controller
+		if err := controllerutil.SetControllerReference(cr, vs, r.scheme); err != nil {
+			klog.Errorf("SetControllerReference error: %v", err)
 			return err
 		}
 
-		// VirtualService created successfully - don't requeue
-		return nil
-	} else if err != nil {
-		klog.Errorf("Get VirtualService error: %+v", err)
-		return err
-	}
-
-	// Update VirtualService
-	if compareVirtualService(vs, found) {
-		klog.Infof("Update VirtualService, Namespace: %s, Name: %s", found.Namespace, found.Name)
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			vs.Spec.DeepCopyInto(&found.Spec)
-			found.Finalizers = vs.Finalizers
-			found.Labels = vs.ObjectMeta.Labels
-
-			updateErr := r.client.Update(ctx, found)
-			if updateErr == nil {
-				klog.V(4).Infof("%s/%s update VirtualService successfully", vs.Namespace, vs.Name)
-				return nil
+		// Check if this VirtualService already exists
+		found, ok := foundMap[vs.Name]
+		if !ok {
+			klog.Infof("Creating a new VirtualService, Namespace: %s, Name: %s",
+				vs.Namespace, vs.Name)
+			err = r.client.Create(ctx, vs)
+			if err != nil {
+				klog.Errorf("Create VirtualService error: %+v", err)
+				return err
 			}
-			return updateErr
-		})
+		} else {
+			// Update VirtualService
+			if compareVirtualService(vs, found) {
+				klog.Infof("Update VirtualService, Namespace: %s, Name: %s",
+					found.Namespace, found.Name)
+				err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+					vs.Spec.DeepCopyInto(&found.Spec)
+					found.Finalizers = vs.Finalizers
+					found.Labels = vs.ObjectMeta.Labels
 
-		if err != nil {
-			klog.Warningf("update VirtualService [%s] spec failed, err: %+v", vs.Name, err)
-			return err
+					updateErr := r.client.Update(ctx, found)
+					if updateErr == nil {
+						klog.V(4).Infof("%s/%s update VirtualService successfully",
+							vs.Namespace, vs.Name)
+						return nil
+					}
+					return updateErr
+				})
+
+				if err != nil {
+					klog.Warningf("update VirtualService [%s] spec failed, err: %+v", vs.Name, err)
+					return err
+				}
+			}
+			delete(foundMap, vs.Name)
 		}
+	}
+	// Delete old VirtualServices
+	for name, vs := range foundMap {
+		klog.V(4).Infof("Delete unused VirtualServices: %s", name)
+		r.client.Delete(ctx, vs)
 	}
 
 	return nil
@@ -165,4 +169,22 @@ func compareVirtualService(new, old *networkingv1beta1.VirtualService) bool {
 		return true
 	}
 	return false
+}
+
+func (r *ReconcileAppMeshConfig) getVirtualServicesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.VirtualService, error) {
+	list := &networkingv1beta1.VirtualServiceList{}
+	labels := &client.MatchingLabels{"app": cr.Spec.AppName}
+	opts := &client.ListOptions{Namespace: cr.Namespace}
+	labels.ApplyToList(opts)
+
+	err := r.client.List(ctx, list, opts)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]*networkingv1beta1.VirtualService)
+	for i := range list.Items {
+		item := list.Items[i]
+		m[item.Name] = &item
+	}
+	return m, nil
 }
