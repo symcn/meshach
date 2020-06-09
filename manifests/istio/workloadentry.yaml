@@ -7,8 +7,8 @@ spec:
   ports:
     dubbo-http: 20881
   labels:
-    app: mosn.io.dubbo.DemoService.workload
-    group: blue
+    service: mosn.io.dubbo.DemoService.workload
+    sym-group: blue
   weight: 10
 
 ---
@@ -21,8 +21,8 @@ spec:
   ports:
     dubbo-http: 20882
   labels:
-    app: mosn.io.dubbo.DemoService.workload
-    group: green
+    service: mosn.io.dubbo.DemoService.workload
+    sym-group: green
   weight: 20
 
 ---
@@ -41,7 +41,7 @@ spec:
   resolution: STATIC
   workloadSelector:
     labels:
-      app: mosn.io.dubbo.DemoService.workload
+      service: mosn.io.dubbo.DemoService.workload
 
 ###############################
 # proxy define
@@ -57,7 +57,7 @@ spec:
   ports:
     proxy: 20881
   labels:
-    app: mosn.io.dubbo.proxy
+    service: mosn.io.dubbo.proxy
 
 ---
 apiVersion: networking.istio.io/v1beta1
@@ -69,7 +69,7 @@ spec:
   ports:
     proxy: 20880
   labels:
-    app: mosn.io.dubbo.proxy
+    service: mosn.io.dubbo.proxy
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -87,4 +87,4 @@ spec:
   resolution: STATIC
   workloadSelector:
     labels:
-      app: mosn.io.dubbo.proxy
+      service: mosn.io.dubbo.proxy

@@ -10,10 +10,10 @@ spec:
   subsets:
   - name: blue
     labels:
-      group: blue
+      sym-group: blue
     trafficPolicy:
       loadBalancer:
         simple: ROUND_ROBIN
   - name: green
     labels:
-      group: green
+      sym-group: green

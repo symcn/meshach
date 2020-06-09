@@ -113,7 +113,7 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 
 func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service) *v1beta1.HTTPRoute {
 	m := make(map[string]*v1beta1.StringMatch)
-	m["zone"] = &v1beta1.StringMatch{
+	m["sym-zone"] = &v1beta1.StringMatch{
 		MatchType: &v1beta1.StringMatch_Exact{
 			Exact: r.opt.Zone,
 		},

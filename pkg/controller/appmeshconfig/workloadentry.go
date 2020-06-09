@@ -114,9 +114,9 @@ func buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *mes
 				ins.Port.Name: ins.Port.Number,
 			},
 			Labels: map[string]string{
-				"service": svc.Name,
-				"group":   ins.Group,
-				"zone":    ins.Zone,
+				"service":   svc.Name,
+				"sym-group": ins.Group,
+				"sym-zone":  ins.Zone,
 			},
 			// Network:        ins.Zone,
 			// Locality:       "",
