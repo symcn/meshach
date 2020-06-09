@@ -166,7 +166,7 @@ func (p *pathCache) onEvent(event *zk.Event) {
 
 //
 func (p *pathCache) onChildDeleted(child string) {
-	fmt.Printf("Received an deletion event by zookeeper: %v\n", child)
+	fmt.Printf("Received a deletion event by zookeeper: %v\n", child)
 
 	vent := pathCacheEvent{
 		eventType: pathCacheEventDeleted,
