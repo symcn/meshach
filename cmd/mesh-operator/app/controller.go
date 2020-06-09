@@ -60,6 +60,7 @@ func NewControllerCmd(ropt *RootOption) *cobra.Command {
 			// Set default manager options
 			rp := time.Minute * time.Duration(opt.SyncPeriod)
 			options := manager.Options{
+				Namespace:               ropt.Namespace,
 				Scheme:                  k8sclient.GetScheme(),
 				SyncPeriod:              &rp,
 				MetricsBindAddress:      "0",
