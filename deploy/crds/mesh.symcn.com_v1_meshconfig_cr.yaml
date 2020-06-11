@@ -1,0 +1,31 @@
+apiVersion: mesh.symcn.com/v1
+kind: MeshConfig
+metadata:
+  name: sym-meshconfig
+spec:
+  matchHeaderLabelKeys:
+    sym-zone: exact
+  matchSourceLabelKeys:
+    - sym-group
+  workloadEntryLabelKeys:
+    - sym-group
+  meshLabelsRemap:
+    group: sym-group
+    zone: sym-zone
+  globalSubsets:
+    - name: blue
+      labels:
+        group: blue
+    - name: green
+      labels:
+        group: green
+    - name: gray
+      labels:
+        group: gray
+  globalPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    maxConnections: 100
+    timeout: 5s
+    maxRetries: 3
+

@@ -68,42 +68,16 @@ spec:
             name: dubbo-http
             protocol: HTTP
             number: 20882
-        - host: 10.11.224.14
-          zone: rz01
-          group: green
-          labels:
-            register: "true"
-            dynamic: "true"
-            weight: "50"
-            release: "2.7.2-SNAPSHOT"
-            sdkVersion: "2.7.2"
-            side: "provider"
-            timeout: "1000"
-            retry: "3"
-          port:
-            name: dubbo-http
-            protocol: HTTP
-            number: 20882
-        - host: 10.11.224.15
-          zone: rz02
-          group: green
-          labels:
-            register: "true"
-            dynamic: "true"
-            weight: "50"
-            release: "2.7.2-SNAPSHOT"
-            sdkVersion: "2.7.2"
-            side: "provider"
-            timeout: "1000"
-            retry: "3"
-          port:
-            name: dubbo-http
-            protocol: HTTP
-            number: 20882
         - host: 10.11.224.16
           zone: gz01
           group: gray
           labels:
+            register: "true"
+            dynamic: "true"
+            weight: "50"
+            release: "2.7.2-SNAPSHOT"
+            sdkVersion: "2.7.2"
+            side: "provider"
           port:
             name: dubbo-http
             protocol: HTTP

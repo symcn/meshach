@@ -71,6 +71,7 @@ rules:
   resources:
   - '*'
   - istioconfigs
+  - meshconfigs
   verbs:
   - create
   - delete
