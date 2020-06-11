@@ -4,7 +4,7 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	"github.com/mesh-operator/pkg/utils"
+	"github.com/mesh-operator/pkg/option"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,12 +29,12 @@ var log = logf.Log.WithName("controller_istioconfig")
 
 // Add creates a new IstioConfig Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(mgr manager.Manager, opt *utils.ControllerOption) error {
+func Add(mgr manager.Manager, opt *option.ControllerOption) error {
 	return add(mgr, newReconciler(mgr, opt))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, opt *utils.ControllerOption) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager, opt *option.ControllerOption) reconcile.Reconciler {
 	return &ReconcileIstioConfig{
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
@@ -78,7 +78,7 @@ type ReconcileIstioConfig struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
-	opt    *utils.ControllerOption
+	opt    *option.ControllerOption
 }
 
 // Reconcile reads that state of the cluster for a IstioConfig object and makes changes based on the state read

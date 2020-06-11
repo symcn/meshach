@@ -21,7 +21,7 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	"github.com/mesh-operator/pkg/utils"
+	"github.com/mesh-operator/pkg/option"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -53,12 +53,12 @@ var log = logf.Log.WithName(controllerName)
 
 // Add creates a new AppMeshConfig Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(mgr manager.Manager, opt *utils.ControllerOption) error {
+func Add(mgr manager.Manager, opt *option.ControllerOption) error {
 	return add(mgr, newReconciler(mgr, opt))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, opt *utils.ControllerOption) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager, opt *option.ControllerOption) reconcile.Reconciler {
 	return &ReconcileAppMeshConfig{
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
@@ -129,7 +129,7 @@ type ReconcileAppMeshConfig struct {
 	// that reads foundects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
-	opt    *utils.ControllerOption
+	opt    *option.ControllerOption
 }
 
 // Reconcile reads that state of the cluster for a AppMeshConfig foundect and makes changes based on the state read

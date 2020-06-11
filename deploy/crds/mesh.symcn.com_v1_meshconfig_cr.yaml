@@ -2,6 +2,7 @@ apiVersion: mesh.symcn.com/v1
 kind: MeshConfig
 metadata:
   name: sym-meshconfig
+  namespace: sym-admin
 spec:
   matchHeaderLabelKeys:
     sym-zone: exact

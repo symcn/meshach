@@ -1,4 +1,4 @@
-package utils
+package option
 
 // ControllerOption ...
 type ControllerOption struct {

@@ -25,6 +25,7 @@ import (
 	"github.com/mesh-operator/pkg/controller"
 	"github.com/mesh-operator/pkg/healthcheck"
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
+	"github.com/mesh-operator/pkg/option"
 	"github.com/mesh-operator/pkg/router"
 	"github.com/mesh-operator/pkg/utils"
 	"github.com/mesh-operator/pkg/version"
@@ -41,8 +42,8 @@ var (
 )
 
 // NewControllerCmd ...
-func NewControllerCmd(ropt *RootOption) *cobra.Command {
-	opt := utils.DefaultControllerOption()
+func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
+	opt := option.DefaultControllerOption()
 	cmd := &cobra.Command{
 		Use:     "controller",
 		Aliases: []string{"ctl"},

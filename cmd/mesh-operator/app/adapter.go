@@ -21,6 +21,7 @@ import (
 
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
+	"github.com/mesh-operator/pkg/option"
 	zk "github.com/mesh-operator/pkg/zookeeper"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
@@ -29,7 +30,7 @@ import (
 )
 
 // NewAdapterCmd ...
-func NewAdapterCmd(ropt *RootOption) *cobra.Command {
+func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 	opt := zk.DefaultOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
