@@ -58,7 +58,15 @@ type Policy struct {
 	MaxConnections int32             `json:"maxConnections,omitempty"`
 	Timeout        string            `json:"timeout,omitempty"`
 	MaxRetries     int32             `json:"maxRetries,omitempty"`
-	Route          []*Destination    `json:"route,omitempty"`
+	SourceLabels   []*SourceLabels   `json:"sourceLabels,omitempty"`
+}
+
+// SourceLabels ...
+type SourceLabels struct {
+	Name    string            `json:"name,omitempty"`
+	Labels  map[string]string `json:"labels,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
+	Route   []*Destination    `json:"route,omitempty"`
 }
 
 // Monitor ...

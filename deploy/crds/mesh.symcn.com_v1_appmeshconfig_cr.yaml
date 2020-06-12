@@ -20,26 +20,45 @@ spec:
         maxConnections: 10
         timeout: 30ms
         maxRetries: 3
-        route:
-          - subset: blue
-            weight: 20
-          - subset: green
-            weight: 80
+        sourceLabels:
+          - name: blue
+            labels:
+              sym-group: blue
+            headers:
+              sym-zone: gz01
+            route:
+              - subset: blue
+                weight: 100
+              - subset: green
+                weight: 0
+              - subset: gray
+                weight: 0
+          - name: green
+            headers:
+              sym-zone: gz01
+              sym-lidc: gz01a
+            labels:
+              sym-group: green
+            route:
+              - subset: blue
+                weight: 0
+              - subset: green
+                weight: 100
       subsets:
         - name: blue
           labels:
-            group: blue
+            sym-group: blue
           policy:
             timeout: 10ms
             maxRetries: 2
         - name: green
           labels:
-            group: green
+            sym-group: green
       instances:
         - host: 10.11.224.11
-          zone: gz01
-          group: blue
           labels:
+            zone: gz01
+            flag: blue
             register: "true"
             dynamic: "true"
             weight: "50"
@@ -53,9 +72,9 @@ spec:
             protocol: HTTP
             number: 20882
         - host: 10.11.224.13
-          zone: gz01
-          group: blue
           labels:
+            zone: gz01
+            flag: green
             register: "true"
             dynamic: "true"
             weight: "50"
@@ -69,9 +88,9 @@ spec:
             protocol: HTTP
             number: 20882
         - host: 10.11.224.16
-          zone: gz01
-          group: gray
           labels:
+            zone: gz01
+            flag: gray
             register: "true"
             dynamic: "true"
             weight: "50"

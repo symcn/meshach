@@ -41,7 +41,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 	}
 
 	for _, ins := range svc.Instances {
-		we := buildWorkloadEntry(cr.Spec.AppName, cr.Namespace, svc, ins)
+		we := r.buildWorkloadEntry(cr.Spec.AppName, cr.Namespace, svc, ins)
 
 		// Set AppMeshConfig instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, we, r.scheme); err != nil {
@@ -99,25 +99,25 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 	return nil
 }
 
-func buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
+func (r *ReconcileAppMeshConfig) buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
 	name := fmt.Sprintf("%s.%s.%d", svc.Name, ins.Host, ins.Port.Number)
+	labels := make(map[string]string)
+	labels[r.opt.WorkloadSelectLabel] = svc.Name
+	for _, k := range r.meshConfig.Spec.WorkloadEntryLabelKeys {
+		labels[k] = ins.Labels[r.meshConfig.Spec.MeshLabelsRemap[k]]
+	}
+
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(name),
 			Namespace: namespace,
-			Labels:    map[string]string{appLabelKey: appName},
+			Labels:    map[string]string{r.opt.AppSelectLabel: appName},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
-			Ports: map[string]uint32{
-				ins.Port.Name: ins.Port.Number,
-			},
-			Labels: map[string]string{
-				workloadSelectLabelKey: svc.Name,
-				workloadGroupLabelKey:  ins.Group,
-				workloadZoneLabelKey:   ins.Zone,
-			},
-			Weight: ins.Weight,
+			Ports:   map[string]uint32{ins.Port.Name: ins.Port.Number},
+			Labels:  labels,
+			Weight:  ins.Weight,
 		},
 	}
 }
@@ -139,7 +139,7 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 
 func (r *ReconcileAppMeshConfig) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.WorkloadEntry, error) {
 	list := &networkingv1beta1.WorkloadEntryList{}
-	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.AppSelectLabel: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

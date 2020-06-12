@@ -59,15 +59,31 @@ spec:
                   maxRetries:
                     format: int32
                     type: integer
-                  route:
+                  sourceLabels:
                     items:
-                      description: Destination ...
+                      description: SourceLabels ...
                       properties:
-                        subset:
+                        headers:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        labels:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        name:
                           type: string
-                        weight:
-                          format: int32
-                          type: integer
+                        route:
+                          items:
+                            description: Destination ...
+                            properties:
+                              subset:
+                                type: string
+                              weight:
+                                format: int32
+                                type: integer
+                            type: object
+                          type: array
                       type: object
                     type: array
                   timeout:
@@ -132,15 +148,31 @@ spec:
                         maxRetries:
                           format: int32
                           type: integer
-                        route:
+                        sourceLabels:
                           items:
-                            description: Destination ...
+                            description: SourceLabels ...
                             properties:
-                              subset:
+                              headers:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              name:
                                 type: string
-                              weight:
-                                format: int32
-                                type: integer
+                              route:
+                                items:
+                                  description: Destination ...
+                                  properties:
+                                    subset:
+                                      type: string
+                                    weight:
+                                      format: int32
+                                      type: integer
+                                  type: object
+                                type: array
                             type: object
                           type: array
                         timeout:
@@ -186,15 +218,31 @@ spec:
                               maxRetries:
                                 format: int32
                                 type: integer
-                              route:
+                              sourceLabels:
                                 items:
-                                  description: Destination ...
+                                  description: SourceLabels ...
                                   properties:
-                                    subset:
+                                    headers:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    labels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    name:
                                       type: string
-                                    weight:
-                                      format: int32
-                                      type: integer
+                                    route:
+                                      items:
+                                        description: Destination ...
+                                        properties:
+                                          subset:
+                                            type: string
+                                          weight:
+                                            format: int32
+                                            type: integer
+                                        type: object
+                                      type: array
                                   type: object
                                 type: array
                               timeout:

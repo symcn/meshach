@@ -5,10 +5,40 @@ import (
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+func (r *ReconcileAppMeshConfig) updateStatus(ctx context.Context, req reconcile.Request, cr *meshv1.AppMeshConfig) error {
+	status := r.buildStatus(cr)
+	if !equality.Semantic.DeepEqual(status, cr.Status) {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			status.DeepCopyInto(&cr.Status)
+			t := metav1.Now()
+			cr.Status.LastUpdateTime = &t
+
+			updateErr := r.client.Status().Update(ctx, cr)
+			if updateErr == nil {
+				klog.V(4).Infof("%s/%s update status[%s] successfully",
+					req.Namespace, req.Name, cr.Status.Phase)
+				return nil
+			}
+
+			getErr := r.client.Get(ctx, req.NamespacedName, cr)
+			if getErr != nil {
+				return getErr
+			}
+			return updateErr
+		})
+		return err
+	}
+	return nil
+}
 
 func (r *ReconcileAppMeshConfig) buildStatus(cr *meshv1.AppMeshConfig) *meshv1.AppMeshConfigStatus {
 	ctx := context.TODO()
@@ -112,7 +142,7 @@ func (r *ReconcileAppMeshConfig) getDestinationRuleStatus(ctx context.Context, c
 
 func (r *ReconcileAppMeshConfig) count(ctx context.Context, cr *meshv1.AppMeshConfig, list runtime.Object) *int {
 	var c int
-	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.AppSelectLabel: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

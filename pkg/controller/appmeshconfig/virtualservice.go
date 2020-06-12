@@ -96,32 +96,39 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 }
 
 func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.VirtualService {
-	http := r.buildHTTPRoute(svc)
+	httpRoute := []*v1beta1.HTTPRoute{}
+	for _, sourceLabels := range svc.Policy.SourceLabels {
+		http := r.buildHTTPRoute(svc, sourceLabels)
+		httpRoute = append(httpRoute, http)
+	}
 	proxy := r.buildProxyRoute()
+	httpRoute = append(httpRoute, proxy)
 	return &networkingv1beta1.VirtualService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels:    map[string]string{appLabelKey: cr.Spec.AppName},
+			Labels:    map[string]string{r.opt.AppSelectLabel: cr.Spec.AppName},
 		},
 		Spec: v1beta1.VirtualService{
 			Hosts: []string{svc.Name},
-			Http:  []*v1beta1.HTTPRoute{http, proxy},
+			Http:  httpRoute,
 		},
 	}
 }
 
-func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service) *v1beta1.HTTPRoute {
+func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service, sourceLabels *meshv1.SourceLabels) *v1beta1.HTTPRoute {
 	m := make(map[string]*v1beta1.StringMatch)
-	m[matchLabelKey] = &v1beta1.StringMatch{
-		MatchType: &v1beta1.StringMatch_Exact{
-			Exact: r.opt.Zone,
-		},
+	for key, matchType := range r.meshConfig.Spec.MatchHeaderLabelKeys {
+		m[key] = getMatchType(matchType, sourceLabels.Headers[key])
 	}
-	match := &v1beta1.HTTPMatchRequest{Headers: m}
+	s := make(map[string]string)
+	for _, key := range r.meshConfig.Spec.MatchSourceLabelKeys {
+		s[key] = sourceLabels.Labels[key]
+	}
+	match := &v1beta1.HTTPMatchRequest{Headers: m, SourceLabels: s}
 
 	var routes []*v1beta1.HTTPRouteDestination
-	for _, destination := range svc.Policy.Route {
+	for _, destination := range sourceLabels.Route {
 		route := &v1beta1.HTTPRouteDestination{
 			Destination: &v1beta1.Destination{
 				Host:   svc.Name,
@@ -133,7 +140,7 @@ func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service) *v1beta1.HT
 	}
 
 	return &v1beta1.HTTPRoute{
-		Name:    httpRouteName,
+		Name:    httpRouteName + "-" + sourceLabels.Name,
 		Match:   []*v1beta1.HTTPMatchRequest{match},
 		Route:   routes,
 		Timeout: utils.StringToDuration(svc.Policy.Timeout),
@@ -177,7 +184,7 @@ func compareVirtualService(new, old *networkingv1beta1.VirtualService) bool {
 
 func (r *ReconcileAppMeshConfig) getVirtualServicesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.VirtualService, error) {
 	list := &networkingv1beta1.VirtualServiceList{}
-	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.AppSelectLabel: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 
@@ -191,4 +198,17 @@ func (r *ReconcileAppMeshConfig) getVirtualServicesMap(ctx context.Context, cr *
 		m[item.Name] = &item
 	}
 	return m, nil
+}
+
+func getMatchType(matchType meshv1.StringMatchType, value string) *v1beta1.StringMatch {
+	s := &v1beta1.StringMatch{}
+	switch matchType {
+	case meshv1.Prefix:
+		s.MatchType = &v1beta1.StringMatch_Prefix{Prefix: value}
+	case meshv1.Regex:
+		s.MatchType = &v1beta1.StringMatch_Regex{Regex: value}
+	default:
+		s.MatchType = &v1beta1.StringMatch_Exact{Exact: value}
+	}
+	return s
 }

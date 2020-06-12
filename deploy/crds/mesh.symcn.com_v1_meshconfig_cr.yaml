@@ -9,20 +9,21 @@ spec:
   matchSourceLabelKeys:
     - sym-group
   workloadEntryLabelKeys:
+    - sym-zone
     - sym-group
   meshLabelsRemap:
-    group: sym-group
-    zone: sym-zone
+    sym-group: flag
+    sym-zone: zone
   globalSubsets:
     - name: blue
       labels:
-        group: blue
+        sym-group: blue
     - name: green
       labels:
-        group: green
+        sym-group: green
     - name: gray
       labels:
-        group: gray
+        sym-group: gray
   globalPolicy:
     loadBalancer:
       simple: ROUND_ROBIN

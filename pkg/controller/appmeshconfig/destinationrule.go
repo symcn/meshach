@@ -51,7 +51,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 
 	// Skip if the service's subset is none
 	if len(svc.Subsets) != 0 {
-		dr := buildDestinationRule(cr, svc)
+		dr := r.buildDestinationRule(cr, svc)
 		// Set AppMeshConfig instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, dr, r.scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
@@ -107,7 +107,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 	return nil
 }
 
-func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.DestinationRule {
+func (r *ReconcileAppMeshConfig) buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.DestinationRule {
 	var subsets []*v1beta1.Subset
 	for _, sub := range svc.Subsets {
 		subset := &v1beta1.Subset{Name: sub.Name, Labels: sub.Labels}
@@ -126,7 +126,7 @@ func buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networ
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels:    map[string]string{appLabelKey: cr.Spec.AppName},
+			Labels:    map[string]string{r.opt.AppSelectLabel: cr.Spec.AppName},
 		},
 		Spec: v1beta1.DestinationRule{
 			Host: svc.Name,
@@ -167,7 +167,7 @@ func getlb(s string) v1beta1.LoadBalancerSettings_SimpleLB {
 
 func (r *ReconcileAppMeshConfig) getDestinationRuleMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.DestinationRule, error) {
 	list := &networkingv1beta1.DestinationRuleList{}
-	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.AppSelectLabel: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

@@ -38,7 +38,7 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 		return err
 	}
 
-	se := buildServiceEntry(cr, svc)
+	se := r.buildServiceEntry(cr, svc)
 	// Set AppMeshConfig instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, se, r.scheme); err != nil {
 		klog.Errorf("SetControllerReference error: %v", err)
@@ -92,7 +92,7 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 	return nil
 }
 
-func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.ServiceEntry {
+func (r *ReconcileAppMeshConfig) buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.ServiceEntry {
 	var ports []*v1beta1.Port
 	for _, port := range svc.Ports {
 		ports = append(ports, &v1beta1.Port{
@@ -106,7 +106,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: cr.Namespace,
-			Labels:    map[string]string{appLabelKey: cr.Spec.AppName},
+			Labels:    map[string]string{r.opt.AppSelectLabel: cr.Spec.AppName},
 		},
 		Spec: v1beta1.ServiceEntry{
 			Hosts:      []string{svc.Name},
@@ -115,7 +115,7 @@ func buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkin
 			Resolution: v1beta1.ServiceEntry_STATIC,
 			WorkloadSelector: &v1beta1.WorkloadSelector{
 				Labels: map[string]string{
-					workloadSelectLabelKey: svc.Name,
+					r.opt.WorkloadSelectLabel: svc.Name,
 				},
 			},
 		},
@@ -139,7 +139,7 @@ func compareServiceEntry(new, old *networkingv1beta1.ServiceEntry) bool {
 
 func (r *ReconcileAppMeshConfig) getServiceEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.ServiceEntry, error) {
 	list := &networkingv1beta1.ServiceEntryList{}
-	labels := &client.MatchingLabels{appLabelKey: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.AppSelectLabel: cr.Spec.AppName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

@@ -21,6 +21,14 @@ type ControllerOption struct {
 	ProxyAttempts      int32
 	ProxyPerTryTimeout int64
 	ProxyRetryOn       string
+
+	// MeshConfig Name
+	MeshConfigName      string
+	MeshConfigNamespace string
+
+	// Custome some labels
+	WorkloadSelectLabel string
+	AppSelectLabel      string
 }
 
 // DefaultControllerOption ...
@@ -41,5 +49,9 @@ func DefaultControllerOption() *ControllerOption {
 		ProxyPerTryTimeout:      2,
 		ProxyRetryOn:            "gateway-error,connect-failure,refused-stream",
 		Zone:                    "gz01",
+		MeshConfigName:          "sym-meshconfig",
+		MeshConfigNamespace:     "sym-admin",
+		WorkloadSelectLabel:     "service",
+		AppSelectLabel:          "app",
 	}
 }

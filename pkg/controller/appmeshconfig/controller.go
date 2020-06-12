@@ -23,11 +23,9 @@ import (
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	"github.com/mesh-operator/pkg/option"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/util/retry"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -39,14 +37,9 @@ import (
 )
 
 const (
-	controllerName         = "appMeshConfig-controller"
-	appLabelKey            = "app"
-	matchLabelKey          = "sym-zone"
-	workloadSelectLabelKey = "service"
-	workloadGroupLabelKey  = "sym-group"
-	workloadZoneLabelKey   = "sym-zone"
-	httpRouteName          = "dubbo-http-route"
-	proxyRouteName         = "dubbo-proxy-route"
+	controllerName = "appMeshConfig-controller"
+	httpRouteName  = "dubbo-http-route"
+	proxyRouteName = "dubbo-proxy-route"
 )
 
 var log = logf.Log.WithName(controllerName)
@@ -127,9 +120,10 @@ var _ reconcile.Reconciler = &ReconcileAppMeshConfig{}
 type ReconcileAppMeshConfig struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads foundects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
-	opt    *option.ControllerOption
+	client     client.Client
+	scheme     *runtime.Scheme
+	opt        *option.ControllerOption
+	meshConfig *meshv1.MeshConfig
 }
 
 // Reconcile reads that state of the cluster for a AppMeshConfig foundect and makes changes based on the state read
@@ -140,9 +134,18 @@ type ReconcileAppMeshConfig struct {
 func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	klog.Infof("Reconciling AppMeshConfig: %s/%s", request.Namespace, request.Name)
 	ctx := context.TODO()
+
+	// Fetch the MeshConfig
+	err := r.getMeshConfig(ctx)
+	if err != nil {
+		klog.Errorf("Get cluster MeshConfig[%s/%s] error: %+v",
+			r.opt.MeshConfigNamespace, r.opt.MeshConfigName, err)
+		return reconcile.Result{}, err
+	}
+
 	// Fetch the AppMeshConfig instance
 	instance := &meshv1.AppMeshConfig{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request foundect not found, could have been deleted after reconcile request.
@@ -170,30 +173,36 @@ func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile
 		}
 	}
 
-	// Modify Status
-	status := r.buildStatus(instance)
-	if !equality.Semantic.DeepEqual(status, instance.Status) {
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			status.DeepCopyInto(&instance.Status)
-			t := metav1.Now()
-			instance.Status.LastUpdateTime = &t
-
-			updateErr := r.client.Status().Update(ctx, instance)
-			if updateErr == nil {
-				klog.V(4).Infof("%s/%s update status[%s] successfully",
-					request.Namespace, request.Name, instance.Status.Phase)
-				return nil
-			}
-
-			getErr := r.client.Get(ctx, request.NamespacedName, instance)
-			if getErr != nil {
-				klog.Errorf("%s/%s update get AppMeshConfig failed, err: %+v", request.Namespace, request.Name)
-				return getErr
-			}
-			return updateErr
-		})
+	// Update Status
+	klog.Infof("Update AppMeshConfig[%s/%s] status...", request.Namespace, request.Name)
+	err = r.updateStatus(ctx, request, instance)
+	if err != nil {
+		klog.Errorf("%s/%s update AppMeshConfig failed, err: %+v", request.Namespace, request.Name)
+		return reconcile.Result{}, err
 	}
 
 	klog.Infof("End Reconciliation, AppMeshConfig: %s/%s.", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileAppMeshConfig) getMeshConfig(ctx context.Context) error {
+	if r.meshConfig != nil {
+		return nil
+	}
+
+	meshConfig := &meshv1.MeshConfig{}
+	err := r.client.Get(
+		ctx,
+		types.NamespacedName{
+			Namespace: r.opt.MeshConfigNamespace,
+			Name:      r.opt.MeshConfigName,
+		},
+		meshConfig,
+	)
+	if err != nil {
+		return err
+	}
+	r.meshConfig = meshConfig
+	klog.V(4).Infof("Get cluster MeshConfig: %+v", meshConfig)
+	return nil
 }
