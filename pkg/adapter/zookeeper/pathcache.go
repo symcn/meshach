@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	dubboRootPath = "/dubbo"
-	providersPath = "providers"
+	DubboRootPath = "/dubbo"
+	ProvidersPath = "providers"
 )
 
 type pathCacheEventType int

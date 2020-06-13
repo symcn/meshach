@@ -2,6 +2,7 @@ package zookeeper
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter"
 	"github.com/samuel/go-zookeeper/zk"
 	"net/url"
 	"path"
@@ -12,59 +13,57 @@ import (
 type ZkClient struct {
 	conn     *zk.Conn
 	root     string
-	services map[string]*Service
-	out      chan ServiceEvent
-
-	scache  *pathCache
-	pcaches map[string]*pathCache
+	services map[string]*adapter.Service
+	out      chan adapter.ServiceEvent
+	scache   *pathCache
+	pcaches  map[string]*pathCache
 }
 
 // NewClient Create a new client for zookeeper
-func NewClient(root string, conn *zk.Conn) *ZkClient {
+func NewClient(conn *zk.Conn) *ZkClient {
 	return &ZkClient{
 		conn:     conn,
-		root:     root,
-		services: make(map[string]*Service),
-		out:      make(chan ServiceEvent),
+		services: make(map[string]*adapter.Service),
+		out:      make(chan adapter.ServiceEvent),
 		scache:   nil,
 		pcaches:  make(map[string]*pathCache),
 	}
 }
 
 // Events channel is a stream of Service and instance updates
-func (c *ZkClient) Events() <-chan ServiceEvent {
+func (c *ZkClient) Events() <-chan adapter.ServiceEvent {
 	return c.out
 }
 
-func (c *ZkClient) Service(hostname string) *Service {
+func (c *ZkClient) Service(hostname string) *adapter.Service {
 	return c.services[hostname]
 }
 
-func (c *ZkClient) Services() []*Service {
-	services := make([]*Service, 0, len(c.services))
+func (c *ZkClient) Services() []*adapter.Service {
+	services := make([]*adapter.Service, 0, len(c.services))
 	for _, service := range c.services {
 		services = append(services, service)
 	}
 	return services
 }
 
-func (c *ZkClient) Instances(hostname string) []*Instance {
-	instances := make([]*Instance, 0)
+func (c *ZkClient) Instances(hostname string) []*adapter.Instance {
+	instances := make([]*adapter.Instance, 0)
 	service, ok := c.services[hostname]
 	if !ok {
 		return instances
 	}
 
-	for _, instance := range service.instances {
+	for _, instance := range service.Instances {
 		instances = append(instances, instance)
 	}
 	return instances
 }
 
-func (c *ZkClient) InstancesByHost(hosts []string) []*Instance {
-	instances := make([]*Instance, 0)
+func (c *ZkClient) InstancesByHost(hosts []string) []*adapter.Instance {
+	instances := make([]*adapter.Instance, 0)
 	for _, service := range c.services {
-		for _, instance := range service.instances {
+		for _, instance := range service.Instances {
 			for _, host := range hosts {
 				if instance.Host == host {
 					instances = append(instances, instance)
@@ -85,7 +84,7 @@ func (c *ZkClient) Stop() {
 
 func (c *ZkClient) Start() error {
 	// create a cache for all services
-	scache, err := newPathCache(c.conn, c.root)
+	scache, err := newPathCache(c.conn, DubboRootPath)
 	if err != nil {
 		return err
 	}
@@ -97,7 +96,8 @@ func (c *ZkClient) Start() error {
 		for {
 			select {
 			case <-tick:
-				fmt.Printf("Observing root pach cache :%v\n%v\n%v\n", scache.path, scache.cached, c.services)
+				fmt.Printf("Observing cache of root path:%v\n  caches: %v\n  services: %v\n",
+					scache.path, scache.cached, c.services)
 				//spew.Dump(scache)
 			}
 		}
@@ -113,7 +113,7 @@ func (c *ZkClient) eventLoop() {
 		switch event.eventType {
 		case pathCacheEventAdded:
 			hostname := path.Base(event.path)
-			ppath := path.Join(event.path, providersPath)
+			ppath := path.Join(event.path, ProvidersPath)
 			pcache, err := newPathCache(c.conn, ppath)
 			if err != nil {
 				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
@@ -144,7 +144,7 @@ func (c *ZkClient) eventLoop() {
 	}
 }
 
-func (c *ZkClient) makeInstance(hostname string, rawUrl string) (*Instance, error) {
+func (c *ZkClient) makeInstance(hostname string, rawUrl string) (*adapter.Instance, error) {
 	cleanUrl, err := url.QueryUnescape(rawUrl)
 	if err != nil {
 		return nil, err
@@ -154,9 +154,9 @@ func (c *ZkClient) makeInstance(hostname string, rawUrl string) (*Instance, erro
 		return nil, err
 	}
 
-	instance := &Instance{
+	instance := &adapter.Instance{
 		Host: ep.Host,
-		Port: &Port{
+		Port: &adapter.Port{
 			Protocol: ep.Scheme,
 			Port:     ep.Port(),
 		},
@@ -178,9 +178,9 @@ func (c *ZkClient) deleteInstance(hostname string, rawUrl string) {
 	}
 	h := makeHostname(hostname, i)
 	if s, ok := c.services[h]; ok {
-		delete(s.instances, rawUrl)
-		go c.notify(ServiceEvent{
-			EventType: ServiceInstanceDeleted,
+		delete(s.Instances, rawUrl)
+		go c.notify(adapter.ServiceEvent{
+			EventType: adapter.ServiceInstanceDeleted,
 			Instance:  i,
 		})
 		// TODO should we unregister the service when all the instances are offline?
@@ -198,26 +198,26 @@ func (c *ZkClient) addInstance(hostname string, rawUrl string) {
 
 	s := c.addService(hostname, i)
 	i.Service = s
-	s.instances[rawUrl] = i
-	go c.notify(ServiceEvent{
-		EventType: ServiceInstanceAdded,
+	s.Instances[rawUrl] = i
+	go c.notify(adapter.ServiceEvent{
+		EventType: adapter.ServiceInstanceAdded,
 		Instance:  i,
 	})
 }
 
-func (c *ZkClient) addService(hostname string, instance *Instance) *Service {
+func (c *ZkClient) addService(hostname string, instance *adapter.Instance) *adapter.Service {
 	h := makeHostname(hostname, instance)
 	s, ok := c.services[h]
 	if !ok {
-		s = &Service{
-			name:      h,
-			ports:     make([]*Port, 0),
-			instances: make(map[string]*Instance),
+		s = &adapter.Service{
+			Name:      h,
+			Ports:     make([]*adapter.Port, 0),
+			Instances: make(map[string]*adapter.Instance),
 		}
 		c.services[h] = s
 		s.AddPort(instance.Port)
-		go c.notify(ServiceEvent{
-			EventType: ServiceAdded,
+		go c.notify(adapter.ServiceEvent{
+			EventType: adapter.ServiceAdded,
 			Service:   s,
 		})
 	}
@@ -234,19 +234,19 @@ func (c *ZkClient) deleteService(hostname string) {
 	for h, s := range c.services {
 		if strings.HasSuffix(h, hostname) {
 			delete(c.services, h)
-			go c.notify(ServiceEvent{
-				EventType: ServiceDeleted,
+			go c.notify(adapter.ServiceEvent{
+				EventType: adapter.ServiceDeleted,
 				Service:   s,
 			})
 		}
 	}
 }
 
-func (c *ZkClient) notify(event ServiceEvent) {
+func (c *ZkClient) notify(event adapter.ServiceEvent) {
 	c.out <- event
 }
 
-func makeHostname(hostname string, instance *Instance) string {
+func makeHostname(hostname string, instance *adapter.Instance) string {
 	return hostname
 	// We don't need version for the moment.
 	// + ":" + instance.Labels["version"]

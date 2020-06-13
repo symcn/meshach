@@ -1,17 +1,15 @@
-package zookeeper
+package adapter
 
 import (
 	"context"
 	"fmt"
-	"net"
-	"reflect"
-	"strconv"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net"
+	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 var defaultNamespace = "default"
@@ -29,7 +27,7 @@ func (ceh *CRDEventHandler) AddService(se ServiceEvent) {
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
 	appCode := resolveAppCode(&se)
 	if appCode == "" {
-		fmt.Printf("Can not find an application name with this adding event: %v\n", se.Service.name)
+		fmt.Printf("Can not find an application name with this adding event: %v\n", se.Service.Name)
 		return
 	}
 
@@ -55,14 +53,14 @@ func (ceh *CRDEventHandler) AddService(se ServiceEvent) {
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
 func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
-	fmt.Printf("CRD event handler: Deleting a service: %s\n", se.Service.name)
+	fmt.Printf("CRD event handler: Deleting a service: %s\n", se.Service.Name)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
 	appCode := resolveAppCode(&se)
 	// There is a chance to delete a service with an empty instances manually, but it is not be sure that which
 	// amc should be modified.
 	if appCode == "" {
-		fmt.Printf("Can not find an application name with this deleting event: %v\n", se.Service.name)
+		fmt.Printf("Can not find an application name with this deleting event: %v\n", se.Service.Name)
 		return
 	}
 
@@ -80,7 +78,7 @@ func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
 	} else {
 		if amc.Spec.Services != nil && len(amc.Spec.Services) > 0 {
 			for i, s := range amc.Spec.Services {
-				if s.Name == se.Service.name {
+				if s.Name == se.Service.Name {
 					result := DeleteInSlice(amc.Spec.Services, i)
 					amc.Spec.Services = result.([]*v1.Service)
 					break
@@ -183,11 +181,11 @@ func (ceh *CRDEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig,
 func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 	// Ports
 	var ports []*v1.Port
-	for _, p := range se.Service.ports {
+	for _, p := range se.Service.Ports {
 		ports = append(ports, convertPort(p))
 	}
 	s := &v1.Service{
-		Name:  se.Service.name,
+		Name:  se.Service.Name,
 		Ports: ports,
 		//Instances: e.Service.instances,
 		//Policy:  nil,
@@ -224,11 +222,11 @@ func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 	var s *v1.Service
 	// Ports
 	var ports []*v1.Port
-	for _, p := range ie.Instance.Service.ports {
+	for _, p := range ie.Instance.Service.Ports {
 		ports = append(ports, convertPort(p))
 	}
 	s = &v1.Service{
-		Name:  ie.Instance.Service.name,
+		Name:  ie.Instance.Service.Name,
 		Ports: ports,
 	}
 
@@ -381,12 +379,12 @@ func findValidInstance(e *ServiceEvent) *Instance {
 		return e.Instance
 	}
 
-	if e.Service == nil || e.Service.instances == nil || len(e.Service.instances) == 0 {
+	if e.Service == nil || e.Service.Instances == nil || len(e.Service.Instances) == 0 {
 		fmt.Printf("The instances list of this service is nil or empty when start to find valid instance from it.\n")
 		return nil
 	}
 
-	for _, value := range e.Service.instances {
+	for _, value := range e.Service.Instances {
 		if value != nil && value.Labels != nil && value.Labels["application"] != "" {
 			return value
 		}

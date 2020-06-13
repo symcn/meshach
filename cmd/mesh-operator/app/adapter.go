@@ -19,10 +19,10 @@ package app
 import (
 	"time"
 
+	zk "github.com/mesh-operator/pkg/adapter/zookeeper"
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/mesh-operator/pkg/option"
-	zk "github.com/mesh-operator/pkg/zookeeper"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
 	"k8s.io/sample-controller/pkg/signals"

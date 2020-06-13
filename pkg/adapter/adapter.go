@@ -1,26 +1,24 @@
-package zookeeper
+package adapter
 
 import (
 	"fmt"
-	"time"
-
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
+	"time"
 )
 
 // Adapter ...
 type Adapter struct {
-	zkClient      *ZkClient
-	eventHandlers []EventHandler
-	opt           *Option
-	K8sMgr        *k8smanager.ClusterManager
+	registryClient RegistryClient
+	eventHandlers  []EventHandler
+	opt            *Option
+	K8sMgr         *k8smanager.ClusterManager
 }
 
 // Option ...
 type Option struct {
 	Address          []string
-	Root             string
 	Timeout          int64
 	ClusterOwner     string
 	ClusterNamespace string
@@ -31,7 +29,6 @@ type Option struct {
 func DefaultOption() *Option {
 	return &Option{
 		Timeout:          15,
-		Root:             dubboRootPath,
 		ClusterOwner:     "sym-admin",
 		ClusterNamespace: "sym-admin",
 	}
@@ -57,42 +54,37 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	}
 	//k8sMgr.GetAll()
 
-	// init adapter
-	conn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	// initializing adapter
+	_, _, err = zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
 		return nil, err
 	}
-	rootPath := dubboRootPath
-	if opt.Root != "" {
-		rootPath = opt.Root
-	}
-	zkClient := NewClient(rootPath, conn)
+	//zkClient := zookeeper.NewClient(conn)
 
-	eventHandlers := []EventHandler{}
+	var eventHandlers []EventHandler
 	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
 	eventHandlers = append(eventHandlers, &CRDEventHandler{k8sMgr: k8sMgr})
 
 	adapter := &Adapter{
-		zkClient:      zkClient,
-		eventHandlers: eventHandlers,
-		opt:           opt,
-		K8sMgr:        k8sMgr,
+		registryClient: nil,
+		eventHandlers:  eventHandlers,
+		opt:            opt,
+		K8sMgr:         k8sMgr,
 	}
 
-	// TODO init informer, registry resource
 	return adapter, nil
 }
 
-// Start ...
+// Start an adapter which is used for synchronizing services and instances to kubernetes cluster.
 func (a *Adapter) Start(stop <-chan struct{}) error {
-	if err := a.zkClient.Start(); err != nil {
+	if err := a.registryClient.Start(); err != nil {
 		fmt.Printf("Start zookeeper client has an error %v\n", err)
 		return err
 	}
 
 	for {
 		select {
-		case event := <-a.zkClient.Events():
+		case event := <-a.registryClient.Events():
 			switch event.EventType {
 			case ServiceAdded:
 				for _, h := range a.eventHandlers {
@@ -112,7 +104,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				}
 			}
 		case <-stop:
-			a.zkClient.Stop()
+			a.registryClient.Stop()
 			return nil
 		}
 	}

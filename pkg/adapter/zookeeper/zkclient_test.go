@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var servers = []string{
+var ZkServers = []string{
 	// local
 	//"10.12.210.70:2181",
 	// dev
@@ -18,12 +18,12 @@ var servers = []string{
 }
 
 func Test_connect(t *testing.T) {
-	conn, _, err := zk.Connect(servers, 15*time.Second)
+	conn, _, err := zk.Connect(ZkServers, 15*time.Second)
 	if err != nil {
 		fmt.Printf("Connect zk has an error :%v\n", err)
 	}
 
-	c := NewClient(dubboRootPath, conn)
+	c := NewClient(conn)
 	c.Start()
 
 	time.Sleep(30 * time.Minute)

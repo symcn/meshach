@@ -1,4 +1,4 @@
-package zookeeper
+package adapter
 
 // All events comes from adapter needs to be handle by various event handler.
 type EventHandler interface {

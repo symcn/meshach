@@ -1,4 +1,4 @@
-package zookeeper
+package adapter
 
 import (
 	"fmt"
@@ -52,8 +52,8 @@ func Test_Start(t *testing.T) {
 	}
 
 	opt := Option{
-		Address:          servers,
-		Timeout:          15 * 1000,
+		Address:          ZkServers,
+		Timeout:          5 * 1000,
 		ClusterNamespace: "sym-admin",
 		ClusterOwner:     "sym-admin",
 	}

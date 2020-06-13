@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package zookeeper
+package adapter
 
 import "strconv"
 
@@ -33,9 +33,9 @@ type Port struct {
 }
 
 type Service struct {
-	name      string
-	ports     []*Port
-	instances map[string]*Instance
+	Name      string
+	Ports     []*Port
+	Instances map[string]*Instance
 }
 
 // Instance is the instance of the service provider
@@ -77,25 +77,25 @@ func (p *Port) Portoi() int {
 
 func (s *Service) AddPort(port *Port) {
 	exist := false
-	for _, p := range s.ports {
+	for _, p := range s.Ports {
 		if p.Port == port.Port && p.Protocol == port.Protocol {
 			exist = true
 			break
 		}
 	}
 	if !exist {
-		s.ports = append(s.ports, port)
+		s.Ports = append(s.Ports, port)
 	}
 }
 
 func (s *Service) Hostname() string {
-	return s.name
+	return s.Name
 }
 
-func (s *Service) Ports() []*Port {
-	return s.ports
+func (s *Service) GetPorts() []*Port {
+	return s.Ports
 }
 
-func (s *Service) Instances() map[string]*Instance {
-	return s.instances
+func (s *Service) GetInstances() map[string]*Instance {
+	return s.Instances
 }
