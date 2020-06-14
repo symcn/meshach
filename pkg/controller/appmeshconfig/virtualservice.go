@@ -121,10 +121,13 @@ func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service, sourceLabel
 	for key, matchType := range r.meshConfig.Spec.MatchHeaderLabelKeys {
 		m[key] = getMatchType(matchType, sourceLabels.Headers[key])
 	}
+	klog.V(4).Infof("match header map: %+v", m)
 	s := make(map[string]string)
 	for _, key := range r.meshConfig.Spec.MatchSourceLabelKeys {
 		s[key] = sourceLabels.Labels[key]
 	}
+	klog.V(4).Infof("match sourceLabels map: %+v", m)
+
 	match := &v1beta1.HTTPMatchRequest{Headers: m, SourceLabels: s}
 
 	var routes []*v1beta1.HTTPRouteDestination

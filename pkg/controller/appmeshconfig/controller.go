@@ -73,19 +73,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to secondary resources and requeue the owner AppMeshConfig
-	err = c.Watch(&source.Kind{Type: &networkingv1beta1.WorkloadEntry{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &meshv1.AppMeshConfig{},
-	})
+	err = c.Watch(&source.Kind{
+		Type: &networkingv1beta1.WorkloadEntry{}},
+		&handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &meshv1.AppMeshConfig{},
+		})
 	if err != nil {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &networkingv1beta1.VirtualService{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &meshv1.AppMeshConfig{},
-	})
+	err = c.Watch(&source.Kind{
+		Type: &networkingv1beta1.VirtualService{}},
+		&handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &meshv1.AppMeshConfig{},
+		})
 	if err != nil {
 		return err
 	}
@@ -186,10 +189,6 @@ func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile
 }
 
 func (r *ReconcileAppMeshConfig) getMeshConfig(ctx context.Context) error {
-	if r.meshConfig != nil {
-		return nil
-	}
-
 	meshConfig := &meshv1.MeshConfig{}
 	err := r.client.Get(
 		ctx,
