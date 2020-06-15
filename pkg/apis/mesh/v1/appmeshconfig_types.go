@@ -77,10 +77,11 @@ type SourceLabels struct {
 type AppMeshConfigSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	AppName  string     `json:"appName,omitempty"`
-	Inject   *Inject    `json:"inject"`
-	Services []*Service `json:"services"`
-	Policy   *Policy    `json:"policy"`
+	AppName              string     `json:"appName,omitempty"`
+	Inject               *Inject    `json:"inject"`
+	Services             []*Service `json:"services"`
+	Policy               *Policy    `json:"policy"`
+	MeshConfigGeneration int64      `json:"meshConfigGeneration"`
 }
 
 // ConfigPhase ...
