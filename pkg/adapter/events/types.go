@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package adapter
+package events
 
 import "strconv"
 

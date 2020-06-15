@@ -12,12 +12,12 @@ import (
 )
 
 var headers = map[string][]string{
-	"Client-Version":  []string{constant.CLIENT_VERSION},
-	"User-Agent":      []string{constant.CLIENT_VERSION},
-	"Accept-Encoding": []string{"gzip,deflate,sdch"},
-	"Connection":      []string{"Keep-Alive"},
-	"Request-Module":  []string{"Naming"},
-	"Content-Type":    []string{"application/x-www-form-urlencoded"},
+	"Client-Version":  {constant.CLIENT_VERSION},
+	"User-Agent":      {constant.CLIENT_VERSION},
+	"Accept-Encoding": {"gzip,deflate,sdch"},
+	"Connection":      {"Keep-Alive"},
+	"Request-Module":  {"Naming"},
+	"Content-Type":    {"application/x-www-form-urlencoded"},
 }
 
 func Test_RegisterServiceInstance(t *testing.T) {

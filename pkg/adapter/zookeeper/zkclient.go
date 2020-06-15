@@ -2,7 +2,7 @@ package zookeeper
 
 import (
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter"
+	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
 	"net/url"
 	"path"
@@ -13,8 +13,8 @@ import (
 type ZkClient struct {
 	conn     *zk.Conn
 	root     string
-	services map[string]*adapter.Service
-	out      chan adapter.ServiceEvent
+	services map[string]*events.Service
+	out      chan events.ServiceEvent
 	scache   *pathCache
 	pcaches  map[string]*pathCache
 }
@@ -23,32 +23,32 @@ type ZkClient struct {
 func NewClient(conn *zk.Conn) *ZkClient {
 	return &ZkClient{
 		conn:     conn,
-		services: make(map[string]*adapter.Service),
-		out:      make(chan adapter.ServiceEvent),
+		services: make(map[string]*events.Service),
+		out:      make(chan events.ServiceEvent),
 		scache:   nil,
 		pcaches:  make(map[string]*pathCache),
 	}
 }
 
 // Events channel is a stream of Service and instance updates
-func (c *ZkClient) Events() <-chan adapter.ServiceEvent {
+func (c *ZkClient) Events() <-chan events.ServiceEvent {
 	return c.out
 }
 
-func (c *ZkClient) Service(hostname string) *adapter.Service {
+func (c *ZkClient) Service(hostname string) *events.Service {
 	return c.services[hostname]
 }
 
-func (c *ZkClient) Services() []*adapter.Service {
-	services := make([]*adapter.Service, 0, len(c.services))
+func (c *ZkClient) Services() []*events.Service {
+	services := make([]*events.Service, 0, len(c.services))
 	for _, service := range c.services {
 		services = append(services, service)
 	}
 	return services
 }
 
-func (c *ZkClient) Instances(hostname string) []*adapter.Instance {
-	instances := make([]*adapter.Instance, 0)
+func (c *ZkClient) Instances(hostname string) []*events.Instance {
+	instances := make([]*events.Instance, 0)
 	service, ok := c.services[hostname]
 	if !ok {
 		return instances
@@ -60,8 +60,8 @@ func (c *ZkClient) Instances(hostname string) []*adapter.Instance {
 	return instances
 }
 
-func (c *ZkClient) InstancesByHost(hosts []string) []*adapter.Instance {
-	instances := make([]*adapter.Instance, 0)
+func (c *ZkClient) InstancesByHost(hosts []string) []*events.Instance {
+	instances := make([]*events.Instance, 0)
 	for _, service := range c.services {
 		for _, instance := range service.Instances {
 			for _, host := range hosts {
@@ -144,7 +144,7 @@ func (c *ZkClient) eventLoop() {
 	}
 }
 
-func (c *ZkClient) makeInstance(hostname string, rawUrl string) (*adapter.Instance, error) {
+func (c *ZkClient) makeInstance(hostname string, rawUrl string) (*events.Instance, error) {
 	cleanUrl, err := url.QueryUnescape(rawUrl)
 	if err != nil {
 		return nil, err
@@ -154,9 +154,9 @@ func (c *ZkClient) makeInstance(hostname string, rawUrl string) (*adapter.Instan
 		return nil, err
 	}
 
-	instance := &adapter.Instance{
+	instance := &events.Instance{
 		Host: ep.Host,
-		Port: &adapter.Port{
+		Port: &events.Port{
 			Protocol: ep.Scheme,
 			Port:     ep.Port(),
 		},
@@ -179,8 +179,8 @@ func (c *ZkClient) deleteInstance(hostname string, rawUrl string) {
 	h := makeHostname(hostname, i)
 	if s, ok := c.services[h]; ok {
 		delete(s.Instances, rawUrl)
-		go c.notify(adapter.ServiceEvent{
-			EventType: adapter.ServiceInstanceDeleted,
+		go c.notify(events.ServiceEvent{
+			EventType: events.ServiceInstanceDeleted,
 			Instance:  i,
 		})
 		// TODO should we unregister the service when all the instances are offline?
@@ -199,25 +199,25 @@ func (c *ZkClient) addInstance(hostname string, rawUrl string) {
 	s := c.addService(hostname, i)
 	i.Service = s
 	s.Instances[rawUrl] = i
-	go c.notify(adapter.ServiceEvent{
-		EventType: adapter.ServiceInstanceAdded,
+	go c.notify(events.ServiceEvent{
+		EventType: events.ServiceInstanceAdded,
 		Instance:  i,
 	})
 }
 
-func (c *ZkClient) addService(hostname string, instance *adapter.Instance) *adapter.Service {
+func (c *ZkClient) addService(hostname string, instance *events.Instance) *events.Service {
 	h := makeHostname(hostname, instance)
 	s, ok := c.services[h]
 	if !ok {
-		s = &adapter.Service{
+		s = &events.Service{
 			Name:      h,
-			Ports:     make([]*adapter.Port, 0),
-			Instances: make(map[string]*adapter.Instance),
+			Ports:     make([]*events.Port, 0),
+			Instances: make(map[string]*events.Instance),
 		}
 		c.services[h] = s
 		s.AddPort(instance.Port)
-		go c.notify(adapter.ServiceEvent{
-			EventType: adapter.ServiceAdded,
+		go c.notify(events.ServiceEvent{
+			EventType: events.ServiceAdded,
 			Service:   s,
 		})
 	}
@@ -234,19 +234,19 @@ func (c *ZkClient) deleteService(hostname string) {
 	for h, s := range c.services {
 		if strings.HasSuffix(h, hostname) {
 			delete(c.services, h)
-			go c.notify(adapter.ServiceEvent{
-				EventType: adapter.ServiceDeleted,
+			go c.notify(events.ServiceEvent{
+				EventType: events.ServiceDeleted,
 				Service:   s,
 			})
 		}
 	}
 }
 
-func (c *ZkClient) notify(event adapter.ServiceEvent) {
+func (c *ZkClient) notify(event events.ServiceEvent) {
 	c.out <- event
 }
 
-func makeHostname(hostname string, instance *adapter.Instance) string {
+func makeHostname(hostname string, instance *events.Instance) string {
 	return hostname
 	// We don't need version for the moment.
 	// + ":" + instance.Labels["version"]

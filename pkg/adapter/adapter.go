@@ -2,6 +2,9 @@ package adapter
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/events"
+	"github.com/mesh-operator/pkg/adapter/handler"
+	"github.com/mesh-operator/pkg/adapter/zookeeper"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
@@ -39,7 +42,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	// TODO init health check handler
 	// TODO init router
 
-	// init multi k8s cluster manager
+	// initializing multiple k8s cluster manager
 	klog.Info("start to initializing multiple cluster managers ... ")
 	labels := map[string]string{
 		"ClusterOwner": opt.ClusterOwner,
@@ -54,22 +57,23 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	}
 	//k8sMgr.GetAll()
 
-	// initializing adapter
-	_, _, err = zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	// Initializing the registry client that you want to use.
+	conn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
+		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
 		return nil, err
 	}
-	//zkClient := zookeeper.NewClient(conn)
+	zkClient := zookeeper.NewClient(conn)
 
+	// initializing adapter
 	var eventHandlers []EventHandler
 	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
-	eventHandlers = append(eventHandlers, &CRDEventHandler{k8sMgr: k8sMgr})
-
+	eventHandlers = append(eventHandlers, &handler.CRDEventHandler{K8sMgr: k8sMgr})
 	adapter := &Adapter{
-		registryClient: nil,
-		eventHandlers:  eventHandlers,
 		opt:            opt,
 		K8sMgr:         k8sMgr,
+		registryClient: zkClient,
+		eventHandlers:  eventHandlers,
 	}
 
 	return adapter, nil
@@ -86,19 +90,19 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 		select {
 		case event := <-a.registryClient.Events():
 			switch event.EventType {
-			case ServiceAdded:
+			case events.ServiceAdded:
 				for _, h := range a.eventHandlers {
 					h.AddService(event)
 				}
-			case ServiceDeleted:
+			case events.ServiceDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteService(event)
 				}
-			case ServiceInstanceAdded:
+			case events.ServiceInstanceAdded:
 				for _, h := range a.eventHandlers {
 					h.AddInstance(event)
 				}
-			case ServiceInstanceDeleted:
+			case events.ServiceInstanceDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteInstance(event)
 				}

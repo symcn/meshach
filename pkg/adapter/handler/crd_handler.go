@@ -1,8 +1,9 @@
-package adapter
+package handler
 
 import (
 	"context"
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/events"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,11 +17,11 @@ var defaultNamespace = "default"
 
 // CRDEventHandler it used for handling the events which has been send from the adapter client.
 type CRDEventHandler struct {
-	k8sMgr *k8smanager.ClusterManager
+	K8sMgr *k8smanager.ClusterManager
 }
 
 // AddService ...
-func (ceh *CRDEventHandler) AddService(se ServiceEvent) {
+func (ceh *CRDEventHandler) AddService(se events.ServiceEvent) {
 	fmt.Printf("CRD event handler: Adding a service\n%v\n", se.Service)
 
 	// Transform a service event that noticed by zookeeper to a Service CRD
@@ -52,7 +53,7 @@ func (ceh *CRDEventHandler) AddService(se ServiceEvent) {
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
-func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
+func (ceh *CRDEventHandler) DeleteService(se events.ServiceEvent) {
 	fmt.Printf("CRD event handler: Deleting a service: %s\n", se.Service.Name)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
@@ -100,7 +101,7 @@ func (ceh *CRDEventHandler) DeleteService(se ServiceEvent) {
 }
 
 // AddInstance ...
-func (ceh *CRDEventHandler) AddInstance(ie ServiceEvent) {
+func (ceh *CRDEventHandler) AddInstance(ie events.ServiceEvent) {
 	fmt.Printf("CRD event handler: Adding an instance\n%v\n", ie.Instance)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
@@ -126,7 +127,7 @@ func (ceh *CRDEventHandler) AddInstance(ie ServiceEvent) {
 }
 
 // DeleteInstance ...
-func (ceh *CRDEventHandler) DeleteInstance(ie ServiceEvent) {
+func (ceh *CRDEventHandler) DeleteInstance(ie events.ServiceEvent) {
 	fmt.Printf("CRD event handler: deleting an instance\n%v\n", ie.Instance)
 
 	appCode := resolveAppCode(&ie)
@@ -150,7 +151,7 @@ func (ceh *CRDEventHandler) DeleteInstance(ie ServiceEvent) {
 // CreateAmc
 func (ceh *CRDEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
 	// TODO
-	cluster, _ := ceh.k8sMgr.Get("tcc-gz01-bj5-test")
+	cluster, _ := ceh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Create(context.Background(), amc)
 	if err != nil {
 		fmt.Printf("Creating an acm has an error:%v\n", err)
@@ -161,7 +162,7 @@ func (ceh *CRDEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
 // UpdateAmc
 func (ceh *CRDEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
 	// TODO
-	cluster, _ := ceh.k8sMgr.Get("tcc-gz01-bj5-test")
+	cluster, _ := ceh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Update(context.Background(), amc)
 	if err != nil {
 		fmt.Printf("Updating an acm has an error: %v\n", err)
@@ -171,14 +172,14 @@ func (ceh *CRDEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
 
 // GetAmc
 func (ceh *CRDEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig, error) {
-	cluster, _ := ceh.k8sMgr.Get("tcc-gz01-bj5-test")
+	cluster, _ := ceh.K8sMgr.Get("tcc-gz01-bj5-test")
 	key, _ := client.ObjectKeyFromObject(config)
 	err := cluster.Client.Get(context.Background(), key, config)
 	return config, err
 }
 
 // putService Put a service derived from a service event into the application mesh config.
-func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
+func putService(se *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	// Ports
 	var ports []*v1.Port
 	for _, p := range se.Service.Ports {
@@ -213,7 +214,7 @@ func putService(se *ServiceEvent, amc *v1.AppMeshConfig) {
 }
 
 // putInstance put an instance into the application mesh config
-func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
+func putInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	i := &v1.Instance{}
 	i.Host = removePort(ie.Instance.Host)
 	i.Port = convertPort(ie.Instance.Port)
@@ -274,7 +275,7 @@ func putInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
 }
 
 // deleteInstance
-func deleteInstance(ie *ServiceEvent, amc *v1.AppMeshConfig) {
+func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	instance := &v1.Instance{
 		Host: removePort(ie.Instance.Host),
 		Port: convertPort(ie.Instance.Port),
@@ -329,7 +330,7 @@ func toUint32(portStr string) uint32 {
 }
 
 // convertPort Convert the port which has been defined in zookeeper library to the one that belongs to CRD.
-func convertPort(port *Port) *v1.Port {
+func convertPort(port *events.Port) *v1.Port {
 	return &v1.Port{
 		Name:     port.Port,
 		Protocol: port.Protocol,
@@ -353,7 +354,7 @@ func DeleteInSlice(s interface{}, index int) interface{} {
 
 // resolveAppCode Resolve the application code that was used as the key of an amc CR
 // from the instance belongs to a service event.
-func resolveAppCode(e *ServiceEvent) string {
+func resolveAppCode(e *events.ServiceEvent) string {
 	vi := findValidInstance(e)
 	if vi == nil {
 		fmt.Printf("Can not find a valid instance with this event.")
@@ -369,7 +370,7 @@ func resolveAppCode(e *ServiceEvent) string {
 
 // findValidInstance because the application name just belongs to an instance,
 // we must try to find out an valid instance.
-func findValidInstance(e *ServiceEvent) *Instance {
+func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	if e == nil {
 		fmt.Printf("Service event is nil when start to find a valid instance from it.\n")
 		return nil
