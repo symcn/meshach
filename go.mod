@@ -5,6 +5,7 @@ go 1.13
 require (
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
 	github.com/DeanThompson/ginpprof v0.0.0-20190408063150-3be636683586
+	github.com/apache/dubbo-go v1.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-logr/logr v0.1.0

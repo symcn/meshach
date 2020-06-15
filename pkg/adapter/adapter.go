@@ -14,6 +14,7 @@ import (
 // Adapter ...
 type Adapter struct {
 	registryClient RegistryClient
+	configClient   ConfigurationCenterClient
 	eventHandlers  []EventHandler
 	opt            *Option
 	K8sMgr         *k8smanager.ClusterManager
@@ -63,7 +64,15 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
 		return nil, err
 	}
-	zkClient := zookeeper.NewClient(conn)
+	registryClient := zookeeper.NewRegistryClient(conn)
+
+	// Initializing the a client to connect to configuration center
+	cconn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	if err != nil {
+		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
+		return nil, err
+	}
+	configClient := zookeeper.NewConfigClient(cconn)
 
 	// initializing adapter
 	var eventHandlers []EventHandler
@@ -72,7 +81,8 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	adapter := &Adapter{
 		opt:            opt,
 		K8sMgr:         k8sMgr,
-		registryClient: zkClient,
+		registryClient: registryClient,
+		configClient:   configClient,
 		eventHandlers:  eventHandlers,
 	}
 
@@ -107,6 +117,8 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 					h.DeleteInstance(event)
 				}
 			}
+		case ccEvents := <-a.configClient.Events():
+			fmt.Printf("%v\n", ccEvents)
 		case <-stop:
 			a.registryClient.Stop()
 			return nil

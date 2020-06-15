@@ -24,8 +24,9 @@ import (
 )
 
 var (
-	DubboRootPath = "/dubbo"
-	ProvidersPath = "providers"
+	DubboRootPath    = "/dubbo"
+	ProvidersPath    = "providers"
+	ConfiguratorPath = DubboRootPath + "/config/dubbo"
 )
 
 type pathCacheEventType int
@@ -48,6 +49,7 @@ type pathCacheEvent struct {
 const (
 	pathCacheEventAdded pathCacheEventType = iota
 	pathCacheEventDeleted
+	pathCacheEventChanged
 )
 
 func newPathCache(conn *zk.Conn, path string) (*pathCache, error) {
@@ -153,18 +155,21 @@ func (p *pathCache) onChildAdd(child string) {
 	go p.notify(event)
 }
 
+// onEvent
 func (p *pathCache) onEvent(event *zk.Event) {
 	switch event.Type {
 	case zk.EventNodeChildrenChanged:
 		p.watchChildren()
 	case zk.EventNodeDeleted:
 		p.onChildDeleted(event.Path)
+	case zk.EventNodeDataChanged:
+		p.onNodeChanged(event.Path)
 	default:
 		fmt.Printf("Event[%v] has not been supported yet", event)
 	}
 }
 
-//
+// onChildDeleted
 func (p *pathCache) onChildDeleted(child string) {
 	fmt.Printf("Received a deletion event by zookeeper: %v\n", child)
 
@@ -173,6 +178,17 @@ func (p *pathCache) onChildDeleted(child string) {
 		path:      child,
 	}
 	go p.notify(vent)
+}
+
+// onNodeChanged
+func (p *pathCache) onNodeChanged(path string) {
+	fmt.Printf("Received a node changed event by zookeeper: %v\n", path)
+	vent := pathCacheEvent{
+		eventType: pathCacheEventChanged,
+		path:      path,
+	}
+	go p.notify(vent)
+
 }
 
 func (p *pathCache) addChild(child string) {

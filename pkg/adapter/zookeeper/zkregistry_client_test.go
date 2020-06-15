@@ -23,8 +23,8 @@ func Test_connect(t *testing.T) {
 		fmt.Printf("Connect zk has an error :%v\n", err)
 	}
 
-	c := NewClient(conn)
-	c.Start()
+	rc := NewRegistryClient(conn)
+	rc.Start()
 
 	time.Sleep(30 * time.Minute)
 }
