@@ -165,7 +165,7 @@ func (p *pathCache) onEvent(event *zk.Event) {
 	case zk.EventNodeDataChanged:
 		p.onNodeChanged(event.Path)
 	default:
-		fmt.Printf("Event[%v] has not been supported yet", event)
+		fmt.Printf("Event[%v] has not been supported yet\n", event)
 	}
 }
 

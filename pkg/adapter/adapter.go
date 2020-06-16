@@ -67,16 +67,18 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	registryClient := zookeeper.NewRegistryClient(conn)
 
 	// Initializing the a client to connect to configuration center
-	cconn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
-	if err != nil {
-		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
-		return nil, err
-	}
-	configClient := zookeeper.NewConfigClient(cconn)
+	//cconn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	//if err != nil {
+	//	fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
+	//	return nil, err
+	//}
+	configClient := zookeeper.NewConfigClient(conn)
 
 	// initializing adapter
 	var eventHandlers []EventHandler
-	eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
+	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
+	eventHandlers = append(eventHandlers, &handler.LogEventHandler{
+		Name: "logging every step information when receiving an event."})
 	eventHandlers = append(eventHandlers, &handler.CRDEventHandler{K8sMgr: k8sMgr})
 	adapter := &Adapter{
 		opt:            opt,
@@ -92,7 +94,12 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 // Start an adapter which is used for synchronizing services and instances to kubernetes cluster.
 func (a *Adapter) Start(stop <-chan struct{}) error {
 	if err := a.registryClient.Start(); err != nil {
-		fmt.Printf("Start zookeeper client has an error %v\n", err)
+		fmt.Printf("Start a registry center's client has an error: %v\n", err)
+		return err
+	}
+
+	if err := a.configClient.Start(); err != nil {
+		fmt.Printf("Start a configuration center's client has an error: %v\n", err)
 		return err
 	}
 
@@ -117,8 +124,22 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 					h.DeleteInstance(event)
 				}
 			}
-		case ccEvents := <-a.configClient.Events():
-			fmt.Printf("%v\n", ccEvents)
+		case ce := <-a.configClient.Events():
+			fmt.Printf("%v\n", ce)
+			switch ce.EventType {
+			case events.ConfigItemAdded:
+				for _, h := range a.eventHandlers {
+					h.AddConfigItem(ce)
+				}
+			case events.ConfigItemChanged:
+				for _, h := range a.eventHandlers {
+					h.ChangeConfigItem(ce)
+				}
+			case events.ConfigItemDeleted:
+				for _, h := range a.eventHandlers {
+					h.DeleteConfigItem(ce)
+				}
+			}
 		case <-stop:
 			a.registryClient.Stop()
 			return nil

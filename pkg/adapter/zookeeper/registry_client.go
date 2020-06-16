@@ -242,6 +242,7 @@ func (c *ZkRegistryClient) deleteService(hostname string) {
 	}
 }
 
+// notify
 func (c *ZkRegistryClient) notify(event events.ServiceEvent) {
 	c.out <- event
 }

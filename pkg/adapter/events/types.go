@@ -67,6 +67,14 @@ const (
 	ServiceInstanceDeleted
 )
 
+type ConfigEventType int
+
+const (
+	ConfigItemAdded ConfigEventType = iota
+	ConfigItemDeleted
+	ConfigItemChanged
+)
+
 func (p *Port) Portoi() int {
 	port, err := strconv.Atoi(p.Port)
 	if err != nil {
@@ -98,4 +106,10 @@ func (s *Service) GetPorts() []*Port {
 
 func (s *Service) GetInstances() map[string]*Instance {
 	return s.Instances
+}
+
+type ConfigEvent struct {
+	EventType ConfigEventType
+	Path      string
+	Data      string
 }

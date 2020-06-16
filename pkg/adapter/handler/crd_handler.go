@@ -393,3 +393,15 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 
 	return nil
 }
+
+func (ceh *CRDEventHandler) AddConfigItem(e *events.ConfigEvent) {
+	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
+}
+
+func (ceh *CRDEventHandler) ChangeConfigItem(e *events.ConfigEvent) {
+	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
+}
+
+func (ceh *CRDEventHandler) DeleteConfigItem(e *events.ConfigEvent) {
+	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
+}
