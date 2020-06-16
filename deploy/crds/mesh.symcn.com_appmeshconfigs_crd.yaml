@@ -32,88 +32,162 @@ spec:
             description: AppMeshConfigSpec ...
             properties:
               appName:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "operator-sdk generate k8s" to regenerate code after
-                  modifying this file'
+                description: The name corresponding to the business application.
                 type: string
               inject:
-                description: Inject ...
+                description: Inject set the relevant parameters of the data plane.
                 properties:
                   logLevel:
+                    description: The log level of sidecar
+                    enum:
+                    - error
+                    - warning
+                    - info
+                    - debug
                     type: string
                   sidecar:
+                    description: Set the sidecar type, must one of mosn|envoy
+                    enum:
+                    - mosn
+                    - envoy
                     type: string
                 required:
                 - sidecar
                 type: object
+              meshConfigGeneration:
+                description: The Generation of MeshConfig, which to reconcile AppMeshConfig
+                  when MeshConfig changes.
+                format: int64
+                type: integer
               policy:
-                description: Policy ...
+                description: Policy defines load balancing, retry, and other policies
+                  for a service.
                 properties:
                   loadBalancer:
                     additionalProperties:
                       type: string
+                    description: Load balancing is a way of distributing traffic between
+                      multiple hosts within a single upstream cluster in order to
+                      effectively make use of available resources. There are many
+                      different ways of accomplishing this, like ROUND_ROBIN, LEAST_CONN
+                      RANDOM and RASSTHROUGN
                     type: object
                   maxConnections:
+                    description: Maximum number of HTTP1 connections to a destination
+                      host. Default 2^32-1.
                     format: int32
                     type: integer
                   maxRetries:
+                    description: Maximum number of retries that can be outstanding
+                      to all hosts in a cluster at a given time. Defaults to 2^32-1.
                     format: int32
                     type: integer
                   sourceLabels:
+                    description: One or more labels that constrain the applicability
+                      of a rule to workloads with the given labels.
                     items:
-                      description: SourceLabels ...
+                      description: SourceLabels is one or more labels that constrain
+                        the applicability of a rule to workloads with the given labels.
                       properties:
                         headers:
                           additionalProperties:
                             type: string
+                          description: The HTTP route match headers.
                           type: object
                         labels:
                           additionalProperties:
                             type: string
+                          description: One or more labels that constrain the applicability
+                            of a rule to workloads with the given labels.
                           type: object
                         name:
+                          description: The name of specific subset.
                           type: string
                         route:
+                          description: Each routing rule is associated with one or
+                            more service versions.
                           items:
-                            description: Destination ...
+                            description: Destination indicates the network addressable
+                              service to which the request/connection will be sent
+                              after processing a routing rule.
                             properties:
                               subset:
+                                description: The name of a subset within the service.
+                                  Applicable only to services within the mesh. The
+                                  subset must be defined in a corresponding DestinationRule.
+                                maxLength: 15
+                                minLength: 1
                                 type: string
                               weight:
+                                description: The proportion of traffic to be forwarded
+                                  to the service version. (0-100). Sum of weights
+                                  across destinations SHOULD BE == 100. If there is
+                                  only one destination in a rule, the weight value
+                                  is assumed to be 100.
                                 format: int32
+                                maximum: 100
+                                minimum: 0
                                 type: integer
+                            required:
+                            - subset
                             type: object
                           type: array
                       type: object
                     type: array
                   timeout:
+                    description: 'Connection timeout. format: 1h/1m/1s/1ms. MUST BE
+                      >=1ms. Default is 10s.'
                     type: string
                 type: object
               services:
+                description: Service describes Dubbo services, will be registered
+                  as ServiceEntries in istio's internal service registry.
                 items:
-                  description: Service ...
+                  description: Service describes Dubbo services, will be registered
+                    as ServiceEntries in istio's internal service registry.
                   properties:
                     instances:
+                      description: A list describes all registered instances of this
+                        service.
                       items:
-                        description: Instance ...
+                        description: Instance describes the properties of a specific
+                          instance of a service.
                         properties:
-                          group:
-                            type: string
                           host:
+                            description: Host associated with the network endpoint
+                              without the port.
+                            maxLength: 16
+                            minLength: 8
                             type: string
                           labels:
                             additionalProperties:
                               type: string
+                            description: The parameters of Dubbo service
                             type: object
                           port:
-                            description: Port ...
+                            description: Port describes the properties of a specific
+                              port of a service. The Dubbo service port registered
+                              with MOSN is 20882, otherwize the native Dubbo service
+                              port is 20880.
                             properties:
                               name:
+                                description: Label assigned to the port.
+                                maxLength: 15
+                                minLength: 1
                                 type: string
                               number:
+                                description: A valid non-negative integer port number.
                                 format: int32
+                                maximum: 65535
+                                minimum: 1
                                 type: integer
                               protocol:
+                                description: The protocol exposed on the port. MUST
+                                  BE HTTP TO ROUTE DUBBO SERVICE.
+                                enum:
+                                - HTTP
+                                - HTTPS
+                                - TCP
                                 type: string
                             required:
                             - name
@@ -121,131 +195,246 @@ spec:
                             - protocol
                             type: object
                           weight:
+                            description: The traffic weight of this instance.
                             format: int32
+                            maximum: 100
+                            minimum: 0
                             type: integer
-                          zone:
-                            type: string
                         required:
-                        - group
                         - host
+                        - labels
                         - port
-                        - weight
-                        - zone
                         type: object
                       type: array
                     name:
+                      description: Must be formatted to conform to the DNS1123 specification.
+                      maxLength: 255
+                      minLength: 1
                       type: string
                     policy:
-                      description: Policy ...
+                      description: Traffic policies of service-level
                       properties:
                         loadBalancer:
                           additionalProperties:
                             type: string
+                          description: Load balancing is a way of distributing traffic
+                            between multiple hosts within a single upstream cluster
+                            in order to effectively make use of available resources.
+                            There are many different ways of accomplishing this, like
+                            ROUND_ROBIN, LEAST_CONN RANDOM and RASSTHROUGN
                           type: object
                         maxConnections:
+                          description: Maximum number of HTTP1 connections to a destination
+                            host. Default 2^32-1.
                           format: int32
                           type: integer
                         maxRetries:
+                          description: Maximum number of retries that can be outstanding
+                            to all hosts in a cluster at a given time. Defaults to
+                            2^32-1.
                           format: int32
                           type: integer
                         sourceLabels:
+                          description: One or more labels that constrain the applicability
+                            of a rule to workloads with the given labels.
                           items:
-                            description: SourceLabels ...
+                            description: SourceLabels is one or more labels that constrain
+                              the applicability of a rule to workloads with the given
+                              labels.
                             properties:
                               headers:
                                 additionalProperties:
                                   type: string
+                                description: The HTTP route match headers.
                                 type: object
                               labels:
                                 additionalProperties:
                                   type: string
+                                description: One or more labels that constrain the
+                                  applicability of a rule to workloads with the given
+                                  labels.
                                 type: object
                               name:
+                                description: The name of specific subset.
                                 type: string
                               route:
+                                description: Each routing rule is associated with
+                                  one or more service versions.
                                 items:
-                                  description: Destination ...
+                                  description: Destination indicates the network addressable
+                                    service to which the request/connection will be
+                                    sent after processing a routing rule.
                                   properties:
                                     subset:
+                                      description: The name of a subset within the
+                                        service. Applicable only to services within
+                                        the mesh. The subset must be defined in a
+                                        corresponding DestinationRule.
+                                      maxLength: 15
+                                      minLength: 1
                                       type: string
                                     weight:
+                                      description: The proportion of traffic to be
+                                        forwarded to the service version. (0-100).
+                                        Sum of weights across destinations SHOULD
+                                        BE == 100. If there is only one destination
+                                        in a rule, the weight value is assumed to
+                                        be 100.
                                       format: int32
+                                      maximum: 100
+                                      minimum: 0
                                       type: integer
+                                  required:
+                                  - subset
                                   type: object
                                 type: array
                             type: object
                           type: array
                         timeout:
+                          description: 'Connection timeout. format: 1h/1m/1s/1ms.
+                            MUST BE >=1ms. Default is 10s.'
                           type: string
                       type: object
                     ports:
+                      description: A list describes the properties of all ports of
+                        this service. The Dubbo service port registered with MOSN
+                        is 20882, otherwize the native Dubbo service port is 20880.
                       items:
-                        description: Port ...
+                        description: Port describes the properties of a specific port
+                          of a service.
                         properties:
                           name:
+                            description: Label assigned to the port.
+                            maxLength: 15
+                            minLength: 1
                             type: string
                           number:
+                            description: A valid non-negative integer port number.
                             format: int32
+                            maximum: 65535
+                            minimum: 1
                             type: integer
                           protocol:
+                            description: The protocol exposed on the port. MUST BE
+                              HTTP TO ROUTE DUBBO SERVICE.
+                            enum:
+                            - HTTP
+                            - HTTPS
+                            - TCP
                             type: string
                         required:
                         - name
                         - number
                         - protocol
                         type: object
+                      minItems: 1
                       type: array
                     subsets:
+                      description: Subsets defined all sebsets of the current service.
                       items:
-                        description: Subset ...
+                        description: Subset is a subset of endpoints of a service.
+                          Subset can be used for scenarios like A/B testing, or routing
+                          to a specific version of a service.
                         properties:
                           labels:
                             additionalProperties:
                               type: string
+                            description: 'One or more labels are typically required
+                              to identify the subset destination. e.g. {"group": "blue"}'
                             type: object
                           name:
+                            description: Must be formatted to conform to the DNS1123
+                              specification.
+                            maxLength: 15
+                            minLength: 1
                             type: string
                           policy:
-                            description: Policy ...
+                            description: 'Traffic policies defined at the service-level
+                              can be overridden at a subset-level. NOTE: Policies
+                              specified for subsets will not take effect until a route
+                              rule explicitly sends traffic to this subset.'
                             properties:
                               loadBalancer:
                                 additionalProperties:
                                   type: string
+                                description: Load balancing is a way of distributing
+                                  traffic between multiple hosts within a single upstream
+                                  cluster in order to effectively make use of available
+                                  resources. There are many different ways of accomplishing
+                                  this, like ROUND_ROBIN, LEAST_CONN RANDOM and RASSTHROUGN
                                 type: object
                               maxConnections:
+                                description: Maximum number of HTTP1 connections to
+                                  a destination host. Default 2^32-1.
                                 format: int32
                                 type: integer
                               maxRetries:
+                                description: Maximum number of retries that can be
+                                  outstanding to all hosts in a cluster at a given
+                                  time. Defaults to 2^32-1.
                                 format: int32
                                 type: integer
                               sourceLabels:
+                                description: One or more labels that constrain the
+                                  applicability of a rule to workloads with the given
+                                  labels.
                                 items:
-                                  description: SourceLabels ...
+                                  description: SourceLabels is one or more labels
+                                    that constrain the applicability of a rule to
+                                    workloads with the given labels.
                                   properties:
                                     headers:
                                       additionalProperties:
                                         type: string
+                                      description: The HTTP route match headers.
                                       type: object
                                     labels:
                                       additionalProperties:
                                         type: string
+                                      description: One or more labels that constrain
+                                        the applicability of a rule to workloads with
+                                        the given labels.
                                       type: object
                                     name:
+                                      description: The name of specific subset.
                                       type: string
                                     route:
+                                      description: Each routing rule is associated
+                                        with one or more service versions.
                                       items:
-                                        description: Destination ...
+                                        description: Destination indicates the network
+                                          addressable service to which the request/connection
+                                          will be sent after processing a routing
+                                          rule.
                                         properties:
                                           subset:
+                                            description: The name of a subset within
+                                              the service. Applicable only to services
+                                              within the mesh. The subset must be
+                                              defined in a corresponding DestinationRule.
+                                            maxLength: 15
+                                            minLength: 1
                                             type: string
                                           weight:
+                                            description: The proportion of traffic
+                                              to be forwarded to the service version.
+                                              (0-100). Sum of weights across destinations
+                                              SHOULD BE == 100. If there is only one
+                                              destination in a rule, the weight value
+                                              is assumed to be 100.
                                             format: int32
+                                            maximum: 100
+                                            minimum: 0
                                             type: integer
+                                        required:
+                                        - subset
                                         type: object
                                       type: array
                                   type: object
                                 type: array
                               timeout:
+                                description: 'Connection timeout. format: 1h/1m/1s/1ms.
+                                  MUST BE >=1ms. Default is 10s.'
                                 type: string
                             type: object
                         required:
@@ -253,11 +442,12 @@ spec:
                         - name
                         type: object
                       type: array
+                  required:
+                  - name
                   type: object
                 type: array
             required:
-            - inject
-            - policy
+            - meshConfigGeneration
             - services
             type: object
           status:
@@ -267,19 +457,24 @@ spec:
                 format: date-time
                 type: string
               phase:
-                description: ConfigPhase ...
+                description: ConfigPhase describes the phase of the configuration
+                  file destribution.
                 type: string
               status:
-                description: Status ...
+                description: Status is a collection of all SubStatus.
                 properties:
                   destinationRule:
-                    description: SubStatus ...
+                    description: SubStatus describes the destribution status of the
+                      individual istio's CR.
                     properties:
                       desired:
+                        description: Total number of desired configuration files.
                         type: integer
                       distributed:
+                        description: Total number of configuration files distributed.
                         type: integer
                       undistributed:
+                        description: Total number of configuration files undistributed.
                         type: integer
                     required:
                     - desired
@@ -287,13 +482,17 @@ spec:
                     - undistributed
                     type: object
                   serviceEntry:
-                    description: SubStatus ...
+                    description: SubStatus describes the destribution status of the
+                      individual istio's CR.
                     properties:
                       desired:
+                        description: Total number of desired configuration files.
                         type: integer
                       distributed:
+                        description: Total number of configuration files distributed.
                         type: integer
                       undistributed:
+                        description: Total number of configuration files undistributed.
                         type: integer
                     required:
                     - desired
@@ -301,13 +500,17 @@ spec:
                     - undistributed
                     type: object
                   virtualService:
-                    description: SubStatus ...
+                    description: SubStatus describes the destribution status of the
+                      individual istio's CR.
                     properties:
                       desired:
+                        description: Total number of desired configuration files.
                         type: integer
                       distributed:
+                        description: Total number of configuration files distributed.
                         type: integer
                       undistributed:
+                        description: Total number of configuration files undistributed.
                         type: integer
                     required:
                     - desired
@@ -315,13 +518,17 @@ spec:
                     - undistributed
                     type: object
                   workloadEntry:
-                    description: SubStatus ...
+                    description: SubStatus describes the destribution status of the
+                      individual istio's CR.
                     properties:
                       desired:
+                        description: Total number of desired configuration files.
                         type: integer
                       distributed:
+                        description: Total number of configuration files distributed.
                         type: integer
                       undistributed:
+                        description: Total number of configuration files undistributed.
                         type: integer
                     required:
                     - desired
