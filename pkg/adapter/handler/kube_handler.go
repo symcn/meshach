@@ -4,48 +4,48 @@ import (
 	"context"
 	"fmt"
 	"github.com/mesh-operator/pkg/adapter/events"
+	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 var defaultNamespace = "default"
 
-// CRDEventHandler it used for handling the events which has been send from the adapter client.
-type CRDEventHandler struct {
+// KubeEventHandler it used for synchronizing the events which has been send by the adapter client
+// to a kubernetes cluster which has an istio controller there.
+// It usually uses a CRD group to depict both registered services and instances.
+type KubeEventHandler struct {
 	K8sMgr *k8smanager.ClusterManager
 }
 
 // AddService ...
-func (ceh *CRDEventHandler) AddService(se events.ServiceEvent) {
+func (kubeeh *KubeEventHandler) AddService(se events.ServiceEvent) {
 	fmt.Printf("CRD event handler: Adding a service\n%v\n", se.Service)
 
 	// Transform a service event that noticed by zookeeper to a Service CRD
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
-	appCode := resolveAppCode(&se)
-	if appCode == "" {
+	appIdentifier := resolveAppIdentifier(&se)
+	if appIdentifier == "" {
 		fmt.Printf("Can not find an application name with this adding event: %v\n", se.Service.Name)
 		return
 	}
 
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appCode,
+			Name:      appIdentifier,
 			Namespace: defaultNamespace,
 		},
 	}
 
-	_, err := ceh.GetAmc(amc)
+	_, err := kubeeh.GetAmc(amc)
 	putService(&se, amc)
 	if err != nil {
 		fmt.Printf("Can not find an existed amc CR: %v\n", err)
-		ceh.CreateAmc(amc)
+		kubeeh.CreateAmc(amc)
 	} else {
-		ceh.UpdateAmc(amc)
+		kubeeh.UpdateAmc(amc)
 	}
 
 	fmt.Printf("Create or update an AppMeshConfig CR after a service has beed created: %s\n", amc.Name)
@@ -53,26 +53,26 @@ func (ceh *CRDEventHandler) AddService(se events.ServiceEvent) {
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
-func (ceh *CRDEventHandler) DeleteService(se events.ServiceEvent) {
+func (kubeeh *KubeEventHandler) DeleteService(se events.ServiceEvent) {
 	fmt.Printf("CRD event handler: Deleting a service: %s\n", se.Service.Name)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
-	appCode := resolveAppCode(&se)
+	appIdentifier := resolveAppIdentifier(&se)
 	// There is a chance to delete a service with an empty instances manually, but it is not be sure that which
 	// amc should be modified.
-	if appCode == "" {
+	if appIdentifier == "" {
 		fmt.Printf("Can not find an application name with this deleting event: %v\n", se.Service.Name)
 		return
 	}
 
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appCode,
+			Name:      appIdentifier,
 			Namespace: defaultNamespace,
 		},
 	}
 
-	_, err := ceh.GetAmc(amc)
+	_, err := kubeeh.GetAmc(amc)
 	if err != nil {
 		fmt.Println("amc CR can not be found, ignore it")
 		return
@@ -80,7 +80,7 @@ func (ceh *CRDEventHandler) DeleteService(se events.ServiceEvent) {
 		if amc.Spec.Services != nil && len(amc.Spec.Services) > 0 {
 			for i, s := range amc.Spec.Services {
 				if s.Name == se.Service.Name {
-					result := DeleteInSlice(amc.Spec.Services, i)
+					result := utils.DeleteInSlice(amc.Spec.Services, i)
 					amc.Spec.Services = result.([]*v1.Service)
 					break
 					// TODO break? Can I assume there is no duplicate services belongs to a same amc?
@@ -91,7 +91,7 @@ func (ceh *CRDEventHandler) DeleteService(se events.ServiceEvent) {
 				amc.Spec.Services = nil
 			}
 
-			ceh.UpdateAmc(amc)
+			kubeeh.UpdateAmc(amc)
 		} else {
 			fmt.Println("The services list belongs to this amc CR is empty, ignore it")
 			return
@@ -101,57 +101,57 @@ func (ceh *CRDEventHandler) DeleteService(se events.ServiceEvent) {
 }
 
 // AddInstance ...
-func (ceh *CRDEventHandler) AddInstance(ie events.ServiceEvent) {
+func (kubeeh *KubeEventHandler) AddInstance(ie events.ServiceEvent) {
 	fmt.Printf("CRD event handler: Adding an instance\n%v\n", ie.Instance)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
-	appCode := resolveAppCode(&ie)
+	appIdentifier := resolveAppIdentifier(&ie)
 
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appCode,
+			Name:      appIdentifier,
 			Namespace: defaultNamespace,
 		},
 	}
 
-	_, err := ceh.GetAmc(amc)
+	_, err := kubeeh.GetAmc(amc)
 	putInstance(&ie, amc)
 	if err != nil {
 		fmt.Printf("Can not get an exist amc CR: %v\n", err)
-		ceh.CreateAmc(amc)
+		kubeeh.CreateAmc(amc)
 	} else {
-		ceh.UpdateAmc(amc)
+		kubeeh.UpdateAmc(amc)
 	}
 
 	fmt.Printf("Create or update an AppMeshConfig CR after an instance has beed added:%s\n", amc.Name)
 }
 
 // DeleteInstance ...
-func (ceh *CRDEventHandler) DeleteInstance(ie events.ServiceEvent) {
+func (kubeeh *KubeEventHandler) DeleteInstance(ie events.ServiceEvent) {
 	fmt.Printf("CRD event handler: deleting an instance\n%v\n", ie.Instance)
 
-	appCode := resolveAppCode(&ie)
+	appIdentifier := resolveAppIdentifier(&ie)
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appCode,
+			Name:      appIdentifier,
 			Namespace: defaultNamespace,
 		},
 	}
-	_, err := ceh.GetAmc(amc)
+	_, err := kubeeh.GetAmc(amc)
 	if err != nil {
-		fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appCode)
+		fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
 		return
 	} else {
 		deleteInstance(&ie, amc)
 	}
 
-	ceh.UpdateAmc(amc)
+	kubeeh.UpdateAmc(amc)
 }
 
 // CreateAmc
-func (ceh *CRDEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
+func (kubeeh *KubeEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
 	// TODO
-	cluster, _ := ceh.K8sMgr.Get("tcc-gz01-bj5-test")
+	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Create(context.Background(), amc)
 	if err != nil {
 		fmt.Printf("Creating an acm has an error:%v\n", err)
@@ -160,9 +160,9 @@ func (ceh *CRDEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
 }
 
 // UpdateAmc
-func (ceh *CRDEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
+func (kubeeh *KubeEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
 	// TODO
-	cluster, _ := ceh.K8sMgr.Get("tcc-gz01-bj5-test")
+	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Update(context.Background(), amc)
 	if err != nil {
 		fmt.Printf("Updating an acm has an error: %v\n", err)
@@ -171,8 +171,8 @@ func (ceh *CRDEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
 }
 
 // GetAmc
-func (ceh *CRDEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig, error) {
-	cluster, _ := ceh.K8sMgr.Get("tcc-gz01-bj5-test")
+func (kubeeh *KubeEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig, error) {
+	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
 	key, _ := client.ObjectKeyFromObject(config)
 	err := cluster.Client.Get(context.Background(), key, config)
 	return config, err
@@ -216,7 +216,7 @@ func putService(se *events.ServiceEvent, amc *v1.AppMeshConfig) {
 // putInstance put an instance into the application mesh config
 func putInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	i := &v1.Instance{}
-	i.Host = removePort(ie.Instance.Host)
+	i.Host = utils.RemovePort(ie.Instance.Host)
 	i.Port = convertPort(ie.Instance.Port)
 	i.Labels = ie.Instance.Labels
 
@@ -277,7 +277,7 @@ func putInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 // deleteInstance
 func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	instance := &v1.Instance{
-		Host: removePort(ie.Instance.Host),
+		Host: utils.RemovePort(ie.Instance.Host),
 		Port: convertPort(ie.Instance.Port),
 	}
 
@@ -298,7 +298,7 @@ func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 
 		for index, i := range s.Instances {
 			if i.Host == instance.Host && i.Port.Number == instance.Port.Number {
-				result := DeleteInSlice(s.Instances, index)
+				result := utils.DeleteInSlice(s.Instances, index)
 				s.Instances = result.([]*v1.Instance)
 				// TODO Can I assume there is not duplicate instances belongs to a same service.
 				break
@@ -311,50 +311,18 @@ func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	}
 }
 
-// Removing the port part of a service name is necessary due to istio requirement.
-// 127.0.0.1:10000 -> 127.0.0.1
-func removePort(addressWithPort string) string {
-	host, _, err := net.SplitHostPort(addressWithPort)
-	if err != nil {
-		fmt.Printf("Split host and port for a service name has an error:%v\n", err)
-		// returning the original address instead if the address has a incorrect format
-		return addressWithPort
-	}
-	return host
-}
-
-// toInt32 Convert a string variable to integer with 32 bit size.
-func toUint32(portStr string) uint32 {
-	port, _ := strconv.ParseInt(portStr, 10, 32)
-	return uint32(port)
-}
-
 // convertPort Convert the port which has been defined in zookeeper library to the one that belongs to CRD.
 func convertPort(port *events.Port) *v1.Port {
 	return &v1.Port{
 		Name:     port.Port,
 		Protocol: port.Protocol,
-		Number:   toUint32(port.Port),
+		Number:   utils.ToUint32(port.Port),
 	}
 }
 
-// Delete an element from a Slice with an index.
-// return the original parameter as the result instead if it is not a slice.
-func DeleteInSlice(s interface{}, index int) interface{} {
-	value := reflect.ValueOf(s)
-	if value.Kind() == reflect.Slice {
-		//|| value.Kind() == reflect.Array {
-		result := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, value.Len()))
-		return result.Interface()
-	} else {
-		fmt.Printf("Only a slice can be passed into this method for deleting an element of it.")
-		return s
-	}
-}
-
-// resolveAppCode Resolve the application code that was used as the key of an amc CR
+// resolveAppIdentifier Resolve the application code that was used as the key of an amc CR
 // from the instance belongs to a service event.
-func resolveAppCode(e *events.ServiceEvent) string {
+func resolveAppIdentifier(e *events.ServiceEvent) string {
 	vi := findValidInstance(e)
 	if vi == nil {
 		fmt.Printf("Can not find a valid instance with this event.")
@@ -364,12 +332,12 @@ func resolveAppCode(e *events.ServiceEvent) string {
 		//return "foo"
 	}
 
-	appCode := vi.Labels["application"]
-	return appCode
+	appIdentifier := vi.Labels["Application"]
+	return appIdentifier
 }
 
-// findValidInstance because the application name just belongs to an instance,
-// we must try to find out an valid instance.
+// findValidInstance because the application name was defined at an instance,
+// we must try to find out an valid instance who always is the first one.
 func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	if e == nil {
 		fmt.Printf("Service event is nil when start to find a valid instance from it.\n")
@@ -386,7 +354,7 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	}
 
 	for _, value := range e.Service.Instances {
-		if value != nil && value.Labels != nil && value.Labels["application"] != "" {
+		if value != nil && value.Labels != nil && value.Labels["Application"] != "" {
 			return value
 		}
 	}
@@ -394,14 +362,37 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	return nil
 }
 
-func (ceh *CRDEventHandler) AddConfigItem(e *events.ConfigEvent) {
+// AddConfigEntry
+func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
 	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
+
+	serviceName := e.ConfigEntry.Key
+	appIdentifier := identifierFinder(serviceName)
+
+	amc := &v1.AppMeshConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appIdentifier,
+			Namespace: defaultNamespace,
+		},
+	}
+	_, err := kubeeh.GetAmc(amc)
+	if err != nil {
+		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		// TODO Is there a requirement to requeue this event?
+	} else {
+		//for _, ci := range cc.Configs {
+		//for address := range ci.Addresses {
+		//
+		//}
+		//}
+	}
+
 }
 
-func (ceh *CRDEventHandler) ChangeConfigItem(e *events.ConfigEvent) {
+func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent) {
 	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
 }
 
-func (ceh *CRDEventHandler) DeleteConfigItem(e *events.ConfigEvent) {
+func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *events.ConfigEvent) {
 	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
 }

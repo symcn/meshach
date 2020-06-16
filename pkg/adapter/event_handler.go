@@ -17,12 +17,12 @@ type EventHandler interface {
 	// AddInstance you should handle the event describe that an instance has been unregistered
 	DeleteInstance(event events.ServiceEvent)
 
-	// AddConfigItem you should handle the event depicted that a dynamic configuration has been added
-	AddConfigItem(event *events.ConfigEvent)
-	// ChangeConfigItem you should handle the event depicted that a dynamic configuration has been changed
-	ChangeConfigItem(event *events.ConfigEvent)
-	// DeleteConfigItem you should handle the event depicted that a dynamic configuration has been deleted
-	DeleteConfigItem(event *events.ConfigEvent)
+	// AddConfigEntry you should handle the event depicted that a dynamic configuration has been added
+	AddConfigEntry(event *events.ConfigEvent, identifierFinder func(a string) string)
+	// ChangeConfigEntry you should handle the event depicted that a dynamic configuration has been changed
+	ChangeConfigEntry(event *events.ConfigEvent)
+	// DeleteConfigEntry you should handle the event depicted that a dynamic configuration has been deleted
+	DeleteConfigEntry(event *events.ConfigEvent)
 }
 
 // SimpleEventHandler Using printing the event's information as a simple handling logic.
@@ -46,14 +46,14 @@ func (seh *SimpleEventHandler) DeleteInstance(e events.ServiceEvent) {
 	fmt.Printf("Simple event handler: Deleting an instance\n%v\n", e.Instance)
 }
 
-func (seh *SimpleEventHandler) AddConfigItem(e *events.ConfigEvent) {
+func (seh *SimpleEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
 	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
 }
 
-func (seh *SimpleEventHandler) ChangeConfigItem(e *events.ConfigEvent) {
+func (seh *SimpleEventHandler) ChangeConfigEntry(e *events.ConfigEvent) {
 	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
 }
 
-func (seh *SimpleEventHandler) DeleteConfigItem(e *events.ConfigEvent) {
+func (seh *SimpleEventHandler) DeleteConfigEntry(e *events.ConfigEvent) {
 	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
 }

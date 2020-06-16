@@ -70,9 +70,9 @@ const (
 type ConfigEventType int
 
 const (
-	ConfigItemAdded ConfigEventType = iota
-	ConfigItemDeleted
-	ConfigItemChanged
+	ConfigEntryAdded ConfigEventType = iota
+	ConfigEntryDeleted
+	ConfigEntryChanged
 )
 
 func (p *Port) Portoi() int {
@@ -108,8 +108,29 @@ func (s *Service) GetInstances() map[string]*Instance {
 	return s.Instances
 }
 
+// ConfiguratorConfig ...
+type ConfiguratorConfig struct {
+	ConfigVersion string       `yaml:"configVersion"`
+	Scope         string       `yaml:"scope"`
+	Key           string       `yaml:"key"`
+	Enabled       bool         `yaml:"enabled"`
+	Configs       []ConfigItem `yaml:"configs"`
+}
+
+// ConfigItem ...
+type ConfigItem struct {
+	Type              string            `yaml:"type"`
+	Enabled           bool              `yaml:"enabled"`
+	Addresses         []string          `yaml:"addresses"`
+	ProviderAddresses []string          `yaml:"providerAddresses"`
+	Services          []string          `yaml:"services"`
+	Applications      []string          `yaml:"applications"`
+	Parameters        map[string]string `yaml:"parameters"`
+	Side              string            `yaml:"side"`
+}
+
 type ConfigEvent struct {
-	EventType ConfigEventType
-	Path      string
-	Data      string
+	EventType   ConfigEventType
+	Path        string
+	ConfigEntry *ConfiguratorConfig
 }

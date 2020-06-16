@@ -26,14 +26,14 @@ func (leh *LogEventHandler) DeleteInstance(e events.ServiceEvent) {
 	fmt.Printf("Simple event handler: Deleting an instance\n%v\n", e.Instance)
 }
 
-func (leh *LogEventHandler) AddConfigItem(e *events.ConfigEvent) {
+func (leh *LogEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
 	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
 }
 
-func (leh *LogEventHandler) ChangeConfigItem(e *events.ConfigEvent) {
+func (leh *LogEventHandler) ChangeConfigEntry(e *events.ConfigEvent) {
 	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
 }
 
-func (leh *LogEventHandler) DeleteConfigItem(e *events.ConfigEvent) {
+func (leh *LogEventHandler) DeleteConfigEntry(e *events.ConfigEvent) {
 	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
 }

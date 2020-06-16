@@ -79,7 +79,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
 	eventHandlers = append(eventHandlers, &handler.LogEventHandler{
 		Name: "logging every step information when receiving an event."})
-	eventHandlers = append(eventHandlers, &handler.CRDEventHandler{K8sMgr: k8sMgr})
+	eventHandlers = append(eventHandlers, &handler.KubeEventHandler{K8sMgr: k8sMgr})
 	adapter := &Adapter{
 		opt:            opt,
 		K8sMgr:         k8sMgr,
@@ -127,17 +127,17 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 		case ce := <-a.configClient.Events():
 			fmt.Printf("%v\n", ce)
 			switch ce.EventType {
-			case events.ConfigItemAdded:
+			case events.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
-					h.AddConfigItem(ce)
+					h.AddConfigEntry(ce, a.registryClient.FindAppIdentifier)
 				}
-			case events.ConfigItemChanged:
+			case events.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
-					h.ChangeConfigItem(ce)
+					h.ChangeConfigEntry(ce)
 				}
-			case events.ConfigItemDeleted:
+			case events.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
-					h.DeleteConfigItem(ce)
+					h.DeleteConfigEntry(ce)
 				}
 			}
 		case <-stop:

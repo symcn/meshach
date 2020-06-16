@@ -2,24 +2,25 @@ package zookeeper
 
 import (
 	"fmt"
+	"github.com/ghodss/yaml"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
 	"time"
 )
 
 type ZkConfigClient struct {
-	conn             *zk.Conn
-	out              chan *events.ConfigEvent
-	rootPathCache    *pathCache
-	configPathCaches map[string]*pathCache
+	conn          *zk.Conn
+	out           chan *events.ConfigEvent
+	configEntries map[string]*events.ConfiguratorConfig
+	rootPathCache *pathCache
 }
 
 func NewConfigClient(conn *zk.Conn) *ZkConfigClient {
 	cc := &ZkConfigClient{
-		conn:             conn,
-		out:              make(chan *events.ConfigEvent),
-		rootPathCache:    nil,
-		configPathCaches: make(map[string]*pathCache),
+		conn:          conn,
+		out:           make(chan *events.ConfigEvent),
+		configEntries: make(map[string]*events.ConfiguratorConfig),
+		rootPathCache: nil,
 	}
 
 	return cc
@@ -39,7 +40,8 @@ func (cc *ZkConfigClient) Start() error {
 		for {
 			select {
 			case <-tick:
-				fmt.Printf("The cache of root path for zk configuration client: \n%v\n", cc.rootPathCache.cached)
+				fmt.Printf("Observing cache of configuration client\n  flags: %v\n  configs: %v\n",
+					cc.rootPathCache.cached, cc.configEntries)
 			}
 		}
 	}()
@@ -50,24 +52,38 @@ func (cc *ZkConfigClient) Start() error {
 // eventLoop
 func (cc *ZkConfigClient) eventLoop() {
 	for event := range cc.rootPathCache.events() {
-		var data string
+		var data []byte
 		var ce *events.ConfigEvent
 		switch event.eventType {
 		case pathCacheEventAdded:
 			data = cc.getData(event.path)
+			config := &events.ConfiguratorConfig{}
+			err := yaml.Unmarshal([]byte(data), config)
+			if err != nil {
+				fmt.Printf("Parsing the configuration data to a defined struct has an error: %v\n", err)
+				continue
+			}
+
+			cc.configEntries[config.Key] = config
 			ce = &events.ConfigEvent{
-				EventType: events.ConfigItemAdded,
-				Path:      event.path,
-				Data:      data,
+				EventType:   events.ConfigEntryAdded,
+				Path:        event.path,
+				ConfigEntry: config,
 			}
 			go cc.notify(ce)
 			break
 		case pathCacheEventChanged:
 			data = cc.getData(event.path)
+			config := &events.ConfiguratorConfig{}
+			err := yaml.Unmarshal([]byte(data), config)
+			if err != nil {
+				fmt.Printf("Parsing the configuration data to a defined struct has an error: %v\n", err)
+				continue
+			}
 			ce = &events.ConfigEvent{
-				EventType: events.ConfigItemChanged,
-				Path:      event.path,
-				Data:      data,
+				EventType:   events.ConfigEntryChanged,
+				Path:        event.path,
+				ConfigEntry: config,
 			}
 			go cc.notify(ce)
 			break
@@ -75,7 +91,7 @@ func (cc *ZkConfigClient) eventLoop() {
 			// TODO Deleting configurations about this service in the CR
 			cc.rootPathCache.cached[event.path] = false
 			ce = &events.ConfigEvent{
-				EventType: events.ConfigItemDeleted,
+				EventType: events.ConfigEntryDeleted,
 				Path:      event.path,
 			}
 			go cc.notify(ce)
@@ -91,15 +107,14 @@ func (cc *ZkConfigClient) Events() <-chan *events.ConfigEvent {
 }
 
 // getData
-func (cc *ZkConfigClient) getData(path string) string {
-	var data string
-	dataBytes, _, err := cc.conn.Get(path)
+func (cc *ZkConfigClient) getData(path string) []byte {
+	data, _, err := cc.conn.Get(path)
 	if err != nil {
 		fmt.Printf("Get data with path %s has an error: %v\n", path, err)
 		return data
 	}
-	data = string(dataBytes)
-	fmt.Printf("Get data with path %s: \n%v\n", path, data)
+
+	//fmt.Printf("Get data with path %s: \n%v\n", path, data)
 	return data
 }
 
