@@ -7,32 +7,41 @@ import (
 // Inject set the relevant parameters of the data plane.
 type Inject struct {
 	// The log level of sidecar
+	// +kubebuilder:validation:Enum=error;warning;info;debug
 	LogLevel string `json:"logLevel,omitempty"`
 
 	// Set the sidecar type, must one of mosn|envoy
+	// +kubebuilder:validation:Enum=mosn;envoy
 	Sidecar string `json:"sidecar"`
 }
 
 // Port describes the properties of a specific port of a service.
 type Port struct {
 	// Label assigned to the port.
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
 	// The protocol exposed on the port.
 	// MUST BE HTTP TO ROUTE DUBBO SERVICE.
+	// +kubebuilder:validation:Enum=HTTP;HTTPS;TCP
 	Protocol string `json:"protocol"`
 
 	// A valid non-negative integer port number.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
 	Number uint32 `json:"number"`
 }
 
 // Instance describes the properties of a specific instance of a service.
 type Instance struct {
 	// Host associated with the network endpoint without the port.
+	// +kubebuilder:validation:MaxLength=16
+	// +kubebuilder:validation:MinLength=8
 	Host string `json:"host"`
 
 	// The parameters of Dubbo service
-	Labels map[string]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels"`
 
 	// Port describes the properties of a specific port of a service.
 	// The Dubbo service port registered with MOSN is 20882,
@@ -40,13 +49,17 @@ type Instance struct {
 	Port *Port `json:"port"`
 
 	// The traffic weight of this instance.
-	Weight uint32 `json:"weight"`
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	Weight uint32 `json:"weight,omitempty"`
 }
 
 // Subset is a subset of endpoints of a service. Subset can be used for
 // scenarios like A/B testing, or routing to a specific version of a service.
 type Subset struct {
 	// Must be formatted to conform to the DNS1123 specification.
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
 	// One or more labels are typically required to identify the subset destination.
@@ -63,11 +76,14 @@ type Subset struct {
 // in istio's internal service registry.
 type Service struct {
 	// Must be formatted to conform to the DNS1123 specification.
-	Name string `json:"name,omitempty"`
+	// +kubebuilder:validation:MaxLength=255
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
 
 	// A list describes the properties of all ports of this service.
 	// The Dubbo service port registered with MOSN is 20882,
 	// otherwize the native Dubbo service port is 20880.
+	// +kubebuilder:validation:MinItems=1
 	Ports []*Port `json:"ports,omitempty"`
 
 	// A list describes all registered instances of this service.
@@ -84,14 +100,16 @@ type Service struct {
 // will be sent after processing a routing rule.
 type Destination struct {
 	// The name of a subset within the service. Applicable only to services
-	// within the mesh. The subset must be defined in a corresponding
-	// DestinationRule.
-	Subset string `json:"subset,omitempty"`
+	// within the mesh. The subset must be defined in a corresponding DestinationRule.
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:MinLength=1
+	Subset string `json:"subset"`
 
 	// The proportion of traffic to be forwarded to the service
 	// version. (0-100). Sum of weights across destinations SHOULD BE == 100.
-	// If there is only one destination in a rule, the weight value is assumed to
-	// be 100.
+	// If there is only one destination in a rule, the weight value is assumed to be 100.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
 	Weight int32 `json:"weight,omitempty"`
 }
 
@@ -141,14 +159,14 @@ type AppMeshConfigSpec struct {
 	AppName string `json:"appName,omitempty"`
 
 	// Inject set the relevant parameters of the data plane.
-	Inject *Inject `json:"inject"`
+	Inject *Inject `json:"inject,omitempty"`
 
 	// Service describes Dubbo services, will be registered as ServiceEntries
 	// in istio's internal service registry.
 	Services []*Service `json:"services"`
 
 	// Policy defines load balancing, retry, and other policies for a service.
-	Policy *Policy `json:"policy"`
+	Policy *Policy `json:"policy,omitempty"`
 
 	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
 	MeshConfigGeneration int64 `json:"meshConfigGeneration"`
