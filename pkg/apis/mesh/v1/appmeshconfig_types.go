@@ -4,87 +4,157 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// Inject ...
+// Inject set the relevant parameters of the data plane.
 type Inject struct {
+	// The log level of sidecar
 	LogLevel string `json:"logLevel,omitempty"`
-	Sidecar  string `json:"sidecar"`
+
+	// Set the sidecar type, must one of mosn|envoy
+	Sidecar string `json:"sidecar"`
 }
 
-// Port ...
+// Port describes the properties of a specific port of a service.
 type Port struct {
-	Name     string `json:"name"`
+	// Label assigned to the port.
+	Name string `json:"name"`
+
+	// The protocol exposed on the port.
+	// MUST BE HTTP TO ROUTE DUBBO SERVICE.
 	Protocol string `json:"protocol"`
-	Number   uint32 `json:"number"`
+
+	// A valid non-negative integer port number.
+	Number uint32 `json:"number"`
 }
 
-// Instance ...
+// Instance describes the properties of a specific instance of a service.
 type Instance struct {
-	Host   string            `json:"host"`
-	Zone   string            `json:"zone"`
-	Group  string            `json:"group"`
+	// Host associated with the network endpoint without the port.
+	Host string `json:"host"`
+
+	// The parameters of Dubbo service
 	Labels map[string]string `json:"labels,omitempty"`
-	Port   *Port             `json:"port"`
-	Weight uint32            `json:"weight"`
+
+	// Port describes the properties of a specific port of a service.
+	// The Dubbo service port registered with MOSN is 20882,
+	// otherwize the native Dubbo service port is 20880.
+	Port *Port `json:"port"`
+
+	// The traffic weight of this instance.
+	Weight uint32 `json:"weight"`
 }
 
-// Subset ...
+// Subset is a subset of endpoints of a service. Subset can be used for
+// scenarios like A/B testing, or routing to a specific version of a service.
 type Subset struct {
-	Name   string            `json:"name"`
+	// Must be formatted to conform to the DNS1123 specification.
+	Name string `json:"name"`
+
+	// One or more labels are typically required to identify the subset destination.
+	// e.g. {"group": "blue"}
 	Labels map[string]string `json:"labels"`
-	Policy *Policy           `json:"policy,omitempty"`
+
+	// Traffic policies defined at the service-level can be overridden at a subset-level.
+	// NOTE: Policies specified for subsets will not take effect until a route rule explicitly
+	// sends traffic to this subset.
+	Policy *Policy `json:"policy,omitempty"`
 }
 
-// Service ...
+// Service describes Dubbo services, will be registered as ServiceEntries
+// in istio's internal service registry.
 type Service struct {
-	Name      string      `json:"name,omitempty"`
-	Ports     []*Port     `json:"ports,omitempty"`
+	// Must be formatted to conform to the DNS1123 specification.
+	Name string `json:"name,omitempty"`
+
+	// A list describes the properties of all ports of this service.
+	// The Dubbo service port registered with MOSN is 20882,
+	// otherwize the native Dubbo service port is 20880.
+	Ports []*Port `json:"ports,omitempty"`
+
+	// A list describes all registered instances of this service.
 	Instances []*Instance `json:"instances,omitempty"`
-	Policy    *Policy     `json:"policy,omitempty"`
-	Subsets   []*Subset   `json:"subsets,omitempty"`
+
+	// Traffic policies of service-level
+	Policy *Policy `json:"policy,omitempty"`
+
+	// Subsets defined all sebsets of the current service.
+	Subsets []*Subset `json:"subsets,omitempty"`
 }
 
-// Destination ...
+// Destination indicates the network addressable service to which the request/connection
+// will be sent after processing a routing rule.
 type Destination struct {
+	// The name of a subset within the service. Applicable only to services
+	// within the mesh. The subset must be defined in a corresponding
+	// DestinationRule.
 	Subset string `json:"subset,omitempty"`
-	Weight int32  `json:"weight,omitempty"`
+
+	// The proportion of traffic to be forwarded to the service
+	// version. (0-100). Sum of weights across destinations SHOULD BE == 100.
+	// If there is only one destination in a rule, the weight value is assumed to
+	// be 100.
+	Weight int32 `json:"weight,omitempty"`
 }
 
-// Policy ...
+// Policy defines load balancing, retry, and other policies for a service.
 type Policy struct {
-	LoadBalancer   map[string]string `json:"loadBalancer,omitempty"`
-	MaxConnections int32             `json:"maxConnections,omitempty"`
-	Timeout        string            `json:"timeout,omitempty"`
-	MaxRetries     int32             `json:"maxRetries,omitempty"`
-	SourceLabels   []*SourceLabels   `json:"sourceLabels,omitempty"`
+	// Load balancing is a way of distributing traffic between multiple hosts within
+	// a single upstream cluster in order to effectively make use of available resources.
+	// There are many different ways of accomplishing this, like ROUND_ROBIN, LEAST_CONN
+	// RANDOM and RASSTHROUGN
+	LoadBalancer map[string]string `json:"loadBalancer,omitempty"`
+
+	// Maximum number of HTTP1 connections to a destination host. Default 2^32-1.
+	MaxConnections int32 `json:"maxConnections,omitempty"`
+
+	// Connection timeout. format: 1h/1m/1s/1ms. MUST BE >=1ms. Default is 10s.
+	Timeout string `json:"timeout,omitempty"`
+
+	// Maximum number of retries that can be outstanding to all hosts in a cluster at a given time.
+	// Defaults to 2^32-1.
+	MaxRetries int32 `json:"maxRetries,omitempty"`
+
+	// One or more labels that constrain the applicability of a rule to workloads with
+	// the given labels.
+	SourceLabels []*SourceLabels `json:"sourceLabels,omitempty"`
 }
 
-// SourceLabels ...
+// SourceLabels is one or more labels that constrain the applicability of a rule to workloads with
+// the given labels.
 type SourceLabels struct {
-	Name    string            `json:"name,omitempty"`
-	Labels  map[string]string `json:"labels,omitempty"`
-	Headers map[string]string `json:"headers,omitempty"`
-	Route   []*Destination    `json:"route,omitempty"`
-}
+	// The name of specific subset.
+	Name string `json:"name,omitempty"`
 
-// Monitor ...
-// type Monitor struct {
-// }
+	// One or more labels that constrain the applicability of a rule to workloads with
+	// the given labels.
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// The HTTP route match headers.
+	Headers map[string]string `json:"headers,omitempty"`
+
+	// Each routing rule is associated with one or more service versions.
+	Route []*Destination `json:"route,omitempty"`
+}
 
 // AppMeshConfigSpec ...
 type AppMeshConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	AppName              string     `json:"appName,omitempty"`
-	Inject               *Inject    `json:"inject"`
-	Services             []*Service `json:"services"`
-	Policy               *Policy    `json:"policy"`
-	MeshConfigGeneration int64      `json:"meshConfigGeneration"`
+	// The name corresponding to the business application.
+	AppName string `json:"appName,omitempty"`
+
+	// Inject set the relevant parameters of the data plane.
+	Inject *Inject `json:"inject"`
+
+	// Service describes Dubbo services, will be registered as ServiceEntries
+	// in istio's internal service registry.
+	Services []*Service `json:"services"`
+
+	// Policy defines load balancing, retry, and other policies for a service.
+	Policy *Policy `json:"policy"`
+
+	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
+	MeshConfigGeneration int64 `json:"meshConfigGeneration"`
 }
 
-// ConfigPhase ...
+// ConfigPhase describes the phase of the configuration file destribution.
 type ConfigPhase string
 
 // ConfigStatus enumerations
@@ -95,14 +165,19 @@ const (
 	ConfigStatusUnknown       ConfigPhase = "Unknown"
 )
 
-// SubStatus ...
+// SubStatus describes the destribution status of the individual istio's CR.
 type SubStatus struct {
-	Desired       int  `json:"desired"`
-	Distributed   *int `json:"distributed"`
+	// Total number of desired configuration files.
+	Desired int `json:"desired"`
+
+	// Total number of configuration files distributed.
+	Distributed *int `json:"distributed"`
+
+	// Total number of configuration files undistributed.
 	Undistributed *int `json:"undistributed"`
 }
 
-// Status ...
+// Status is a collection of all SubStatus.
 type Status struct {
 	ServiceEntry    *SubStatus `json:"serviceEntry"`
 	WorkloadEntry   *SubStatus `json:"workloadEntry"`
