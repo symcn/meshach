@@ -59,26 +59,25 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	//k8sMgr.GetAll()
 
 	// Initializing the registry client that you want to use.
-	conn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	rConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
 		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
 		return nil, err
 	}
-	registryClient := zookeeper.NewRegistryClient(conn)
+	registryClient := zookeeper.NewRegistryClient(rConn)
 
 	// Initializing the a client to connect to configuration center
-	//cconn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
-	//if err != nil {
-	//	fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
-	//	return nil, err
-	//}
-	configClient := zookeeper.NewConfigClient(conn)
+	cConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	if err != nil {
+		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
+		return nil, err
+	}
+	configClient := zookeeper.NewConfigClient(cConn)
 
 	// initializing adapter
 	var eventHandlers []EventHandler
 	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
-	eventHandlers = append(eventHandlers, &handler.LogEventHandler{
-		Name: "logging every step information when receiving an event."})
+	//eventHandlers = append(eventHandlers, &handler.LogEventHandler{Name: "logging events."})
 	//eventHandlers = append(eventHandlers, &handler.KubeEventHandler{K8sMgr: k8sMgr})
 	eventHandlers = append(eventHandlers, &handler.KubeV2EventHandler{K8sMgr: k8sMgr})
 	adapter := &Adapter{
@@ -134,11 +133,11 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				}
 			case events.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
-					h.ChangeConfigEntry(ce)
+					h.ChangeConfigEntry(ce, a.registryClient.FindAppIdentifier)
 				}
 			case events.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
-					h.DeleteConfigEntry(ce)
+					h.DeleteConfigEntry(ce, a.registryClient.FindAppIdentifier)
 				}
 			}
 		case <-stop:

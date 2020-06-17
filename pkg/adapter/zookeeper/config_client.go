@@ -27,24 +27,27 @@ func NewConfigClient(conn *zk.Conn) *ZkConfigClient {
 }
 
 func (cc *ZkConfigClient) Start() error {
-	rootpc, err := newPathCache(cc.conn, ConfiguratorPath)
+	rpc, err := newPathCache(cc.conn, ConfiguratorPath)
 	if err != nil {
 		return err
 	}
-	cc.rootPathCache = rootpc
+	cc.rootPathCache = rpc
 	go cc.eventLoop()
 
 	// FIXME just for debug
-	go func() {
-		tick := time.Tick(10 * time.Second)
-		for {
-			select {
-			case <-tick:
-				fmt.Printf("Observing cache of configuration client\n  flags: %v\n  configs: %v\n",
-					cc.rootPathCache.cached, cc.configEntries)
+	var debug = true
+	if debug {
+		go func() {
+			tick := time.Tick(10 * time.Second)
+			for {
+				select {
+				case <-tick:
+					fmt.Printf("Observing cache of configuration client\n  flags: %v\n  configs: %v\n",
+						cc.rootPathCache.cached, cc.configEntries)
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	return nil
 }

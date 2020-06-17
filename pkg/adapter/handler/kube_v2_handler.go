@@ -205,7 +205,7 @@ func (kubev2eh *KubeV2EventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMes
 
 // AddConfigEntry
 func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
-	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
+	fmt.Printf("Kube v2 event handler: adding a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
 	appIdentifier := identifierFinder(serviceName)
@@ -230,10 +230,31 @@ func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *events.ConfigEvent, identi
 
 }
 
-func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent) {
-	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
+func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+	fmt.Printf("Kube v2 event handler: change a configuration\n%v\n", e.Path)
+
+	serviceName := e.ConfigEntry.Key
+	appIdentifier := identifierFinder(serviceName)
+
+	amc := &v1.AppMeshConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appIdentifier,
+			Namespace: defaultNamespace,
+		},
+	}
+	_, err := kubev2eh.GetAmc(amc)
+	if err != nil {
+		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		// TODO Is there a requirement to requeue this event?
+	} else {
+		//for _, ci := range cc.Configs {
+		//for address := range ci.Addresses {
+		//
+		//}
+		//}
+	}
 }
 
-func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent) {
-	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
+func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+	fmt.Printf("Kube v2 event handler: delete a configuration\n%v\n", e.Path)
 }

@@ -364,8 +364,8 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 }
 
 // AddConfigEntry
-func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
-	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
+func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+	fmt.Printf("Kube event handler: adding a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
 	appIdentifier := identifierFinder(serviceName)
@@ -390,10 +390,31 @@ func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, identifier
 
 }
 
-func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent) {
-	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
+func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+	fmt.Printf("Kube event handler: change a configuration\n%v\n", e.Path)
+
+	serviceName := e.ConfigEntry.Key
+	appIdentifier := identifierFinder(serviceName)
+
+	amc := &v1.AppMeshConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appIdentifier,
+			Namespace: defaultNamespace,
+		},
+	}
+	_, err := kubeeh.GetAmc(amc)
+	if err != nil {
+		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		// TODO Is there a requirement to requeue this event?
+	} else {
+		//for _, ci := range cc.Configs {
+		//for address := range ci.Addresses {
+		//
+		//}
+		//}
+	}
 }
 
-func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *events.ConfigEvent) {
-	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
+func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+	fmt.Printf("Kube event handler: delete a configuration\n%v\n", e.Path)
 }

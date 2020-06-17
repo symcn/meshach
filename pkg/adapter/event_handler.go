@@ -20,9 +20,9 @@ type EventHandler interface {
 	// AddConfigEntry you should handle the event depicted that a dynamic configuration has been added
 	AddConfigEntry(event *events.ConfigEvent, identifierFinder func(a string) string)
 	// ChangeConfigEntry you should handle the event depicted that a dynamic configuration has been changed
-	ChangeConfigEntry(event *events.ConfigEvent)
+	ChangeConfigEntry(event *events.ConfigEvent, identifierFinder func(s string) string)
 	// DeleteConfigEntry you should handle the event depicted that a dynamic configuration has been deleted
-	DeleteConfigEntry(event *events.ConfigEvent)
+	DeleteConfigEntry(event *events.ConfigEvent, identifierFinder func(s string) string)
 }
 
 // SimpleEventHandler Using printing the event's information as a simple handling logic.
@@ -50,10 +50,10 @@ func (seh *SimpleEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierF
 	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
 }
 
-func (seh *SimpleEventHandler) ChangeConfigEntry(e *events.ConfigEvent) {
+func (seh *SimpleEventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
 	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
 }
 
-func (seh *SimpleEventHandler) DeleteConfigEntry(e *events.ConfigEvent) {
+func (seh *SimpleEventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
 	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
 }

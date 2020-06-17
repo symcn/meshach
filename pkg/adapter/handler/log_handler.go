@@ -30,10 +30,10 @@ func (leh *LogEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFind
 	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
 }
 
-func (leh *LogEventHandler) ChangeConfigEntry(e *events.ConfigEvent) {
+func (leh *LogEventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
 	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
 }
 
-func (leh *LogEventHandler) DeleteConfigEntry(e *events.ConfigEvent) {
+func (leh *LogEventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
 	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
 }
