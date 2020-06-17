@@ -1,4 +1,4 @@
-package adapter
+package constant
 
 var ZkServers = []string{
 	// local
@@ -9,3 +9,7 @@ var ZkServers = []string{
 	//"10.248.224.25:2181",
 
 }
+
+var (
+	ApplicationLabel = "application"
+)

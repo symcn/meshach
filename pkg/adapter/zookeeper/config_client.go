@@ -80,6 +80,7 @@ func (cc *ZkConfigClient) eventLoop() {
 				fmt.Printf("Parsing the configuration data to a defined struct has an error: %v\n", err)
 				continue
 			}
+			cc.configEntries[config.Key] = config
 			ce = &events.ConfigEvent{
 				EventType:   events.ConfigEntryChanged,
 				Path:        event.path,

@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
@@ -332,7 +333,7 @@ func resolveAppIdentifier(e *events.ServiceEvent) string {
 		//return "foo"
 	}
 
-	appIdentifier := vi.Labels["Application"]
+	appIdentifier := vi.Labels["application"]
 	return appIdentifier
 }
 
@@ -354,7 +355,7 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	}
 
 	for _, value := range e.Service.Instances {
-		if value != nil && value.Labels != nil && value.Labels["Application"] != "" {
+		if value != nil && value.Labels != nil && value.Labels[constant.ApplicationLabel] != "" {
 			return value
 		}
 	}

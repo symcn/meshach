@@ -2,6 +2,7 @@ package zookeeper
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
 	"net/url"
@@ -122,7 +123,7 @@ func (c *ZkRegistryClient) FindAppIdentifier(serviceName string) string {
 	}
 	for _, ins := range service.Instances {
 		if ins != nil && ins.Labels != nil {
-			return ins.Labels["Application"]
+			return ins.Labels[constant.ApplicationLabel]
 		}
 	}
 	return appName

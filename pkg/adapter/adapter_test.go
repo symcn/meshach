@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,7 +53,7 @@ func Test_Start(t *testing.T) {
 	}
 
 	opt := Option{
-		Address:          ZkServers,
+		Address:          constant.ZkServers,
 		Timeout:          5 * 1000,
 		ClusterNamespace: "sym-admin",
 		ClusterOwner:     "sym-admin",
