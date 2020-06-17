@@ -45,3 +45,21 @@ clear:
 	kubectl delete -f deploy/role_binding.yaml
 	kubectl delete -f deploy/operator.yaml
 
+# Run unit test code
+test: set-goproxy fmt vet
+	go test -v -race -cover ./...
+
+test-controller:
+	go test -v -cover github.com/mesh-operator/pkg/controller/appmeshconfig
+
+# Run go fmt against code
+fmt:
+	go fmt ./...
+
+# Run go vet against code
+vet:
+	go vet ./...
+
+# Speed up Go module downloads in CI
+set-goproxy:
+	go env -w GOPROXY=https://goproxy.cn,direct

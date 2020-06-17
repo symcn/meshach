@@ -2,12 +2,12 @@ package zookeeper
 
 import (
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/events"
-	"github.com/samuel/go-zookeeper/zk"
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/mesh-operator/pkg/adapter/events"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 type ZkRegistryClient struct {
@@ -116,7 +116,7 @@ func (c *ZkRegistryClient) FindAppIdentifier(serviceName string) string {
 		return appName
 	}
 
-	if service.Instances == nil || len(service.Instances) <= 0 {
+	if service.Instances == nil || len(service.Instances) == 0 {
 		fmt.Printf("Can not find any instance from a service %s which has an empty instances list.\n", service)
 		return appName
 	}
