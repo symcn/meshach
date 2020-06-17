@@ -230,11 +230,21 @@ func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *events.ConfigEvent, identi
 
 }
 
+// ChangeConfigEntry
 func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
 	fmt.Printf("Kube v2 event handler: change a configuration\n%v\n", e.Path)
 
+	if !e.ConfigEntry.Enabled {
+		fmt.Printf("Configurator [%s] is disable, ignore it.", e.ConfigEntry.Key)
+		return
+	}
+
 	serviceName := e.ConfigEntry.Key
 	appIdentifier := identifierFinder(serviceName)
+	if appIdentifier == "" {
+		fmt.Printf("Can not find the app identified name through the cached service, service name :%s", serviceName)
+		return
+	}
 
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -242,17 +252,63 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, ide
 			Namespace: defaultNamespace,
 		},
 	}
-	_, err := kubev2eh.GetAmc(amc)
+	amc, err := kubev2eh.GetAmc(amc)
 	if err != nil {
 		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 		// TODO Is there a requirement to requeue this event?
-	} else {
-		//for _, ci := range cc.Configs {
-		//for address := range ci.Addresses {
-		//
-		//}
-		//}
+		return
 	}
+
+	for index, service := range amc.Spec.Services {
+		// find the service we need to process
+		if service.Name == serviceName {
+			s := service
+
+			// find out the default configuration if it exists
+			// it will be used to assemble both the service and instances without customized configuration.
+			var defaultConfig *events.ConfigItem
+			for _, c := range e.ConfigEntry.Configs {
+				for _, a := range c.Addresses {
+					if a == "0.0.0.0" {
+						defaultConfig = &c
+					}
+				}
+			}
+
+			// Assemble the service
+			if defaultConfig != nil && defaultConfig.Enabled {
+				s.Policy = &v1.Policy{
+					LoadBalancer:   nil,
+					MaxConnections: 0,
+					Timeout:        e.ConfigEntry.Configs[0].Parameters["timeout"],
+					MaxRetries:     utils.ToInt32(e.ConfigEntry.Configs[0].Parameters["retries"]),
+					SourceLabels:   nil,
+				}
+			}
+
+			// Assemble these instances
+			for index, ins := range s.Instances {
+				for _, cc := range e.ConfigEntry.Configs {
+					for _, adds := range cc.Addresses {
+						if ins.Host+":"+ins.Port.Name == adds {
+							// found an customized configuration for this instance.
+							i := service.Instances[index]
+							i.Weight = utils.ToUint32(cc.Parameters["weight"])
+							s.Instances[index] = i
+						}
+					}
+				}
+			}
+
+			amc.Spec.Services[index] = s
+		}
+	}
+
+	kubev2eh.UpdateAmc(amc)
+}
+
+func wrapConfig(config *events.ConfiguratorConfig, amc *v1.AppMeshConfig) {
+
 }
 
 func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
