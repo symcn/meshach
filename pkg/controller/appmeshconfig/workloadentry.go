@@ -89,7 +89,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 
 	// Delete old WorkloadEntries
 	for name, we := range foundMap {
-		klog.V(4).Infof("Delete unused WorkloadEntry: %s", name)
+		klog.Infof("Delete unused WorkloadEntry: %s", name)
 		err := r.client.Delete(ctx, we)
 		if err != nil {
 			klog.Errorf("Delete unused WorkloadEntry error: %+v", err)

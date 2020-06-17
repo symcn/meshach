@@ -81,7 +81,7 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 
 	// Delete old ServiceEntry
 	for name, se := range foundMap {
-		klog.V(4).Infof("Delete unused ServiceEntry: %s", name)
+		klog.Infof("Delete unused ServiceEntry: %s", name)
 		err := r.client.Delete(ctx, se)
 		if err != nil {
 			klog.Errorf("Delete unused ServiceEntry error: %+v", err)

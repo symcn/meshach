@@ -212,7 +212,7 @@ type AppMeshConfigStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AppMeshConfig is the Schema for the appmeshconfigs API
+// AppMeshConfig is the Schema for the appmeshconfigs API.
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=appmeshconfigs,scope=Namespaced
 type AppMeshConfig struct {

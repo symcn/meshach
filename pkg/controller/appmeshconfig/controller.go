@@ -154,6 +154,7 @@ func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile
 			// Request foundect not found, could have been deleted after reconcile request.
 			// Owned foundects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			klog.Infof("Can't found AppMeshConfig[%s/%s], requeue...", request.Namespace, request.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the foundect - requeue the request.
@@ -180,7 +181,7 @@ func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile
 	klog.Infof("Update AppMeshConfig[%s/%s] status...", request.Namespace, request.Name)
 	err = r.updateStatus(ctx, request, instance)
 	if err != nil {
-		klog.Errorf("%s/%s update AppMeshConfig failed, err: %+v", request.Namespace, request.Name)
+		klog.Errorf("%s/%s update AppMeshConfig failed, err: %+v", request.Namespace, request.Name, err)
 		return reconcile.Result{}, err
 	}
 

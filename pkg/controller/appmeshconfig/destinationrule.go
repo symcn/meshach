@@ -97,7 +97,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 	}
 	// Delete old DestinationRules
 	for name, dr := range foundMap {
-		klog.V(4).Infof("Delete unused DestinationRule: %s", name)
+		klog.Infof("Delete unused DestinationRule: %s", name)
 		err := r.client.Delete(ctx, dr)
 		if err != nil {
 			klog.Errorf("Delete unused DestinationRule error: %+v", err)

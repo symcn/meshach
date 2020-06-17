@@ -84,7 +84,7 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 	}
 	// Delete old VirtualServices
 	for name, vs := range foundMap {
-		klog.V(4).Infof("Delete unused VirtualService: %s", name)
+		klog.Infof("Delete unused VirtualService: %s", name)
 		err := r.client.Delete(ctx, vs)
 		if err != nil {
 			klog.Errorf("Delete unused VirtualService error: %+v", err)

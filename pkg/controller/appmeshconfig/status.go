@@ -94,7 +94,7 @@ func (r *ReconcileAppMeshConfig) getVirtualServiceStatus(ctx context.Context, cr
 	svcCount := len(cr.Spec.Services)
 
 	// Skip if the service's subset is none
-	if len(cr.Spec.Services[0].Subsets) == 0 {
+	if len(cr.Spec.Services) == 0 || len(cr.Spec.Services[0].Subsets) == 0 {
 		svcCount = 0
 		return &meshv1.SubStatus{
 			Desired:       svcCount,
@@ -119,7 +119,7 @@ func (r *ReconcileAppMeshConfig) getDestinationRuleStatus(ctx context.Context, c
 	svcCount := len(cr.Spec.Services)
 
 	// Skip if the service's subset is none
-	if len(cr.Spec.Services[0].Subsets) == 0 {
+	if len(cr.Spec.Services) == 0 || len(cr.Spec.Services[0].Subsets) == 0 {
 		svcCount = 0
 		return &meshv1.SubStatus{
 			Desired:       svcCount,
