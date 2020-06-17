@@ -2,6 +2,7 @@ package zookeeper
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	"net/url"
 	"path"
 	"strings"
@@ -179,7 +180,8 @@ func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events
 	instance := &events.Instance{
 		Host: ep.Host,
 		Port: &events.Port{
-			Protocol: ep.Scheme,
+			//Protocol: ep.Scheme,
+			Protocol: constant.DubboProtocol,
 			Port:     ep.Port(),
 		},
 		Labels: make(map[string]string),
