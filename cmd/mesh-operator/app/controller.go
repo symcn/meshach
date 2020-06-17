@@ -25,10 +25,12 @@ import (
 	"github.com/mesh-operator/pkg/controller"
 	"github.com/mesh-operator/pkg/healthcheck"
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
+	"github.com/mesh-operator/pkg/option"
 	"github.com/mesh-operator/pkg/router"
 	"github.com/mesh-operator/pkg/utils"
 	"github.com/mesh-operator/pkg/version"
 	"github.com/spf13/cobra"
+	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/klog"
 	"k8s.io/sample-controller/pkg/signals"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -40,8 +42,8 @@ var (
 )
 
 // NewControllerCmd ...
-func NewControllerCmd(ropt *RootOption) *cobra.Command {
-	opt := utils.DefaultControllerOption()
+func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
+	opt := option.DefaultControllerOption()
 	cmd := &cobra.Command{
 		Use:     "controller",
 		Aliases: []string{"ctl"},
@@ -59,6 +61,7 @@ func NewControllerCmd(ropt *RootOption) *cobra.Command {
 			// Set default manager options
 			rp := time.Minute * time.Duration(opt.SyncPeriod)
 			options := manager.Options{
+				Namespace:               ropt.Namespace,
 				Scheme:                  k8sclient.GetScheme(),
 				SyncPeriod:              &rp,
 				MetricsBindAddress:      "0",
@@ -99,13 +102,15 @@ func NewControllerCmd(ropt *RootOption) *cobra.Command {
 
 			// Setup Scheme for all resources
 			if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-				klog.Error(err, "")
-				os.Exit(1)
+				klog.Fatalf("add AppMeshConfig to scheme error: %+v", err)
+			}
+			if err := networkingv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+				klog.Fatalf("add istio CRDs to scheme error: %+v", err)
 			}
 
 			// Setup all Controllers
 			if err := controller.AddToManager(mgr, opt); err != nil {
-				klog.Fatalf("unable to register controllers to the manager err: %v", err)
+				klog.Fatalf("unable to register controllers to the manager err: %+v", err)
 			}
 
 			stopCh := signals.SetupSignalHandler()

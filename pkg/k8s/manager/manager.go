@@ -176,7 +176,7 @@ func (m *ClusterManager) GetAll(name ...string) []*Cluster {
 	var ObserveName string
 	if len(name) > 0 {
 		if name[0] != ClustersAll {
-			ObserveName = utils.FormatClusterName(name[0])
+			ObserveName = utils.FormatToDNS1123(name[0])
 			isAll = false
 		}
 	}
@@ -255,7 +255,7 @@ func (m *ClusterManager) Delete(name string) error {
 func (m *ClusterManager) Get(name string) (*Cluster, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	name = utils.FormatClusterName(name)
+	name = utils.FormatToDNS1123(name)
 
 	if name == "" || name == "all" {
 		return nil, fmt.Errorf("single query not support: %s ", name)

@@ -1,7 +1,8 @@
-package zookeeper
+package adapter
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,8 +53,8 @@ func Test_Start(t *testing.T) {
 	}
 
 	opt := Option{
-		Address:          []string{"10.12.210.70:2181"},
-		Timeout:          15,
+		Address:          constant.ZkServers,
+		Timeout:          5 * 1000,
 		ClusterNamespace: "sym-admin",
 		ClusterOwner:     "sym-admin",
 	}
@@ -71,15 +72,18 @@ func Test_Start(t *testing.T) {
 
 	adapter, err := NewAdapter(&opt)
 	if err != nil {
-		fmt.Sprintf("Start an adaptor has an error: %v\n", err)
+		fmt.Sprintf("Create an adapter has an error: %v\n", err)
+		return
 	}
 
 	stop := make(chan struct{})
-	adapter.Start(stop)
+	err = adapter.Start(stop)
+	if err != nil {
+		fmt.Sprintf("Start an adaptor has an error: %v\n", err)
+		return
+	}
 
 	time.Sleep(30 * time.Minute)
-
 	stop <- struct{}{}
 	time.Sleep(5 * time.Second)
-
 }

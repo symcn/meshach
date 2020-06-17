@@ -5,6 +5,9 @@ go 1.13
 require (
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
 	github.com/DeanThompson/ginpprof v0.0.0-20190408063150-3be636683586
+	github.com/apache/dubbo-go v1.4.1
+	github.com/davecgh/go-spew v1.1.1
+	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-logr/logr v0.1.0
 	github.com/gofrs/uuid v3.3.0+incompatible

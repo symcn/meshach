@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package zookeeper
+package events
 
 import "strconv"
 
@@ -33,9 +33,9 @@ type Port struct {
 }
 
 type Service struct {
-	name      string
-	ports     []*Port
-	instances map[string]*Instance
+	Name      string
+	Ports     []*Port
+	Instances map[string]*Instance
 }
 
 // Instance is the instance of the service provider
@@ -67,6 +67,14 @@ const (
 	ServiceInstanceDeleted
 )
 
+type ConfigEventType int
+
+const (
+	ConfigEntryAdded ConfigEventType = iota
+	ConfigEntryDeleted
+	ConfigEntryChanged
+)
+
 func (p *Port) Portoi() int {
 	port, err := strconv.Atoi(p.Port)
 	if err != nil {
@@ -77,25 +85,52 @@ func (p *Port) Portoi() int {
 
 func (s *Service) AddPort(port *Port) {
 	exist := false
-	for _, p := range s.ports {
+	for _, p := range s.Ports {
 		if p.Port == port.Port && p.Protocol == port.Protocol {
 			exist = true
 			break
 		}
 	}
 	if !exist {
-		s.ports = append(s.ports, port)
+		s.Ports = append(s.Ports, port)
 	}
 }
 
 func (s *Service) Hostname() string {
-	return s.name
+	return s.Name
 }
 
-func (s *Service) Ports() []*Port {
-	return s.ports
+func (s *Service) GetPorts() []*Port {
+	return s.Ports
 }
 
-func (s *Service) Instances() map[string]*Instance {
-	return s.instances
+func (s *Service) GetInstances() map[string]*Instance {
+	return s.Instances
+}
+
+// ConfiguratorConfig ...
+type ConfiguratorConfig struct {
+	ConfigVersion string       `yaml:"configVersion"`
+	Scope         string       `yaml:"scope"`
+	Key           string       `yaml:"key"`
+	Enabled       bool         `yaml:"enabled"`
+	Configs       []ConfigItem `yaml:"configs"`
+}
+
+// ConfigItem ...
+type ConfigItem struct {
+	Type              string            `yaml:"type"`
+	Enabled           bool              `yaml:"enabled"`
+	Addresses         []string          `yaml:"addresses"`
+	ProviderAddresses []string          `yaml:"providerAddresses"`
+	Services          []string          `yaml:"services"`
+	Applications      []string          `yaml:"applications"`
+	Parameters        map[string]string `yaml:"parameters"`
+	Side              string            `yaml:"side"`
+}
+
+type ConfigEvent struct {
+	EventType   ConfigEventType
+	Path        string
+	ConfigEntry *ConfiguratorConfig
 }

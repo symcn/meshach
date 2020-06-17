@@ -19,9 +19,10 @@ package app
 import (
 	"time"
 
+	"github.com/mesh-operator/pkg/adapter"
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
-	zk "github.com/mesh-operator/pkg/zookeeper"
+	"github.com/mesh-operator/pkg/option"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
 	"k8s.io/sample-controller/pkg/signals"
@@ -29,8 +30,8 @@ import (
 )
 
 // NewAdapterCmd ...
-func NewAdapterCmd(ropt *RootOption) *cobra.Command {
-	opt := zk.DefaultOption()
+func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
+	opt := adapter.DefaultOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
 		Aliases: []string{"adapter"},
@@ -60,14 +61,14 @@ func NewAdapterCmd(ropt *RootOption) *cobra.Command {
 				Manager: mgr,
 			}
 
-			adapter, err := zk.NewAdapter(opt)
+			adp, err := adapter.NewAdapter(opt)
 			if err != nil {
 				klog.Fatalf("unable to NewAdapter err: %v", err)
 			}
 
 			stopCh := signals.SetupSignalHandler()
-			mgr.Add(adapter)
-			mgr.Add(adapter.K8sMgr)
+			mgr.Add(adp)
+			mgr.Add(adp.K8sMgr)
 
 			klog.Info("starting manager")
 			if err := mgr.Start(stopCh); err != nil {
@@ -82,11 +83,11 @@ func NewAdapterCmd(ropt *RootOption) *cobra.Command {
 		opt.Address,
 		"the zookeeper address pool")
 
-	cmd.PersistentFlags().StringVar(
-		&opt.Root,
-		"zk-root",
-		opt.Root,
-		"the zookeeper root")
+	// cmd.PersistentFlags().StringVar(
+	// 	&opt.Root,
+	// 	"zk-root",
+	// 	opt.Root,
+	// 	"the zookeeper root")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Timeout,

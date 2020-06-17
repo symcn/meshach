@@ -21,10 +21,11 @@ import (
 	"context"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	"github.com/mesh-operator/pkg/utils"
+	"github.com/mesh-operator/pkg/option"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -37,18 +38,20 @@ import (
 
 const (
 	controllerName = "appMeshConfig-controller"
+	httpRouteName  = "dubbo-http-route"
+	proxyRouteName = "dubbo-proxy-route"
 )
 
 var log = logf.Log.WithName(controllerName)
 
 // Add creates a new AppMeshConfig Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(mgr manager.Manager, opt *utils.ControllerOption) error {
+func Add(mgr manager.Manager, opt *option.ControllerOption) error {
 	return add(mgr, newReconciler(mgr, opt))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, opt *utils.ControllerOption) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager, opt *option.ControllerOption) reconcile.Reconciler {
 	return &ReconcileAppMeshConfig{
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
@@ -70,19 +73,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to secondary resources and requeue the owner AppMeshConfig
-	err = c.Watch(&source.Kind{Type: &networkingv1beta1.WorkloadEntry{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &meshv1.AppMeshConfig{},
-	})
+	err = c.Watch(&source.Kind{
+		Type: &networkingv1beta1.WorkloadEntry{}},
+		&handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &meshv1.AppMeshConfig{},
+		})
 	if err != nil {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &networkingv1beta1.VirtualService{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &meshv1.AppMeshConfig{},
-	})
+	err = c.Watch(&source.Kind{
+		Type: &networkingv1beta1.VirtualService{}},
+		&handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &meshv1.AppMeshConfig{},
+		})
 	if err != nil {
 		return err
 	}
@@ -117,9 +123,10 @@ var _ reconcile.Reconciler = &ReconcileAppMeshConfig{}
 type ReconcileAppMeshConfig struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads foundects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
-	opt    *utils.ControllerOption
+	client     client.Client
+	scheme     *runtime.Scheme
+	opt        *option.ControllerOption
+	meshConfig *meshv1.MeshConfig
 }
 
 // Reconcile reads that state of the cluster for a AppMeshConfig foundect and makes changes based on the state read
@@ -128,40 +135,74 @@ type ReconcileAppMeshConfig struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	klog.Info("Reconciling AppMeshConfig")
+	klog.Infof("Reconciling AppMeshConfig: %s/%s", request.Namespace, request.Name)
+	ctx := context.TODO()
+
+	// Fetch the MeshConfig
+	err := r.getMeshConfig(ctx)
+	if err != nil {
+		klog.Errorf("Get cluster MeshConfig[%s/%s] error: %+v",
+			r.opt.MeshConfigNamespace, r.opt.MeshConfigName, err)
+		return reconcile.Result{}, err
+	}
 
 	// Fetch the AppMeshConfig instance
 	instance := &meshv1.AppMeshConfig{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request foundect not found, could have been deleted after reconcile request.
 			// Owned foundects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			klog.Infof("Can't found AppMeshConfig[%s/%s], requeue...", request.Namespace, request.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the foundect - requeue the request.
 		return reconcile.Result{}, err
 	}
 
+	// TODO(haidong): Is it requeue request after Spec changed 5 seconds later to update Status?
 	for _, svc := range instance.Spec.Services {
-		if err := r.reconcileWorkloadEntry(instance, svc); err != nil {
+		if err := r.reconcileWorkloadEntry(ctx, instance, svc); err != nil {
 			return reconcile.Result{}, err
 		}
-
-		if err := r.reconcileServiceEntry(instance, svc); err != nil {
+		if err := r.reconcileServiceEntry(ctx, instance, svc); err != nil {
 			return reconcile.Result{}, err
 		}
-
-		if err := r.reconcileVirtualService(instance, svc); err != nil {
+		if err := r.reconcileDestinationRule(ctx, instance, svc); err != nil {
 			return reconcile.Result{}, err
 		}
-
-		if err := r.reconcileDestinationRule(instance, svc); err != nil {
+		if err := r.reconcileVirtualService(ctx, instance, svc); err != nil {
 			return reconcile.Result{}, err
 		}
-
 	}
 
+	// Update Status
+	klog.Infof("Update AppMeshConfig[%s/%s] status...", request.Namespace, request.Name)
+	err = r.updateStatus(ctx, request, instance)
+	if err != nil {
+		klog.Errorf("%s/%s update AppMeshConfig failed, err: %+v", request.Namespace, request.Name, err)
+		return reconcile.Result{}, err
+	}
+
+	klog.Infof("End Reconciliation, AppMeshConfig: %s/%s.", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileAppMeshConfig) getMeshConfig(ctx context.Context) error {
+	meshConfig := &meshv1.MeshConfig{}
+	err := r.client.Get(
+		ctx,
+		types.NamespacedName{
+			Namespace: r.opt.MeshConfigNamespace,
+			Name:      r.opt.MeshConfigName,
+		},
+		meshConfig,
+	)
+	if err != nil {
+		return err
+	}
+	r.meshConfig = meshConfig
+	klog.V(4).Infof("Get cluster MeshConfig: %+v", meshConfig)
+	return nil
 }

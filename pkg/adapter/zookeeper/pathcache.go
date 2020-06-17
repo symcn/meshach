@@ -24,8 +24,9 @@ import (
 )
 
 var (
-	dubboRootPath = "/dubbo"
-	providersPath = "providers"
+	DubboRootPath    = "/dubbo"
+	ProvidersPath    = "providers"
+	ConfiguratorPath = DubboRootPath + "/config/dubbo"
 )
 
 type pathCacheEventType int
@@ -48,6 +49,7 @@ type pathCacheEvent struct {
 const (
 	pathCacheEventAdded pathCacheEventType = iota
 	pathCacheEventDeleted
+	pathCacheEventChanged
 )
 
 func newPathCache(conn *zk.Conn, path string) (*pathCache, error) {
@@ -57,8 +59,8 @@ func newPathCache(conn *zk.Conn, path string) (*pathCache, error) {
 		conn:       conn,
 		path:       path,
 		cached:     make(map[string]bool),
-		watchCh:    make(chan zk.Event),
-		notifyCh:   make(chan pathCacheEvent),
+		watchCh:    make(chan zk.Event),       // The zookeeper events will be forwarded to this channel.
+		notifyCh:   make(chan pathCacheEvent), // The notified events will be send into this channel.
 		addChildCh: make(chan string),
 		stopCh:     make(chan bool),
 	}
@@ -96,23 +98,37 @@ func (p *pathCache) stop() {
 	}()
 }
 
+// watch watch a specified path to make the node changed event can be handle by path cache.
 func (p *pathCache) watch(path string) error {
+	fmt.Printf("Get Watching on path[%s]\n", path)
+
 	_, _, ch, err := p.conn.GetW(path)
 	if err != nil {
+		fmt.Printf("Watching node[%s] has an error: %v.\n", path, err)
 		return err
 	}
 	go p.forward(ch)
 	return nil
 }
 
+// watchChildren
+// 1.Watching this node's children
+// 2.Forwarding the events which has been send by zookeeper
+// 3.Watching these children's node via GetW() & Caching every child
 func (p *pathCache) watchChildren() error {
-	fmt.Printf("Watch the children for path: %s\n", p.path)
+	fmt.Printf("Watch the children for path[%s]\n", p.path)
 
 	children, _, ch, err := p.conn.ChildrenW(p.path)
 	if err != nil {
+		fmt.Printf("Watching node[%s]'s children has an error: %v.\n", p.path, err)
 		return err
 	}
+	fmt.Printf("The children of the watched path[%s]:\n%v\n", p.path, children)
+
+	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)
+
+	// caching every child into a map
 	for _, child := range children {
 		fp := path.Join(p.path, child)
 		if ok := p.cached[fp]; !ok {
@@ -126,7 +142,7 @@ func (p *pathCache) watchChildren() error {
 func (p *pathCache) onChildAdd(child string) {
 	err := p.watch(child)
 	if err != nil {
-		fmt.Printf("Failed to watch child %s, the err is %s\n", child, err)
+		fmt.Printf("Failed to watch child %s, error：%s\n", child, err)
 		return
 	}
 
@@ -139,21 +155,50 @@ func (p *pathCache) onChildAdd(child string) {
 	go p.notify(event)
 }
 
+// onEvent Processing event from zookeeper.
 func (p *pathCache) onEvent(event *zk.Event) {
+	fmt.Printf("[== RECEIVED ZK ORIGNAL EVENT ==]: [%s]:[%v]\n", event.Path, event.Type)
+
 	switch event.Type {
+	case zk.EventNodeDataChanged:
+		p.onNodeChanged(event.Path)
 	case zk.EventNodeChildrenChanged:
 		p.watchChildren()
 	case zk.EventNodeDeleted:
 		p.onChildDeleted(event.Path)
+	default:
+		fmt.Printf("Event[%v] has not been supported yet\n", event)
 	}
 }
 
+// onChildDeleted
 func (p *pathCache) onChildDeleted(child string) {
+	fmt.Printf("Received a deletion event by zookeeper: %v\n", child)
 	vent := pathCacheEvent{
 		eventType: pathCacheEventDeleted,
 		path:      child,
 	}
 	go p.notify(vent)
+}
+
+// onNodeChanged
+func (p *pathCache) onNodeChanged(path string) {
+	fmt.Printf("Received a node changed event by zookeeper: %v\n", path)
+	vent := pathCacheEvent{
+		eventType: pathCacheEventChanged,
+		path:      path,
+	}
+
+	// We must watch this zNode again if we have received a data changed event through this channel.
+	_, _, ch, err := p.conn.GetW(path)
+	if err != nil {
+		fmt.Printf("GetW path[%s] has an error: %v\n", path, err)
+	} else {
+		go p.forward(ch)
+	}
+
+	go p.notify(vent)
+
 }
 
 func (p *pathCache) addChild(child string) {

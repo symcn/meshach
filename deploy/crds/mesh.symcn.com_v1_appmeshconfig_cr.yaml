@@ -1,71 +1,109 @@
 apiVersion: mesh.symcn.com/v1
 kind: AppMeshConfig
 metadata:
-  name: test-order-orderapi   # dubbo 中的 application 字段或 MOSN 注册时带入与 appset 关联的标识
+  name: amc-order-api
+  namespace: sym-admin
 spec:
-  inject:                      # 注入相关设置
-    logLevel: debug            # 日志级别
-    sidecar: mosn              # sidecar 类型，mosn、envoy、all、none
+  appName: order-api
+  inject:                     
+    logLevel: debug          
+    sidecar: mosn           
   services:
     - name: com.test.order.service.OrderApiForAppClient
-      appName: order-api
       ports:
-        - name: dubbo
-          protocol: dubbo
-          port: 18004
-        - name: register
-          protocol: dubbo
-          port: 20882
+        - name: dubbo-http
+          protocol: HTTP
+          number: 20882
       policy:
         loadBalancer:
           simple: ROUND_ROBIN
         maxConnections: 10
         timeout: 30ms
         maxRetries: 3
-        route:
-          - subset: blue
-            weight: 50
-          - subset: green
-            weight: 50
+        sourceLabels:
+          - name: blue
+            labels:
+              sym-group: blue
+            headers:
+              sym-zone: gz01
+            route:
+              - subset: blue
+                weight: 100
+              - subset: green
+                weight: 0
+              - subset: gray
+                weight: 0
+          - name: green
+            headers:
+              sym-zone: gz01
+              sym-lidc: gz01a
+            labels:
+              sym-group: green
+            route:
+              - subset: blue
+                weight: 0
+              - subset: green
+                weight: 100
       subsets:
         - name: blue
           labels:
-            group: blue
+            sym-group: blue
           policy:
             timeout: 10ms
             maxRetries: 2
         - name: green
           labels:
-            group: green
+            sym-group: green
       instances:
-        - host: 10.11.224.12
-          zone: gz01
-          group: blue
+        - host: 10.11.224.11
           labels:
-            register: true
-            dynamic: true
-            weight: 0.5
-            release: 2.7.2-SNAPSHOT
-            sdkVersion: 2.7.2
-            side: provider
-            timeout: 1000
-            retry: 3
+            zone: gz01
+            flag: blue
+            register: "true"
+            dynamic: "true"
+            weight: "50"
+            release: "2.7.2-SNAPSHOT"
+            sdkVersion: "2.7.2"
+            side: "provider"
+            timeout: "1000"
+            retry: "3"
           port:
-            name: dubbo
-            protocol: dubbo
-            port: 18004
+            name: dubbo-http
+            protocol: HTTP
+            number: 20882
+        - host: 10.11.224.13
+          labels:
+            zone: gz01
+            flag: green
+            register: "true"
+            dynamic: "true"
+            weight: "50"
+            release: "2.7.2-SNAPSHOT"
+            sdkVersion: "2.7.2"
+            side: "provider"
+            timeout: "1000"
+            retry: "3"
+          port:
+            name: dubbo-http
+            protocol: HTTP
+            number: 20882
+        - host: 10.11.224.16
+          labels:
+            zone: gz01
+            flag: gray
+            register: "true"
+            dynamic: "true"
+            weight: "50"
+            release: "2.7.2-SNAPSHOT"
+            sdkVersion: "2.7.2"
+            side: "provider"
+          port:
+            name: dubbo-http
+            protocol: HTTP
+            number: 20882
   policy:
     loadBalancer:
       simple: ROUND_ROBIN
     maxConnections: 100
     timeout: 5s
     maxRetries: 3
-status:
-  observedGeneration: 2
-  lastUpdateTime: 2020-05-20T00:00:00
-  status: Distributed
-  xdsStatus:
-    lds: Distributed
-    rds: Distributed
-    cds: Distributed
-    eds: Distributed

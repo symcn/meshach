@@ -20,6 +20,7 @@ package app
 import (
 	"flag"
 
+	"github.com/mesh-operator/pkg/option"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/klog"
@@ -27,7 +28,7 @@ import (
 
 // GetRootCmd returns the root of the cobra command-tree.
 func GetRootCmd(args []string) *cobra.Command {
-	opt := DefaultRootOption()
+	opt := option.DefaultRootOption()
 	rootCmd := &cobra.Command{
 		Use:               "operator",
 		Short:             "It's in charge of all things about implements of Service Mesh",

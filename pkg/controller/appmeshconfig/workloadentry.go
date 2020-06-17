@@ -18,56 +18,59 @@ package appmeshconfig
 
 import (
 	"context"
+	"fmt"
 
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	utils "github.com/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+	// Get all workloadEntry of this AppMeshConfig
+	foundMap, err := r.getWorkloadEntriesMap(ctx, cr)
+	if err != nil {
+		klog.Errorf("%s/%s get WorkloadEntries error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		return err
+	}
+
 	for _, ins := range svc.Instances {
-		we := buildWorkloadEntry(cr.Namespace, svc, ins)
+		we := r.buildWorkloadEntry(cr.Spec.AppName, cr.Namespace, svc, ins)
 
 		// Set AppMeshConfig instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, we, r.scheme); err != nil {
+			klog.Errorf("SetControllerReference error: %v", err)
 			return err
 		}
+
 		// Check if this WorkloadEntry already exists
-		found := &networkingv1beta1.WorkloadEntry{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{
-			Name:      we.Name,
-			Namespace: we.Namespace},
-			found)
-		if err != nil && errors.IsNotFound(err) {
-			klog.Info("Creating a new WorkloadEntry", "Namespace",
-				we.Namespace, "Name", we.Name)
-			err = r.client.Create(context.TODO(), we)
+		found, ok := foundMap[we.Name]
+		if !ok {
+			klog.Infof("Creating a new WorkloadEntry, Namespace: %s, Name: %s", we.Namespace, we.Name)
+			err = r.client.Create(ctx, we)
 			if err != nil {
+				klog.Errorf("Create WorkloadEntry error: %+v", err)
 				return err
 			}
-
-			// WorkloadEntry created successfully - don't requeue
-			return nil
-		} else if err != nil {
-			return err
+			continue
 		}
+		delete(foundMap, we.Name)
 
 		// Update WorkloadEntry
-		klog.Info("Update WorkloadEntry", "Namespace", found.Namespace, "Name", found.Name)
 		if compareWorkloadEntry(we, found) {
+			klog.Infof("Update WorkloadEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				we.Spec.DeepCopyInto(&found.Spec)
 				found.Finalizers = we.Finalizers
 				found.Labels = we.ObjectMeta.Labels
 
-				updateErr := r.client.Update(context.TODO(), found)
+				updateErr := r.client.Update(ctx, found)
 				if updateErr == nil {
 					klog.V(4).Infof("%s/%s update WorkloadEntry successfully",
 						we.Namespace, we.Name)
@@ -77,35 +80,44 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(cr *meshv1.AppMeshConfig
 			})
 
 			if err != nil {
-				klog.Warningf("update WorkloadEntry [%s] spec failed, err: %+v",
+				klog.Warningf("Update WorkloadEntry [%s] spec failed, err: %+v",
 					we.Name, err)
 				return err
 			}
 		}
 	}
+
+	// Delete old WorkloadEntries
+	for name, we := range foundMap {
+		klog.Infof("Delete unused WorkloadEntry: %s", name)
+		err := r.client.Delete(ctx, we)
+		if err != nil {
+			klog.Errorf("Delete unused WorkloadEntry error: %+v", err)
+			return err
+		}
+	}
 	return nil
 }
 
-func buildWorkloadEntry(namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
+func (r *ReconcileAppMeshConfig) buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
+	name := fmt.Sprintf("%s.%s.%d", svc.Name, ins.Host, ins.Port.Number)
+	labels := make(map[string]string)
+	labels[r.opt.WorkloadSelectLabel] = svc.Name
+	for _, k := range r.meshConfig.Spec.WorkloadEntryLabelKeys {
+		labels[k] = ins.Labels[r.meshConfig.Spec.MeshLabelsRemap[k]]
+	}
+
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      svc.Name + "-we-" + ins.Host,
+			Name:      utils.FormatToDNS1123(name),
 			Namespace: namespace,
+			Labels:    map[string]string{r.opt.AppSelectLabel: appName},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
-			Ports: map[string]uint32{
-				ins.Port.Name: ins.Port.Number,
-			},
-			Labels: map[string]string{
-				"app":     svc.AppName,
-				"service": svc.Name + ".workload",
-				"group":   ins.Group,
-				"zone":    ins.Zone,
-			},
-			// Network:        ins.Zone,
-			// Locality:       "",
-			Weight: ins.Weight,
+			Ports:   map[string]uint32{ins.Port.Name: ins.Port.Number},
+			Labels:  labels,
+			Weight:  ins.Weight,
 		},
 	}
 }
@@ -123,4 +135,22 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 		return true
 	}
 	return false
+}
+
+func (r *ReconcileAppMeshConfig) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.WorkloadEntry, error) {
+	list := &networkingv1beta1.WorkloadEntryList{}
+	labels := &client.MatchingLabels{r.opt.AppSelectLabel: cr.Spec.AppName}
+	opts := &client.ListOptions{Namespace: cr.Namespace}
+	labels.ApplyToList(opts)
+
+	err := r.client.List(ctx, list, opts)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]*networkingv1beta1.WorkloadEntry)
+	for i := range list.Items {
+		item := list.Items[i]
+		m[item.Name] = &item
+	}
+	return m, nil
 }

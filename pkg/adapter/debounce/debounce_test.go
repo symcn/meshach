@@ -1,4 +1,4 @@
-package zookeeper
+package debounce
 
 import (
 	"fmt"
