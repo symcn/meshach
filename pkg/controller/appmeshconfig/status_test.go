@@ -8,11 +8,14 @@ import (
 	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	"github.com/mesh-operator/pkg/option"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func TestReconcileAppMeshConfig_updateStatus(t *testing.T) {
+	fakeScheme := GetFakeScheme()
 	type fields struct {
 		client     client.Client
 		scheme     *runtime.Scheme
@@ -30,7 +33,84 @@ func TestReconcileAppMeshConfig_updateStatus(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test-status-update-ok",
+			fields: fields{
+				client: GetFakeClient(
+					amcTestOK,
+					fakeServiceEntry,
+					fakeVirtualService,
+					fakeDestinationRule,
+					fakeWorkloadEntry,
+				),
+				scheme:     fakeScheme,
+				opt:        TestOpt,
+				meshConfig: TestMeshConfig,
+			},
+			args: args{
+				ctx: context.TODO(),
+				req: reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      "amc-test-case",
+					Namespace: "sym-test",
+				}},
+				cr: amcTestOK,
+			},
+			wantErr: false,
+		},
+		{
+			name: "test-status-update-error",
+			fields: fields{
+				client:     GetFakeClient(),
+				scheme:     fakeScheme,
+				opt:        TestOpt,
+				meshConfig: TestMeshConfig,
+			},
+			args: args{
+				ctx: context.TODO(),
+				req: reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      "amc-test-case",
+					Namespace: "sym-test",
+				}},
+				cr: amcTestOK,
+			},
+			wantErr: true,
+		},
+		{
+			name: "test-status-update-distributing",
+			fields: fields{
+				client:     GetFakeClient(amcTestOK, fakeServiceEntry, fakeVirtualService),
+				scheme:     fakeScheme,
+				opt:        TestOpt,
+				meshConfig: TestMeshConfig,
+			},
+			args: args{
+				ctx: context.TODO(),
+				req: reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      "amc-test-case",
+					Namespace: "sym-test",
+				}},
+				cr: amcTestOK,
+			},
+			wantErr: false,
+		},
+		{
+			name: "test-status-update-undistributed",
+			fields: fields{
+				client:     GetFakeClient(amcTestOK),
+				scheme:     fakeScheme,
+				opt:        TestOpt,
+				meshConfig: TestMeshConfig,
+			},
+			args: args{
+				ctx: context.TODO(),
+				req: reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      "amc-test-case",
+					Namespace: "sym-test",
+				}},
+				cr: amcTestOK,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -43,210 +123,26 @@ func TestReconcileAppMeshConfig_updateStatus(t *testing.T) {
 			if err := r.updateStatus(tt.args.ctx, tt.args.req, tt.args.cr); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileAppMeshConfig.updateStatus() error = %v, wantErr %v", err, tt.wantErr)
 			}
-		})
-	}
-}
-
-func TestReconcileAppMeshConfig_buildStatus(t *testing.T) {
-	type fields struct {
-		client     client.Client
-		scheme     *runtime.Scheme
-		opt        *option.ControllerOption
-		meshConfig *meshv1.MeshConfig
-	}
-	type args struct {
-		cr *meshv1.AppMeshConfig
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *meshv1.AppMeshConfigStatus
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileAppMeshConfig{
-				client:     tt.fields.client,
-				scheme:     tt.fields.scheme,
-				opt:        tt.fields.opt,
-				meshConfig: tt.fields.meshConfig,
-			}
-			if got := r.buildStatus(tt.args.cr); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconcileAppMeshConfig.buildStatus() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReconcileAppMeshConfig_getServiceEntryStatus(t *testing.T) {
-	type fields struct {
-		client     client.Client
-		scheme     *runtime.Scheme
-		opt        *option.ControllerOption
-		meshConfig *meshv1.MeshConfig
-	}
-	type args struct {
-		ctx context.Context
-		cr  *meshv1.AppMeshConfig
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *meshv1.SubStatus
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileAppMeshConfig{
-				client:     tt.fields.client,
-				scheme:     tt.fields.scheme,
-				opt:        tt.fields.opt,
-				meshConfig: tt.fields.meshConfig,
-			}
-			if got := r.getServiceEntryStatus(tt.args.ctx, tt.args.cr); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconcileAppMeshConfig.getServiceEntryStatus() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReconcileAppMeshConfig_getWorkloadEntryStatus(t *testing.T) {
-	type fields struct {
-		client     client.Client
-		scheme     *runtime.Scheme
-		opt        *option.ControllerOption
-		meshConfig *meshv1.MeshConfig
-	}
-	type args struct {
-		ctx context.Context
-		cr  *meshv1.AppMeshConfig
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *meshv1.SubStatus
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileAppMeshConfig{
-				client:     tt.fields.client,
-				scheme:     tt.fields.scheme,
-				opt:        tt.fields.opt,
-				meshConfig: tt.fields.meshConfig,
-			}
-			if got := r.getWorkloadEntryStatus(tt.args.ctx, tt.args.cr); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconcileAppMeshConfig.getWorkloadEntryStatus() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReconcileAppMeshConfig_getVirtualServiceStatus(t *testing.T) {
-	type fields struct {
-		client     client.Client
-		scheme     *runtime.Scheme
-		opt        *option.ControllerOption
-		meshConfig *meshv1.MeshConfig
-	}
-	type args struct {
-		ctx context.Context
-		cr  *meshv1.AppMeshConfig
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *meshv1.SubStatus
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileAppMeshConfig{
-				client:     tt.fields.client,
-				scheme:     tt.fields.scheme,
-				opt:        tt.fields.opt,
-				meshConfig: tt.fields.meshConfig,
-			}
-			if got := r.getVirtualServiceStatus(tt.args.ctx, tt.args.cr); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconcileAppMeshConfig.getVirtualServiceStatus() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReconcileAppMeshConfig_getDestinationRuleStatus(t *testing.T) {
-	type fields struct {
-		client     client.Client
-		scheme     *runtime.Scheme
-		opt        *option.ControllerOption
-		meshConfig *meshv1.MeshConfig
-	}
-	type args struct {
-		ctx context.Context
-		cr  *meshv1.AppMeshConfig
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *meshv1.SubStatus
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileAppMeshConfig{
-				client:     tt.fields.client,
-				scheme:     tt.fields.scheme,
-				opt:        tt.fields.opt,
-				meshConfig: tt.fields.meshConfig,
-			}
-			if got := r.getDestinationRuleStatus(tt.args.ctx, tt.args.cr); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconcileAppMeshConfig.getDestinationRuleStatus() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReconcileAppMeshConfig_count(t *testing.T) {
-	type fields struct {
-		client     client.Client
-		scheme     *runtime.Scheme
-		opt        *option.ControllerOption
-		meshConfig *meshv1.MeshConfig
-	}
-	type args struct {
-		ctx  context.Context
-		cr   *meshv1.AppMeshConfig
-		list runtime.Object
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *int
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileAppMeshConfig{
-				client:     tt.fields.client,
-				scheme:     tt.fields.scheme,
-				opt:        tt.fields.opt,
-				meshConfig: tt.fields.meshConfig,
-			}
-			if got := r.count(tt.args.ctx, tt.args.cr, tt.args.list); got != tt.want {
-				t.Errorf("ReconcileAppMeshConfig.count() = %v, want %v", got, tt.want)
-			}
+			klog.Infof("[serviceentry] desired: %#v, distributed: %#v, undistributed: %#v",
+				tt.args.cr.Status.Status.ServiceEntry.Desired,
+				*tt.args.cr.Status.Status.ServiceEntry.Distributed,
+				*tt.args.cr.Status.Status.ServiceEntry.Undistributed,
+			)
+			klog.Infof("[workloadentry] desired: %#v, distributed: %#v, undistributed: %#v",
+				tt.args.cr.Status.Status.WorkloadEntry.Desired,
+				*tt.args.cr.Status.Status.WorkloadEntry.Distributed,
+				*tt.args.cr.Status.Status.WorkloadEntry.Undistributed,
+			)
+			klog.Infof("[virtualservice] desired: %#v, distributed: %#v, undistributed: %#v",
+				tt.args.cr.Status.Status.VirtualService.Desired,
+				*tt.args.cr.Status.Status.VirtualService.Distributed,
+				*tt.args.cr.Status.Status.VirtualService.Undistributed,
+			)
+			klog.Infof("[destinationrule] desired: %#v, distributed: %#v, undistributed: %#v",
+				tt.args.cr.Status.Status.DestinationRule.Desired,
+				*tt.args.cr.Status.Status.DestinationRule.Distributed,
+				*tt.args.cr.Status.Status.DestinationRule.Undistributed,
+			)
 		})
 	}
 }
@@ -260,7 +156,34 @@ func Test_calcPhase(t *testing.T) {
 		args args
 		want meshv1.ConfigPhase
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test-calc-phase-status-unkonwn-ok",
+			args: args{
+				status: &meshv1.Status{
+					ServiceEntry: &meshv1.SubStatus{
+						Desired:       1,
+						Distributed:   nil,
+						Undistributed: nil,
+					},
+					WorkloadEntry: &meshv1.SubStatus{
+						Desired:       1,
+						Distributed:   nil,
+						Undistributed: nil,
+					},
+					VirtualService: &meshv1.SubStatus{
+						Desired:       1,
+						Distributed:   nil,
+						Undistributed: nil,
+					},
+					DestinationRule: &meshv1.SubStatus{
+						Desired:       1,
+						Distributed:   nil,
+						Undistributed: nil,
+					},
+				},
+			},
+			want: meshv1.ConfigStatusUnknown,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
