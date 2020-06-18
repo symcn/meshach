@@ -422,8 +422,18 @@ var (
 	}
 	fakeWorkloadEntry = &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "",
-			Namespace: "",
+			Name:      "dubbo.testserviceok.10.10.10.10.20882",
+			Namespace: "sym-test",
+			Labels: map[string]string{
+				"app": "test-case-app",
+			},
+		},
+		Spec: v1beta1.WorkloadEntry{},
+	}
+	fakeDeleteWorkloadEntry = &networkingv1beta1.WorkloadEntry{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "dubbo.testserviceok.10.10.10.11.20882",
+			Namespace: "sym-test",
 			Labels: map[string]string{
 				"app": "test-case-app",
 			},
