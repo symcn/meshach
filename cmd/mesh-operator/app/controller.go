@@ -126,5 +126,115 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 			}
 		},
 	}
+
+	cmd.PersistentFlags().StringVar(
+		&opt.HTTPAddress,
+		"http-address",
+		opt.HTTPAddress,
+		"The HTTP address of controller, default is :8080.",
+	)
+	cmd.PersistentFlags().Int32Var(
+		&opt.SyncPeriod,
+		"sync-period",
+		opt.SyncPeriod,
+		"The minimum frequency at which watched resources are reconciled.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.MetricsEnabled,
+		"metrics-enables",
+		opt.MetricsEnabled,
+		"This parameter determines whether metrics server is enabled.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.LeaderElectionNamespace,
+		"leader-election-namespace",
+		opt.LeaderElectionNamespace,
+		"The namespace where leader election configmap resides.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.LeaderElectionID,
+		"leader-election-id",
+		opt.LeaderElectionID,
+		"The name of leader election configmap.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.EnableLeaderElection,
+		"leader-enable",
+		opt.EnableLeaderElection,
+		"This parameter determines whether enable leader election.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.GinLogEnabled,
+		"enable-ginlog",
+		opt.GinLogEnabled,
+		"Enabled will open gin run log.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.PprofEnabled,
+		"enable-pprof",
+		opt.PprofEnabled,
+		"Enabled will open endpoint for go pprof.",
+	)
+	cmd.PersistentFlags().IntVar(
+		&opt.GoroutineThreshold,
+		"goroutine-threshold",
+		opt.GoroutineThreshold,
+		"The max Goroutine Threshold",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.Zone,
+		"zone",
+		opt.Zone,
+		"The exact zone code of current cluster, used for virtualservice generation.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.ProxyHost,
+		"proxy-host",
+		opt.ProxyHost,
+		"The host of dubbo proxy service.",
+	)
+	cmd.PersistentFlags().Int32Var(
+		&opt.ProxyAttempts,
+		"proxy-attempts",
+		opt.ProxyAttempts,
+		"Number of retries for dubbo proxy services.",
+	)
+	cmd.PersistentFlags().Int64Var(
+		&opt.ProxyPerTryTimeout,
+		"proxy-pertrytimeout",
+		opt.ProxyPerTryTimeout,
+		"Timeout per retry attempt for dubbo proxy service. format: 1h/1m/1s/1ms.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.ProxyRetryOn,
+		"proxy-retryon",
+		opt.ProxyRetryOn,
+		"Flag to specify whether the retries should retry to other localities.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.MeshConfigName,
+		"meshconfig-name",
+		opt.MeshConfigName,
+		"The name of MeshConfig to use.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.MeshConfigNamespace,
+		"meshconfig-namespace",
+		opt.MeshConfigNamespace,
+		"The namespace of MeshConfig to use.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.WorkloadSelectLabel,
+		"workload-selectlabel",
+		opt.WorkloadSelectLabel,
+		"The key of workloadentry selectlabel. Default is service.",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opt.AppSelectLabel,
+		"app-selectlabel",
+		opt.AppSelectLabel,
+		"The key of all mesh CRs metadata labels. Default is app",
+	)
+
 	return cmd
 }
