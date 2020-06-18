@@ -442,6 +442,18 @@ var (
 			Hosts: []string{"dubbo.testserviceok"},
 		},
 	}
+	fakeDeleteVirtualService = &networkingv1beta1.VirtualService{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "dubbo.testserviceok.delete",
+			Namespace: "sym-test",
+			Labels: map[string]string{
+				"app": "test-case-app",
+			},
+		},
+		Spec: v1beta1.VirtualService{
+			Hosts: []string{"dubbo.testserviceok"},
+		},
+	}
 	fakeServiceEntry = &networkingv1beta1.ServiceEntry{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "dubbo.testserviceok",
