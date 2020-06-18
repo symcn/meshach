@@ -260,43 +260,30 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, ide
 	}
 
 	for index, service := range amc.Spec.Services {
-		// find the service we need to process
+		// find out the service we need to process
 		if service.Name == serviceName {
 			s := service
 
-			// find out the default configuration if it exists
-			// it will be used to assemble both the service and instances without customized configuration.
-			var defaultConfig *events.ConfigItem
-			for _, c := range e.ConfigEntry.Configs {
-				for _, a := range c.Addresses {
-					if a == "0.0.0.0" {
-						defaultConfig = &c
-					}
-				}
-			}
-
-			// Assemble the service
+			// find out the default configuration if it has been presented.
+			// it will be used to assemble both the service and instances without customized configurations.
+			defaultConfig := findDefaultConfig(e.ConfigEntry.Configs)
+			// Setting the service's configuration such as policy
 			if defaultConfig != nil && defaultConfig.Enabled {
 				s.Policy = &v1.Policy{
 					LoadBalancer:   nil,
 					MaxConnections: 0,
-					Timeout:        e.ConfigEntry.Configs[0].Parameters["timeout"],
-					MaxRetries:     utils.ToInt32(e.ConfigEntry.Configs[0].Parameters["retries"]),
+					Timeout:        defaultConfig.Parameters["timeout"],
+					MaxRetries:     utils.ToInt32(defaultConfig.Parameters["retries"]),
 					SourceLabels:   nil,
 				}
 			}
 
-			// Assemble these instances
+			// Setting these instances's configuration such as weight
 			for index, ins := range s.Instances {
-				for _, cc := range e.ConfigEntry.Configs {
-					for _, adds := range cc.Addresses {
-						if ins.Host+":"+ins.Port.Name == adds {
-							// found an customized configuration for this instance.
-							i := service.Instances[index]
-							i.Weight = utils.ToUint32(cc.Parameters["weight"])
-							s.Instances[index] = i
-						}
-					}
+				if matched, c := matchInstance(ins, e.ConfigEntry.Configs); matched {
+					service.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
+				} else {
+					service.Instances[index].Weight = 100
 				}
 			}
 
@@ -305,6 +292,35 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, ide
 	}
 
 	kubev2eh.UpdateAmc(amc)
+}
+
+// findDefaultConfig
+func findDefaultConfig(configs []events.ConfigItem) *events.ConfigItem {
+	var defaultConfig *events.ConfigItem
+	for _, c := range configs {
+		if c.Side == "provider" {
+			for _, a := range c.Addresses {
+				if a == "0.0.0.0" {
+					defaultConfig = &c
+					return defaultConfig
+				}
+			}
+		}
+	}
+	return defaultConfig
+}
+
+// matchInstance
+func matchInstance(ins *v1.Instance, configs []events.ConfigItem) (bool, *events.ConfigItem) {
+	for _, cc := range configs {
+		for _, adds := range cc.Addresses {
+			if ins.Host+":"+ins.Port.Name == adds {
+				// found an customized configuration for this instance.
+				return true, &cc
+			}
+		}
+	}
+	return false, nil
 }
 
 func wrapConfig(config *events.ConfiguratorConfig, amc *v1.AppMeshConfig) {
