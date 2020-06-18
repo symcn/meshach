@@ -10,6 +10,8 @@ type LogEventHandler struct {
 	Name string
 }
 
+func (leh *LogEventHandler) Init() {}
+
 func (leh *LogEventHandler) AddService(e events.ServiceEvent) {
 	fmt.Printf("Simple event handler: Adding a service\n%v\n", e.Service)
 }

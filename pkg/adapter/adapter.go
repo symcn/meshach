@@ -79,7 +79,10 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
 	//eventHandlers = append(eventHandlers, &handler.LogEventHandler{Name: "logging events."})
 	//eventHandlers = append(eventHandlers, &handler.KubeEventHandler{K8sMgr: k8sMgr})
-	eventHandlers = append(eventHandlers, &handler.KubeV2EventHandler{K8sMgr: k8sMgr})
+	kubev2handler := &handler.KubeV2EventHandler{K8sMgr: k8sMgr}
+	kubev2handler.Init()
+	eventHandlers = append(eventHandlers, kubev2handler)
+
 	adapter := &Adapter{
 		opt:            opt,
 		K8sMgr:         k8sMgr,

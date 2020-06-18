@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var defaultNamespace = "default"
+var defaultNamespace = "sym-admin"
 
 // KubeEventHandler it used for synchronizing the events which has been send by the adapter client
 // to a kubernetes cluster which has an istio controller there.
@@ -20,6 +20,8 @@ var defaultNamespace = "default"
 type KubeEventHandler struct {
 	K8sMgr *k8smanager.ClusterManager
 }
+
+func (kubeeh *KubeEventHandler) Init() {}
 
 // AddService ...
 func (kubeeh *KubeEventHandler) AddService(se events.ServiceEvent) {

@@ -7,6 +7,8 @@ import (
 
 // All events comes from adapter needs to be handle by various event handler.
 type EventHandler interface {
+	// Initializer
+	Init()
 
 	// AddService you should handle the event described that a service has been created
 	AddService(event events.ServiceEvent)
@@ -29,6 +31,8 @@ type EventHandler interface {
 type SimpleEventHandler struct {
 	Name string
 }
+
+func (seh *SimpleEventHandler) Init() {}
 
 func (seh *SimpleEventHandler) AddService(e events.ServiceEvent) {
 	fmt.Printf("Simple event handler: Adding a service\n%v\n", e.Service)
