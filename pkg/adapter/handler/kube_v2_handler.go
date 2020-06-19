@@ -3,8 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
@@ -52,18 +50,20 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		return
 	}
 
+	// loading amc CR from k8s cluster
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      appIdentifier,
 			Namespace: defaultNamespace,
 		},
 	}
-
 	_, err := kubev2eh.getAmc(amc)
+
+	// Replacing service information belongs to this amc CR with this event.
 	s := getService(&event)
 	replace(s, amc)
 
-	// meanwhile we should set configurator into this service
+	// meanwhile we should set configurator to this service
 	config := configuratorFinder(s.Name)
 	if config != nil {
 		setConfig(config, amc, kubev2eh.meshConfig)
@@ -154,7 +154,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event events.ServiceEvent) {
 	kubev2eh.updateAmc(amc)
 }
 
-// getService
+// getService Find a service within a service event
 func getService(event *events.ServiceEvent) *events.Service {
 	var svc *events.Service
 	if event.Service == nil {
@@ -165,7 +165,7 @@ func getService(event *events.ServiceEvent) *events.Service {
 	return svc
 }
 
-// replace
+// replace Replace the whole service which belongs to this amc CR with this service entry。
 func replace(svc *events.Service, amc *v1.AppMeshConfig) {
 	s := convertService(svc)
 	if amc.Spec.Services == nil {
@@ -183,7 +183,7 @@ func replace(svc *events.Service, amc *v1.AppMeshConfig) {
 	}
 }
 
-// convertService
+// convertService Convert service between the two formats
 func convertService(s *events.Service) *v1.Service {
 	// Ports
 	var ports []*v1.Port
@@ -338,89 +338,13 @@ func setConfig(e *events.ConfiguratorConfig, amc *v1.AppMeshConfig, mc *v1.MeshC
 			s := service
 
 			// policy's setting
-			s.Policy = &v1.Policy{
-				LoadBalancer:   mc.Spec.GlobalPolicy.LoadBalancer,
-				MaxConnections: mc.Spec.GlobalPolicy.MaxConnections,
-				Timeout:        mc.Spec.GlobalPolicy.Timeout,
-				MaxRetries:     mc.Spec.GlobalPolicy.MaxRetries,
-			}
+			buildPolicy(s, e, mc)
 			// subset's setting
-			s.Subsets = mc.Spec.GlobalSubsets
-			// find out the default configuration if it has been presented.
-			// it will be used to assemble both the service and instances without customized configurations.
-			defaultConfig := findDefaultConfig(e.Configs)
-			// Setting the service's configuration such as policy
-			if defaultConfig != nil && defaultConfig.Enabled {
-				if t, ok := defaultConfig.Parameters["timeout"]; ok {
-					s.Policy.Timeout = t
-				}
-				if r, ok := defaultConfig.Parameters["retries"]; ok {
-					s.Policy.MaxRetries = utils.ToInt32(r)
-				}
-			}
-
-			flagConfig := findFlagConfig(e.Configs)
-			if flagConfig != nil && flagConfig.Enabled {
-				var sls []*v1.SourceLabels
-				fc, ok := flagConfig.Parameters["flag_config"]
-				if ok {
-					fmt.Printf("%s\n", fc)
-					fcp := &events.FlagConfigParameter{}
-					err := yaml.Unmarshal([]byte(fc), fcp)
-					if err != nil {
-						fmt.Printf("Parsing the flag_config parameter has an error: %v\n", err)
-					} else {
-						for _, subset := range mc.Spec.GlobalSubsets {
-							sl := &v1.SourceLabels{
-								Name:   subset.Name,
-								Labels: subset.Labels,
-							}
-							// header
-							h := make(map[string]string)
-							h["sym-zone"] = constant.Zone
-							sl.Headers = h
-
-							// route
-							// The dynamic configuration has the highest priority if the manual is true
-							var routes []*v1.Destination
-							if fcp.Manual {
-								for _, f := range fcp.Flags {
-									routes = append(routes, &v1.Destination{
-										Subset: f.Key,
-										Weight: f.Weight,
-									})
-								}
-							} else {
-								// otherwise it means the consumer can only visit the providers
-								// whose group is same as itself.
-								for _, ss := range mc.Spec.GlobalSubsets {
-									d := &v1.Destination{Subset: ss.Name}
-									if ss.Name == sl.Name {
-										d.Weight = 99
-									} else {
-										d.Weight = 1
-									}
-									routes = append(routes, d)
-								}
-							}
-							sl.Route = routes
-
-							sls = append(sls, sl)
-						}
-
-					}
-				}
-				s.Policy.SourceLabels = sls
-			}
-
+			buildSubsets(s, e, mc)
+			// setting source labels
+			buildSourceLabels(s, e, mc)
 			// Setting these instances's configuration such as weight
-			for index, ins := range s.Instances {
-				if matched, c := matchInstance(ins, e.Configs); matched {
-					service.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
-				} else {
-					service.Instances[index].Weight = 100
-				}
-			}
+			buildInstanceSetting(s, e, mc)
 
 			amc.Spec.Services[index] = s
 		}

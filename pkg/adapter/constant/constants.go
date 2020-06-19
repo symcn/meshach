@@ -13,5 +13,5 @@ var ZkServers = []string{
 var (
 	ApplicationLabel = "application"
 	DubboProtocol    = "HTTP"
-	Zone             = "gzone"
+	Zone             = "gz01"
 )
