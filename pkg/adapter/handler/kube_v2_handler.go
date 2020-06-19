@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
@@ -65,12 +66,17 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 
 	// meanwhile we should set configurator to this service
 	config := configuratorFinder(s.Name)
-	if config != nil {
+	if config == nil {
+		dc := *configuratorFinder(constant.DefaultConfigName)
+		dc.Key = s.Name
+		setConfig(&dc, amc, kubev2eh.meshConfig)
+	} else {
 		setConfig(config, amc, kubev2eh.meshConfig)
 	}
 
 	if err != nil {
 		fmt.Printf("Can not find an existed amc CR: %v\n", err)
+		amc.Spec.AppName = appIdentifier
 		kubev2eh.createAmc(amc)
 	} else {
 		kubev2eh.updateAmc(amc)
@@ -201,6 +207,7 @@ func convertService(s *events.Service) *v1.Service {
 		ins.Host = utils.RemovePort(i.Host)
 		ins.Port = convertPort(i.Port)
 		ins.Labels = i.Labels
+		ins.Labels[constant.ZoneLabel] = constant.Zone
 		instances = append(instances, ins)
 	}
 	service.Instances = instances
@@ -239,14 +246,14 @@ func (kubev2eh *KubeV2EventHandler) getAmc(config *v1.AppMeshConfig) (*v1.AppMes
 }
 
 // AddConfigEntry
-func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
+func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Kube v2 event handler: adding a configuration\n%v\n", e.Path)
 	// Adding a new configuration for a service is same as changing it.
-	kubev2eh.ChangeConfigEntry(e, identifierFinder)
+	kubev2eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
 // ChangeConfigEntry
-func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Kube v2 event handler: change a configuration\n%v\n", e.Path)
 
 	// TODO we really need to handle and think about the case that configuration has been disable.
@@ -256,7 +263,8 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, ide
 	}
 
 	serviceName := e.ConfigEntry.Key
-	appIdentifier := identifierFinder(serviceName)
+	service := cachedServiceFinder(serviceName)
+	appIdentifier := getAppIdentifier(service)
 	if appIdentifier == "" {
 		fmt.Printf("Can not find the app identified name through the cached service, service name :%s", serviceName)
 		return
@@ -281,7 +289,7 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, ide
 	kubev2eh.updateAmc(amc)
 }
 
-func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Kube v2 event handler: delete a configuration\n%v\n", e.Path)
 }
 
@@ -331,20 +339,20 @@ func matchInstance(ins *v1.Instance, configs []events.ConfigItem) (bool, *events
 }
 
 // setConfig
-func setConfig(e *events.ConfiguratorConfig, amc *v1.AppMeshConfig, mc *v1.MeshConfig) {
+func setConfig(c *events.ConfiguratorConfig, amc *v1.AppMeshConfig, mc *v1.MeshConfig) {
 	for index, service := range amc.Spec.Services {
 		// find out the service we need to process
-		if service.Name == e.Key {
+		if service.Name == c.Key {
 			s := service
 
 			// policy's setting
-			buildPolicy(s, e, mc)
+			buildPolicy(s, c, mc)
 			// subset's setting
-			buildSubsets(s, e, mc)
+			buildSubsets(s, c, mc)
 			// setting source labels
-			buildSourceLabels(s, e, mc)
+			buildSourceLabels(s, c, mc)
 			// Setting these instances's configuration such as weight
-			buildInstanceSetting(s, e, mc)
+			buildInstanceSetting(s, c, mc)
 
 			amc.Spec.Services[index] = s
 		}

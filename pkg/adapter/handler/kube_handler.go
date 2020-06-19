@@ -10,6 +10,7 @@ import (
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 var defaultNamespace = "sym-admin"
@@ -335,8 +336,43 @@ func resolveAppIdentifier(e *events.ServiceEvent) string {
 		//return "foo"
 	}
 
-	appIdentifier := vi.Labels["application"]
+	appIdentifier := findAppIdentifier(vi)
 	return appIdentifier
+}
+
+// FindAppIdentifier
+func findAppIdentifier(i *events.Instance) string {
+	if i != nil && i.Labels != nil {
+		if appCodeLabelValue, ok := i.Labels[constant.AppCodeLabel]; ok {
+			return strings.ToLower(appCodeLabelValue + "-" + i.Labels[constant.ProjectCodeLabel])
+		}
+
+		return strings.ToLower(i.Labels[constant.ApplicationLabel])
+	}
+	return ""
+}
+
+// getAppIdentifier
+func getAppIdentifier(s *events.Service) string {
+	var appName string
+	if s == nil {
+		fmt.Printf("Can not get the application identifier with an empty service.\n")
+		return appName
+	}
+
+	if s.Instances == nil || len(s.Instances) == 0 {
+		fmt.Printf("Can not find any instance from a service %s which has an empty instances list.\n", s.Name)
+		return appName
+	}
+
+	for _, ins := range s.Instances {
+		id := findAppIdentifier(ins)
+		if id != "" {
+			return id
+		}
+	}
+	return appName
+
 }
 
 // findValidInstance because the application name was defined at an instance,
@@ -366,11 +402,12 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 }
 
 // AddConfigEntry
-func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Kube event handler: adding a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
-	appIdentifier := identifierFinder(serviceName)
+	service := cachedServiceFinder(serviceName)
+	appIdentifier := getAppIdentifier(service)
 
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -392,11 +429,12 @@ func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, identifier
 
 }
 
-func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Kube event handler: change a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
-	appIdentifier := identifierFinder(serviceName)
+	service := cachedServiceFinder(serviceName)
+	appIdentifier := getAppIdentifier(service)
 
 	amc := &v1.AppMeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -417,6 +455,6 @@ func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent, identif
 	}
 }
 
-func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Kube event handler: delete a configuration\n%v\n", e.Path)
 }

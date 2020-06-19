@@ -3,10 +3,41 @@ package zookeeper
 import (
 	"fmt"
 	"github.com/ghodss/yaml"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
 	"time"
 )
+
+var defaultConfig = &events.ConfiguratorConfig{
+	ConfigVersion: "2.7",
+	Scope:         "service",
+	Key:           constant.DefaultConfigName,
+	Enabled:       true,
+	Configs: []events.ConfigItem{
+		{
+			Type:       "service",
+			Enabled:    true,
+			Addresses:  []string{"0.0.0.0"},
+			Parameters: map[string]string{"retries": "3", "timeout": "200"},
+			Side:       "provider",
+			// Applications:      nil,
+			// ProviderAddresses: nil,
+			// Services:          nil,
+		}, {
+			Type:       "service",
+			Enabled:    false,
+			Addresses:  []string{"0.0.0.0"},
+			Parameters: map[string]string{
+				//"flag_config": "flags:\n- key: blue\n weight: 60\n- key: green\n weight: 40\nmanual: true\n",
+			},
+			Side: "consumer",
+			// Applications:      nil,
+			// ProviderAddresses: nil,
+			// Services:          nil,
+		},
+	},
+}
 
 type ZkConfigClient struct {
 	conn          *zk.Conn
@@ -27,6 +58,9 @@ func NewConfigClient(conn *zk.Conn) *ZkConfigClient {
 }
 
 func (cc *ZkConfigClient) Start() error {
+	// Initializing a configuration for the service without a configurator
+	cc.configEntries[constant.DefaultConfigName] = defaultConfig
+
 	rpc, err := newPathCache(cc.conn, ConfiguratorPath)
 	if err != nil {
 		return err

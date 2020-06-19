@@ -20,11 +20,11 @@ type EventHandler interface {
 	DeleteInstance(event events.ServiceEvent)
 
 	// AddConfigEntry you should handle the event depicted that a dynamic configuration has been added
-	AddConfigEntry(event *events.ConfigEvent, identifierFinder func(s string) string)
+	AddConfigEntry(event *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service)
 	// ChangeConfigEntry you should handle the event depicted that a dynamic configuration has been changed
-	ChangeConfigEntry(event *events.ConfigEvent, identifierFinder func(s string) string)
+	ChangeConfigEntry(event *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service)
 	// DeleteConfigEntry you should handle the event depicted that a dynamic configuration has been deleted
-	DeleteConfigEntry(event *events.ConfigEvent, identifierFinder func(s string) string)
+	DeleteConfigEntry(event *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service)
 }
 
 // SimpleEventHandler Using printing the event's information as a simple handling logic.
@@ -50,14 +50,14 @@ func (seh *SimpleEventHandler) DeleteInstance(e events.ServiceEvent) {
 	fmt.Printf("Simple event handler: Deleting an instance\n%v\n", e.Instance)
 }
 
-func (seh *SimpleEventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
+func (seh *SimpleEventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
 }
 
-func (seh *SimpleEventHandler) ChangeConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+func (seh *SimpleEventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
 }
 
-func (seh *SimpleEventHandler) DeleteConfigEntry(e *events.ConfigEvent, identifierFinder func(s string) string) {
+func (seh *SimpleEventHandler) DeleteConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
 }

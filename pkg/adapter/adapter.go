@@ -132,15 +132,15 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 			switch ce.EventType {
 			case events.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
-					h.AddConfigEntry(ce, a.registryClient.FindAppIdentifier)
+					h.AddConfigEntry(ce, a.registryClient.GetCachedService)
 				}
 			case events.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
-					h.ChangeConfigEntry(ce, a.registryClient.FindAppIdentifier)
+					h.ChangeConfigEntry(ce, a.registryClient.GetCachedService)
 				}
 			case events.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
-					h.DeleteConfigEntry(ce, a.registryClient.FindAppIdentifier)
+					h.DeleteConfigEntry(ce, a.registryClient.GetCachedService)
 				}
 			}
 		case <-stop:

@@ -108,26 +108,14 @@ func (c *ZkRegistryClient) Start() error {
 	return nil
 }
 
-// FindAppIdentifier
-func (c *ZkRegistryClient) FindAppIdentifier(serviceName string) string {
-	var appName string
+// GetCachedService
+func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service {
 	service, ok := c.services[serviceName]
 	if !ok {
 		fmt.Printf("Can not find a service with name %s\n", serviceName)
-		return appName
+		return nil
 	}
-
-	if service.Instances == nil || len(service.Instances) == 0 {
-		fmt.Printf("Can not find any instance from a service %s which has an empty instances list.\n", service)
-		return appName
-	}
-	for _, ins := range service.Instances {
-		if ins != nil && ins.Labels != nil {
-			return ins.Labels[constant.ApplicationLabel]
-		}
-	}
-	return appName
-
+	return service
 }
 
 // eventLoop Creating the caches for every provider
@@ -181,8 +169,9 @@ func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events
 		Host: ep.Host,
 		Port: &events.Port{
 			//Protocol: ep.Scheme,
+			//Port:     ep.Port(),
 			Protocol: constant.DubboProtocol,
-			Port:     ep.Port(),
+			Port:     constant.MosnPort,
 		},
 		Labels: make(map[string]string),
 	}
