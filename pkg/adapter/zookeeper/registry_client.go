@@ -113,7 +113,7 @@ func (c *ZkRegistryClient) FindAppIdentifier(serviceName string) string {
 	var appName string
 	service, ok := c.services[serviceName]
 	if !ok {
-		fmt.Printf("Can not find a service with name %s\n", service)
+		fmt.Printf("Can not find a service with name %s\n", serviceName)
 		return appName
 	}
 

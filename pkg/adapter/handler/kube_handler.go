@@ -24,7 +24,7 @@ type KubeEventHandler struct {
 func (kubeeh *KubeEventHandler) Init() {}
 
 // AddService ...
-func (kubeeh *KubeEventHandler) AddService(se events.ServiceEvent) {
+func (kubeeh *KubeEventHandler) AddService(se events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("CRD event handler: Adding a service\n%v\n", se.Service)
 
 	// Transform a service event that noticed by zookeeper to a Service CRD
@@ -104,7 +104,7 @@ func (kubeeh *KubeEventHandler) DeleteService(se events.ServiceEvent) {
 }
 
 // AddInstance ...
-func (kubeeh *KubeEventHandler) AddInstance(ie events.ServiceEvent) {
+func (kubeeh *KubeEventHandler) AddInstance(ie events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("CRD event handler: Adding an instance\n%v\n", ie.Instance)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.

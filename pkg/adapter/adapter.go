@@ -79,9 +79,9 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
 	//eventHandlers = append(eventHandlers, &handler.LogEventHandler{Name: "logging events."})
 	//eventHandlers = append(eventHandlers, &handler.KubeEventHandler{K8sMgr: k8sMgr})
-	kubev2handler := &handler.KubeV2EventHandler{K8sMgr: k8sMgr}
-	kubev2handler.Init()
-	eventHandlers = append(eventHandlers, kubev2handler)
+	kubev2Handler := &handler.KubeV2EventHandler{K8sMgr: k8sMgr}
+	kubev2Handler.Init()
+	eventHandlers = append(eventHandlers, kubev2Handler)
 
 	adapter := &Adapter{
 		opt:            opt,
@@ -112,7 +112,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 			switch event.EventType {
 			case events.ServiceAdded:
 				for _, h := range a.eventHandlers {
-					h.AddService(event)
+					h.AddService(event, a.configClient.FindConfiguratorConfig)
 				}
 			case events.ServiceDeleted:
 				for _, h := range a.eventHandlers {
@@ -120,7 +120,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				}
 			case events.ServiceInstanceAdded:
 				for _, h := range a.eventHandlers {
-					h.AddInstance(event)
+					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
 			case events.ServiceInstanceDeleted:
 				for _, h := range a.eventHandlers {

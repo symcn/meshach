@@ -122,6 +122,12 @@ func (cc *ZkConfigClient) getData(path string) []byte {
 	return data
 }
 
+// Find the configurator from the caches for this service,
+// return a nil value if there is no result matches this service.
+func (cc *ZkConfigClient) FindConfiguratorConfig(serviceName string) *events.ConfiguratorConfig {
+	return cc.configEntries[serviceName]
+}
+
 func (cc *ZkConfigClient) Stop() error {
 	return nil
 }

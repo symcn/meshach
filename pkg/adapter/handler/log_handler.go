@@ -12,7 +12,7 @@ type LogEventHandler struct {
 
 func (leh *LogEventHandler) Init() {}
 
-func (leh *LogEventHandler) AddService(e events.ServiceEvent) {
+func (leh *LogEventHandler) AddService(e events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("Simple event handler: Adding a service\n%v\n", e.Service)
 }
 
@@ -20,7 +20,7 @@ func (leh *LogEventHandler) DeleteService(e events.ServiceEvent) {
 	fmt.Printf("Simple event handler: Deleting a service\n%v\n", e.Service)
 }
 
-func (leh *LogEventHandler) AddInstance(e events.ServiceEvent) {
+func (leh *LogEventHandler) AddInstance(e events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("Simple event handler: Adding an instance\n%v\n", e.Instance)
 }
 

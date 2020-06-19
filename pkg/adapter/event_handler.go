@@ -11,16 +11,16 @@ type EventHandler interface {
 	Init()
 
 	// AddService you should handle the event described that a service has been created
-	AddService(event events.ServiceEvent)
+	AddService(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig)
 	// DeleteService you should handle the event describe that a service has been removed
 	DeleteService(event events.ServiceEvent)
 	// AddInstance you should handle the event described that an instance has been registered
-	AddInstance(event events.ServiceEvent)
+	AddInstance(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig)
 	// AddInstance you should handle the event describe that an instance has been unregistered
 	DeleteInstance(event events.ServiceEvent)
 
 	// AddConfigEntry you should handle the event depicted that a dynamic configuration has been added
-	AddConfigEntry(event *events.ConfigEvent, identifierFinder func(a string) string)
+	AddConfigEntry(event *events.ConfigEvent, identifierFinder func(s string) string)
 	// ChangeConfigEntry you should handle the event depicted that a dynamic configuration has been changed
 	ChangeConfigEntry(event *events.ConfigEvent, identifierFinder func(s string) string)
 	// DeleteConfigEntry you should handle the event depicted that a dynamic configuration has been deleted
@@ -34,7 +34,7 @@ type SimpleEventHandler struct {
 
 func (seh *SimpleEventHandler) Init() {}
 
-func (seh *SimpleEventHandler) AddService(e events.ServiceEvent) {
+func (seh *SimpleEventHandler) AddService(e events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("Simple event handler: Adding a service\n%v\n", e.Service)
 }
 
@@ -42,7 +42,7 @@ func (seh *SimpleEventHandler) DeleteService(e events.ServiceEvent) {
 	fmt.Printf("Simple event handler: Deleting a service\n%v\n", e.Service)
 }
 
-func (seh *SimpleEventHandler) AddInstance(e events.ServiceEvent) {
+func (seh *SimpleEventHandler) AddInstance(e events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("Simple event handler: Adding an instance\n%v\n", e.Instance)
 }
 

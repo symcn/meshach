@@ -41,7 +41,7 @@ func (kubev2eh *KubeV2EventHandler) Init() {
 }
 
 // AddService ...
-func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent) {
+func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("Kube v2 event handler: Adding a service\n%v\n", event.Service)
 
 	// Transform a service event that noticed by zookeeper to a Service CRD
@@ -60,7 +60,15 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent) {
 	}
 
 	_, err := kubev2eh.getAmc(amc)
-	replace(&event, amc)
+	s := getService(&event)
+	replace(s, amc)
+
+	// meanwhile we should set configurator into this service
+	config := configuratorFinder(s.Name)
+	if config != nil {
+		setConfig(config, amc, kubev2eh.meshConfig)
+	}
+
 	if err != nil {
 		fmt.Printf("Can not find an existed amc CR: %v\n", err)
 		kubev2eh.createAmc(amc)
@@ -71,9 +79,9 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent) {
 	fmt.Printf("Create or update an AppMeshConfig CR after a service has beed created: %s\n", amc.Name)
 }
 
-func (kubev2eh *KubeV2EventHandler) AddInstance(event events.ServiceEvent) {
+func (kubev2eh *KubeV2EventHandler) AddInstance(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("Kube v2 event handler: Adding an instance\n%v\n", event.Service)
-	kubev2eh.AddService(event)
+	kubev2eh.AddService(event, configuratorFinder)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
@@ -146,14 +154,19 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event events.ServiceEvent) {
 	kubev2eh.updateAmc(amc)
 }
 
-// replace
-func replace(event *events.ServiceEvent, amc *v1.AppMeshConfig) {
+// getService
+func getService(event *events.ServiceEvent) *events.Service {
 	var svc *events.Service
 	if event.Service == nil {
 		svc = event.Instance.Service
 	} else {
 		svc = event.Service
 	}
+	return svc
+}
+
+// replace
+func replace(svc *events.Service, amc *v1.AppMeshConfig) {
 	s := convertService(svc)
 	if amc.Spec.Services == nil {
 		var services []*v1.Service
@@ -228,28 +241,8 @@ func (kubev2eh *KubeV2EventHandler) getAmc(config *v1.AppMeshConfig) (*v1.AppMes
 // AddConfigEntry
 func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *events.ConfigEvent, identifierFinder func(a string) string) {
 	fmt.Printf("Kube v2 event handler: adding a configuration\n%v\n", e.Path)
-
-	serviceName := e.ConfigEntry.Key
-	appIdentifier := identifierFinder(serviceName)
-
-	amc := &v1.AppMeshConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      appIdentifier,
-			Namespace: defaultNamespace,
-		},
-	}
-	_, err := kubev2eh.getAmc(amc)
-	if err != nil {
-		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
-		// TODO Is there a requirement to requeue this event?
-	} else {
-		//for _, ci := range cc.Configs {
-		//for address := range ci.Addresses {
-		//
-		//}
-		//}
-	}
-
+	// Adding a new configuration for a service is same as changing it.
+	kubev2eh.ChangeConfigEntry(e, identifierFinder)
 }
 
 // ChangeConfigEntry
@@ -282,99 +275,8 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, ide
 		return
 	}
 
-	for index, service := range amc.Spec.Services {
-		// find out the service we need to process
-		if service.Name == serviceName {
-			s := service
-
-			// policy's setting
-			s.Policy = &v1.Policy{
-				LoadBalancer:   kubev2eh.meshConfig.Spec.GlobalPolicy.LoadBalancer,
-				MaxConnections: kubev2eh.meshConfig.Spec.GlobalPolicy.MaxConnections,
-				Timeout:        kubev2eh.meshConfig.Spec.GlobalPolicy.Timeout,
-				MaxRetries:     kubev2eh.meshConfig.Spec.GlobalPolicy.MaxRetries,
-			}
-			// subset's setting
-			s.Subsets = kubev2eh.meshConfig.Spec.GlobalSubsets
-			// find out the default configuration if it has been presented.
-			// it will be used to assemble both the service and instances without customized configurations.
-			defaultConfig := findDefaultConfig(e.ConfigEntry.Configs)
-			// Setting the service's configuration such as policy
-			if defaultConfig != nil && defaultConfig.Enabled {
-				if t, ok := defaultConfig.Parameters["timeout"]; ok {
-					s.Policy.Timeout = t
-				}
-				if r, ok := defaultConfig.Parameters["retries"]; ok {
-					s.Policy.MaxRetries = utils.ToInt32(r)
-				}
-			}
-
-			flagConfig := findFlagConfig(e.ConfigEntry.Configs)
-			if flagConfig != nil && flagConfig.Enabled {
-				var sls []*v1.SourceLabels
-				fc, ok := flagConfig.Parameters["flag_config"]
-				if ok {
-					fmt.Printf("%s\n", fc)
-					fcp := &events.FlagConfigParameter{}
-					err := yaml.Unmarshal([]byte(fc), fcp)
-					if err != nil {
-						fmt.Printf("Parsing the flag_config parameter has an error: %v\n", err)
-					} else {
-						for _, subset := range kubev2eh.meshConfig.Spec.GlobalSubsets {
-							sl := &v1.SourceLabels{
-								Name:   subset.Name,
-								Labels: subset.Labels,
-							}
-							// header
-							h := make(map[string]string)
-							h["sym-zone"] = constant.Zone
-							sl.Headers = h
-
-							// route
-							// The dynamic configuration has the highest priority if the manual is true
-							var routes []*v1.Destination
-							if fcp.Manual {
-								for _, f := range fcp.Flags {
-									routes = append(routes, &v1.Destination{
-										Subset: f.Key,
-										Weight: f.Weight,
-									})
-								}
-							} else {
-								// otherwise it means the consumer can only visit the providers
-								// whose group is same as itself.
-								for _, ss := range kubev2eh.meshConfig.Spec.GlobalSubsets {
-									d := &v1.Destination{Subset: ss.Name}
-									if ss.Name == sl.Name {
-										d.Weight = 99
-									} else {
-										d.Weight = 1
-									}
-									routes = append(routes, d)
-								}
-							}
-							sl.Route = routes
-
-							sls = append(sls, sl)
-						}
-
-					}
-				}
-				s.Policy.SourceLabels = sls
-			}
-
-			// Setting these instances's configuration such as weight
-			for index, ins := range s.Instances {
-				if matched, c := matchInstance(ins, e.ConfigEntry.Configs); matched {
-					service.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
-				} else {
-					service.Instances[index].Weight = 100
-				}
-			}
-
-			amc.Spec.Services[index] = s
-		}
-	}
+	// set the configuration into the amc CR
+	setConfig(e.ConfigEntry, amc, kubev2eh.meshConfig)
 
 	kubev2eh.updateAmc(amc)
 }
@@ -428,6 +330,99 @@ func matchInstance(ins *v1.Instance, configs []events.ConfigItem) (bool, *events
 	return false, nil
 }
 
-func wrapConfig(config *events.ConfiguratorConfig, amc *v1.AppMeshConfig) {
+// setConfig
+func setConfig(e *events.ConfiguratorConfig, amc *v1.AppMeshConfig, mc *v1.MeshConfig) {
+	for index, service := range amc.Spec.Services {
+		// find out the service we need to process
+		if service.Name == e.Key {
+			s := service
 
+			// policy's setting
+			s.Policy = &v1.Policy{
+				LoadBalancer:   mc.Spec.GlobalPolicy.LoadBalancer,
+				MaxConnections: mc.Spec.GlobalPolicy.MaxConnections,
+				Timeout:        mc.Spec.GlobalPolicy.Timeout,
+				MaxRetries:     mc.Spec.GlobalPolicy.MaxRetries,
+			}
+			// subset's setting
+			s.Subsets = mc.Spec.GlobalSubsets
+			// find out the default configuration if it has been presented.
+			// it will be used to assemble both the service and instances without customized configurations.
+			defaultConfig := findDefaultConfig(e.Configs)
+			// Setting the service's configuration such as policy
+			if defaultConfig != nil && defaultConfig.Enabled {
+				if t, ok := defaultConfig.Parameters["timeout"]; ok {
+					s.Policy.Timeout = t
+				}
+				if r, ok := defaultConfig.Parameters["retries"]; ok {
+					s.Policy.MaxRetries = utils.ToInt32(r)
+				}
+			}
+
+			flagConfig := findFlagConfig(e.Configs)
+			if flagConfig != nil && flagConfig.Enabled {
+				var sls []*v1.SourceLabels
+				fc, ok := flagConfig.Parameters["flag_config"]
+				if ok {
+					fmt.Printf("%s\n", fc)
+					fcp := &events.FlagConfigParameter{}
+					err := yaml.Unmarshal([]byte(fc), fcp)
+					if err != nil {
+						fmt.Printf("Parsing the flag_config parameter has an error: %v\n", err)
+					} else {
+						for _, subset := range mc.Spec.GlobalSubsets {
+							sl := &v1.SourceLabels{
+								Name:   subset.Name,
+								Labels: subset.Labels,
+							}
+							// header
+							h := make(map[string]string)
+							h["sym-zone"] = constant.Zone
+							sl.Headers = h
+
+							// route
+							// The dynamic configuration has the highest priority if the manual is true
+							var routes []*v1.Destination
+							if fcp.Manual {
+								for _, f := range fcp.Flags {
+									routes = append(routes, &v1.Destination{
+										Subset: f.Key,
+										Weight: f.Weight,
+									})
+								}
+							} else {
+								// otherwise it means the consumer can only visit the providers
+								// whose group is same as itself.
+								for _, ss := range mc.Spec.GlobalSubsets {
+									d := &v1.Destination{Subset: ss.Name}
+									if ss.Name == sl.Name {
+										d.Weight = 99
+									} else {
+										d.Weight = 1
+									}
+									routes = append(routes, d)
+								}
+							}
+							sl.Route = routes
+
+							sls = append(sls, sl)
+						}
+
+					}
+				}
+				s.Policy.SourceLabels = sls
+			}
+
+			// Setting these instances's configuration such as weight
+			for index, ins := range s.Instances {
+				if matched, c := matchInstance(ins, e.Configs); matched {
+					service.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
+				} else {
+					service.Instances[index].Weight = 100
+				}
+			}
+
+			amc.Spec.Services[index] = s
+		}
+	}
 }
