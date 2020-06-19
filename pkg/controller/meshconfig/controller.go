@@ -11,9 +11,11 @@ import (
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -45,7 +47,20 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource MeshConfig
-	err = c.Watch(&source.Kind{Type: &meshv1.MeshConfig{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(
+		&source.Kind{Type: &meshv1.MeshConfig{}},
+		&handler.EnqueueRequestForObject{},
+		predicate.Funcs{
+			// Ignore updates to CR status in which case metadata.Generation does not change
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+			},
+			DeleteFunc: func(e event.DeleteEvent) bool {
+				// Evaluates to false if the object has been confirmed deleted.
+				return !e.DeleteStateUnknown
+			},
+		},
+	)
 	if err != nil {
 		return err
 	}
