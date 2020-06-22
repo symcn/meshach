@@ -18,13 +18,14 @@ func FormatToDNS1123(name string) string {
 // 2s => ptypes.Duration{Seconds: 2}
 // 20ms => ptypes.Duration{Nanos: 20000000}
 // 2 => ptypes.Duration{Seconds: 2}
-func StringToDuration(s string) *ptypes.Duration {
+func StringToDuration(s string, repeat int64) *ptypes.Duration {
 	if strings.HasSuffix(s, "ms") {
 		t, err := strconv.ParseInt(strings.TrimSuffix(s, "ms"), 10, 64)
 		if err != nil {
 			klog.Errorf("parse %s to protobuf duration error: %v", s, err)
 			t = 0
 		}
+		t *= repeat
 		return &ptypes.Duration{Nanos: int32(t) * 1000000}
 	}
 
@@ -33,5 +34,6 @@ func StringToDuration(s string) *ptypes.Duration {
 		klog.Errorf("parse %s to protobuf duration error: %v", s, err)
 		t = 0
 	}
+	t *= repeat
 	return &ptypes.Duration{Seconds: t}
 }
