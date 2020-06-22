@@ -2,13 +2,14 @@ package adapter
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/handler"
 	"github.com/mesh-operator/pkg/adapter/zookeeper"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
-	"time"
 )
 
 // Adapter ...
@@ -61,7 +62,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	// Initializing the registry client that you want to use.
 	rConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
-		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
+		klog.Errorf("Initializing a registry client has an error: %v\n", err)
 		return nil, err
 	}
 	registryClient := zookeeper.NewRegistryClient(rConn)
@@ -69,7 +70,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	// Initializing the a client to connect to configuration center
 	cConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
-		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
+		klog.Errorf("Initializing a registry client has an error: %v\n", err)
 		return nil, err
 	}
 	configClient := zookeeper.NewConfigClient(cConn)
