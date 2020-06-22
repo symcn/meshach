@@ -146,10 +146,11 @@ func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service, sourceLabel
 		Name:    httpRouteName + "-" + sourceLabels.Name,
 		Match:   []*v1beta1.HTTPMatchRequest{match},
 		Route:   routes,
-		Timeout: utils.StringToDuration(svc.Policy.Timeout),
+		Timeout: utils.StringToDuration(svc.Policy.Timeout, int64(svc.Policy.MaxRetries)),
 		Retries: &v1beta1.HTTPRetry{
-			Attempts: svc.Policy.MaxRetries,
-			RetryOn:  r.opt.ProxyRetryOn,
+			Attempts:      svc.Policy.MaxRetries,
+			PerTryTimeout: utils.StringToDuration(svc.Policy.Timeout, 1),
+			RetryOn:       r.opt.ProxyRetryOn,
 		},
 	}
 }
