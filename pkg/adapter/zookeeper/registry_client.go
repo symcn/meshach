@@ -171,8 +171,7 @@ func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events
 			//Protocol: ep.Scheme,
 			//Port:     ep.Port(),
 			Protocol: constant.DubboProtocol,
-			//Port:     constant.MosnPort,
-			Port: ep.Port(),
+			Port:     constant.MosnPort,
 		},
 		Labels: make(map[string]string),
 	}
