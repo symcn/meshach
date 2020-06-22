@@ -171,7 +171,8 @@ func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events
 			//Protocol: ep.Scheme,
 			//Port:     ep.Port(),
 			Protocol: constant.DubboProtocol,
-			Port:     constant.MosnPort,
+			//Port:     constant.MosnPort,
+			Port: ep.Port(),
 		},
 		Labels: make(map[string]string),
 	}
@@ -229,6 +230,7 @@ func (c *ZkRegistryClient) addService(hostname string, instance *events.Instance
 		}
 		c.services[h] = s
 		s.AddPort(instance.Port)
+
 		go c.notify(events.ServiceEvent{
 			EventType: events.ServiceAdded,
 			Service:   s,

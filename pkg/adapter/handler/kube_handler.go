@@ -318,7 +318,8 @@ func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 // convertPort Convert the port which has been defined in zookeeper library to the one that belongs to CRD.
 func convertPort(port *events.Port) *v1.Port {
 	return &v1.Port{
-		Name:     port.Port,
+		// Name:     port.Port,
+		Name:     constant.DubboPortName,
 		Protocol: port.Protocol,
 		Number:   utils.ToUint32(port.Port),
 	}

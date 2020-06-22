@@ -16,6 +16,7 @@ var (
 	ApplicationLabel  = "application"
 	AppCodeLabel      = "app_code"
 	ProjectCodeLabel  = "pro_code"
+	DubboPortName     = "dubbo-http"
 	DubboProtocol     = "HTTP"
 	MosnPort          = "20882"
 	ZoneLabel         = "zone"

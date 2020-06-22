@@ -10,6 +10,7 @@ import (
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 // KubeV2EventHandler it used for synchronizing the events which has been send by the adapter client
@@ -189,16 +190,23 @@ func replace(svc *events.Service, amc *v1.AppMeshConfig) {
 	}
 }
 
-// convertService Convert service between the two formats
+// convertService Convert service between these two formats
 func convertService(s *events.Service) *v1.Service {
 	// Ports
-	var ports []*v1.Port
-	for _, p := range s.Ports {
-		ports = append(ports, convertPort(p))
-	}
+
+	//var ports []*v1.Port
+	//for _, p := range s.Ports {
+	//	ports = append(ports, convertPort(p))
+	//}
+
+	// TODO Assuming every service can only provide an unique fixed port to adapt the dubbo case.
 	service := &v1.Service{
-		Name:  s.Name,
-		Ports: ports,
+		Name: s.Name,
+		Ports: []*v1.Port{{
+			Name:     constant.DubboPortName,
+			Protocol: constant.DubboProtocol,
+			Number:   utils.ToUint32(constant.MosnPort),
+		}},
 	}
 
 	var instances []*v1.Instance
@@ -329,7 +337,7 @@ func findFlagConfig(configs []events.ConfigItem) *events.ConfigItem {
 func matchInstance(ins *v1.Instance, configs []events.ConfigItem) (bool, *events.ConfigItem) {
 	for _, cc := range configs {
 		for _, adds := range cc.Addresses {
-			if ins.Host+":"+ins.Port.Name == adds {
+			if ins.Host+":"+strconv.FormatInt(int64(ins.Port.Number), 10) == adds {
 				// found an customized configuration for this instance.
 				return true, &cc
 			}
