@@ -278,7 +278,7 @@ func putInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	}
 }
 
-// deleteInstance
+// deleteInstance Remove an instance from the amc CR
 func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	instance := &v1.Instance{
 		Host: utils.RemovePort(ie.Instance.Host),

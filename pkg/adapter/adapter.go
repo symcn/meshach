@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"time"
 
 	"github.com/mesh-operator/pkg/adapter/events"
@@ -97,6 +98,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 
 // Start an adapter which is used for synchronizing services and instances to kubernetes cluster.
 func (a *Adapter) Start(stop <-chan struct{}) error {
+	klog.Info("====> start adapter")
 	if err := a.registryClient.Start(); err != nil {
 		fmt.Printf("Start a registry center's client has an error: %v\n", err)
 		return err
@@ -110,6 +112,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 	for {
 		select {
 		case event := <-a.registryClient.Events():
+			fmt.Printf("Registry events which has been reveived by adapter: %v\n", event)
 			switch event.EventType {
 			case events.ServiceAdded:
 				for _, h := range a.eventHandlers {
@@ -124,12 +127,15 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
 			case events.ServiceInstanceDeleted:
+				uuid := utils.GetUUID()
+				klog.Infof("====> start to handle event %s", uuid)
 				for _, h := range a.eventHandlers {
 					h.DeleteInstance(event)
 				}
+				klog.Infof("====> end handling %s", uuid)
 			}
 		case ce := <-a.configClient.Events():
-			fmt.Printf("%v\n", ce)
+			fmt.Printf("Configuration events which has been reveived by adapter: %v\n", ce)
 			switch ce.EventType {
 			case events.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
