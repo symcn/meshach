@@ -71,7 +71,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	// Initializing the a client to connect to configuration center
 	cConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
-		klog.Errorf("Initializing a registry client has an error: %v\n", err)
+		klog.Errorf("Initializing a configuration client has an error: %v\n", err)
 		return nil, err
 	}
 	configClient := zookeeper.NewConfigClient(cConn)
@@ -115,24 +115,30 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 			fmt.Printf("Registry events which has been reveived by adapter: %v\n", event)
 			switch event.EventType {
 			case events.ServiceAdded:
+				uuid := utils.GetUUID()
+				klog.Infof("====> Start to handle event - ADD SERVICE %s", uuid)
 				for _, h := range a.eventHandlers {
 					h.AddService(event, a.configClient.FindConfiguratorConfig)
 				}
+				klog.Infof("====> end handling event - ADD SERVICE %s", uuid)
 			case events.ServiceDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteService(event)
 				}
 			case events.ServiceInstanceAdded:
+				uuid := utils.GetUUID()
+				klog.Infof("====> Start to handle event - ADD INSTANCE %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
+				klog.Infof("====> end handling event - ADD INSTANCE %s", uuid)
 			case events.ServiceInstanceDeleted:
 				uuid := utils.GetUUID()
-				klog.Infof("====> start to handle event %s", uuid)
+				klog.Infof("====> Start to handle event - DELETE INSTANCE %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.DeleteInstance(event)
 				}
-				klog.Infof("====> end handling %s", uuid)
+				klog.Infof("====> end handling event - DELETE INSTANCE %s", uuid)
 			}
 		case ce := <-a.configClient.Events():
 			fmt.Printf("Configuration events which has been reveived by adapter: %v\n", ce)

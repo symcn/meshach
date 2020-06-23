@@ -3,6 +3,7 @@ package zookeeper
 import (
 	"fmt"
 	"github.com/mesh-operator/pkg/adapter/constant"
+	"k8s.io/klog"
 	"net/url"
 	"path"
 	"strings"
@@ -85,7 +86,7 @@ func (c *ZkRegistryClient) Stop() {
 
 func (c *ZkRegistryClient) Start() error {
 	// create a cache for every service
-	scache, err := newPathCache(c.conn, DubboRootPath)
+	scache, err := newPathCache(c.conn, DubboRootPath, "REGISTRY")
 	if err != nil {
 		return err
 	}
@@ -121,11 +122,16 @@ func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service 
 // eventLoop Creating the caches for every provider
 func (c *ZkRegistryClient) eventLoop() {
 	for event := range c.scache.events() {
+		hostname := path.Base(event.path)
+		if hostname == IgnoredHostNames[0] || hostname == IgnoredHostNames[1] {
+			klog.Infof("Path should be ignored by registry client: %s", event.path)
+			continue
+		}
+
 		switch event.eventType {
 		case pathCacheEventAdded:
-			hostname := path.Base(event.path)
 			ppath := path.Join(event.path, ProvidersPath)
-			pcache, err := newPathCache(c.conn, ppath)
+			pcache, err := newPathCache(c.conn, ppath, "REGISTRY")
 			if err != nil {
 				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
 				continue
@@ -144,7 +150,7 @@ func (c *ZkRegistryClient) eventLoop() {
 		case pathCacheEventDeleted:
 			// In fact, this snippet always won't be executed.
 			// At least one empty node of this service exists.
-			hostname := path.Base(event.path)
+			// hostname := path.Base(event.path)
 			c.deleteService(hostname)
 
 			// Especially a service node may be deleted by someone manually,

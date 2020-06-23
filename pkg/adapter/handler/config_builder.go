@@ -9,6 +9,37 @@ import (
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 )
 
+// Default configurator for the service without a customized configurator
+var DefaultConfigurator = &events.ConfiguratorConfig{
+	ConfigVersion: "2.7",
+	Scope:         "service",
+	Key:           constant.DefaultConfigName,
+	Enabled:       true,
+	Configs: []events.ConfigItem{
+		{
+			Type:       "service",
+			Enabled:    true,
+			Addresses:  []string{"0.0.0.0"},
+			Parameters: map[string]string{"retries": "3", "timeout": "200"},
+			Side:       "provider",
+			// Applications:      nil,
+			// ProviderAddresses: nil,
+			// Services:          nil,
+		}, {
+			Type:       "service",
+			Enabled:    false,
+			Addresses:  []string{"0.0.0.0"},
+			Parameters: map[string]string{
+				//"flag_config": "flags:\n- key: blue\n weight: 60\n- key: green\n weight: 40\nmanual: true\n",
+			},
+			Side: "consumer",
+			// Applications:      nil,
+			// ProviderAddresses: nil,
+			// Services:          nil,
+		},
+	},
+}
+
 // buildPolicy
 func buildPolicy(s *v1.Service, e *events.ConfiguratorConfig, mc *v1.MeshConfig) *v1.Service {
 	s.Policy = &v1.Policy{
@@ -18,7 +49,7 @@ func buildPolicy(s *v1.Service, e *events.ConfiguratorConfig, mc *v1.MeshConfig)
 		MaxRetries:     mc.Spec.GlobalPolicy.MaxRetries,
 	}
 
-	// find out the default configuration if it has been presented.
+	// find out the default configuration if it presents.
 	// it will be used to assemble both the service and instances without customized configurations.
 	defaultConfig := findDefaultConfig(e.Configs)
 	// Setting the service's configuration such as policy

@@ -11,8 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
+	"strings"
 )
 
 // KubeV2EventHandler it used for synchronizing the events which has been send by the adapter client
@@ -44,7 +46,7 @@ func (kubev2eh *KubeV2EventHandler) Init() {
 
 // AddService ...
 func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
-	fmt.Printf("Kube v2 event handler: Adding a service\n%v\n", event.Service)
+	klog.Infof("Kube v2 event handler: Adding a service\n%v", event)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Transform a service event that noticed by zookeeper to a Service CRD
@@ -56,13 +58,7 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		}
 
 		// loading amc CR from k8s cluster
-		amc := &v1.AppMeshConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      appIdentifier,
-				Namespace: defaultNamespace,
-			},
-		}
-		_, err := kubev2eh.getAmc(amc)
+		amc, err := kubev2eh.findAmc(appIdentifier)
 
 		// Replacing service information belongs to this amc CR with this event.
 		s := getService(&event)
@@ -71,7 +67,7 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		// meanwhile we should set configurator to this service
 		config := configuratorFinder(s.Name)
 		if config == nil {
-			dc := *configuratorFinder(constant.DefaultConfigName)
+			dc := *DefaultConfigurator
 			dc.Key = s.Name
 			setConfig(&dc, amc, kubev2eh.meshConfig)
 		} else {
@@ -92,14 +88,14 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 }
 
 func (kubev2eh *KubeV2EventHandler) AddInstance(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
-	fmt.Printf("Kube v2 event handler: Adding an instance\n%v\n", event.Service)
+	klog.Infof("Kube v2 event handler: Adding an instance\n%v", event.Instance)
 	kubev2eh.AddService(event, configuratorFinder)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
 func (kubev2eh *KubeV2EventHandler) DeleteService(event events.ServiceEvent) {
-	fmt.Printf("Kube v2 event handler: Deleting a service: %s\n", event.Service.Name)
+	klog.Infof("Kube v2 event handler: Deleting a service: %s", event.Service)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// TODO we should resolve the application name from the meta data placed in a zookeeper node.
@@ -111,14 +107,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event events.ServiceEvent) {
 			return nil
 		}
 
-		amc := &v1.AppMeshConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      appIdentifier,
-				Namespace: defaultNamespace,
-			},
-		}
-
-		_, err := kubev2eh.getAmc(amc)
+		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
 			fmt.Println("amc CR can not be found, ignore it")
 			return nil
@@ -152,13 +141,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event events.ServiceEvent) {
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		appIdentifier := resolveAppIdentifier(&event)
-		amc := &v1.AppMeshConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      appIdentifier,
-				Namespace: defaultNamespace,
-			},
-		}
-		_, err := kubev2eh.getAmc(amc)
+		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
 			fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
 			return nil
@@ -238,11 +221,12 @@ func convertService(s *events.Service) *v1.Service {
 	return service
 }
 
-// CreateAmc
+// createAmc
 func (kubev2eh *KubeV2EventHandler) createAmc(amc *v1.AppMeshConfig) error {
 	// TODO
 	cluster, _ := kubev2eh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Create(context.Background(), amc)
+	klog.Infof("========> The generation of amc when creating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
 		fmt.Printf("Creating an acm has an error:%v\n", err)
 		return err
@@ -250,11 +234,12 @@ func (kubev2eh *KubeV2EventHandler) createAmc(amc *v1.AppMeshConfig) error {
 	return nil
 }
 
-// UpdateAmc
+// updateAmc
 func (kubev2eh *KubeV2EventHandler) updateAmc(amc *v1.AppMeshConfig) error {
 	// TODO
 	cluster, _ := kubev2eh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Update(context.Background(), amc)
+	klog.Infof("========> The generation of amc after updating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
 		fmt.Printf("Updating an acm has an error: %v\n", err)
 		return err
@@ -263,13 +248,31 @@ func (kubev2eh *KubeV2EventHandler) updateAmc(amc *v1.AppMeshConfig) error {
 	return nil
 }
 
-// GetAmc
+// getAmc
 func (kubev2eh *KubeV2EventHandler) getAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig, error) {
 	cluster, _ := kubev2eh.K8sMgr.Get("tcc-gz01-bj5-test")
 	key, _ := client.ObjectKeyFromObject(config)
 	err := cluster.Client.Get(context.Background(), key, config)
-	klog.Infof("========> generation : %d", config.ObjectMeta.Generation)
+	klog.Infof("========> The generation of amc when getting: %d", config.ObjectMeta.Generation)
 	return config, err
+}
+
+// findAmc
+func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshConfig, error) {
+	amc := &v1.AppMeshConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appIdentifier,
+			Namespace: defaultNamespace,
+		},
+	}
+	amc, err := kubev2eh.getAmc(amc)
+	if err != nil {
+		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		// TODO Is there a requirement to requeue this event?
+		return nil, err
+	}
+
+	return amc, nil
 }
 
 // AddConfigEntry
@@ -284,27 +287,15 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, cac
 	fmt.Printf("Kube v2 event handler: change a configuration\n%v\n", e.Path)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// TODO we really need to handle and think about the case that configuration has been disable.
-		if !e.ConfigEntry.Enabled {
-			fmt.Printf("Configurator [%s] is disable, ignore it.", e.ConfigEntry.Key)
-			return nil
-		}
-
 		serviceName := e.ConfigEntry.Key
 		service := cachedServiceFinder(serviceName)
 		appIdentifier := getAppIdentifier(service)
 		if appIdentifier == "" {
-			fmt.Printf("Can not find the app identified name through the cached service, service name :%s", serviceName)
+			fmt.Printf("Can not find the app identified name through the cached service, service name :%s\n", serviceName)
 			return nil
 		}
 
-		amc := &v1.AppMeshConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      appIdentifier,
-				Namespace: defaultNamespace,
-			},
-		}
-		amc, err := kubev2eh.getAmc(amc)
+		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
 			fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 			// TODO Is there a requirement to requeue this event?
@@ -312,14 +303,51 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, cac
 		}
 
 		// set the configuration into the amc CR
-		setConfig(e.ConfigEntry, amc, kubev2eh.meshConfig)
+		if e.ConfigEntry == nil || !e.ConfigEntry.Enabled {
+			// TODO we really need to handle and think about the case that configuration has been disable.
+			dc := *DefaultConfigurator
+			dc.Key = serviceName
+			setConfig(&dc, amc, kubev2eh.meshConfig)
+		} else {
+			setConfig(e.ConfigEntry, amc, kubev2eh.meshConfig)
+		}
 
 		return kubev2eh.updateAmc(amc)
 	})
 }
 
+// DeleteConfigEntry
 func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
 	fmt.Printf("Kube v2 event handler: delete a configuration\n%v\n", e.Path)
+
+	retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// an example for the path: /dubbo/config/dubbo/com.dmall.mesh.test.PoviderDemo.configurators
+		// Usually deleting event don't include the configuration data, so that we should
+		// parse the zNode path to decide what is the service name.
+		serviceName := strings.Replace(path.Base(e.Path), ".configurators", "", 1)
+
+		service := cachedServiceFinder(serviceName)
+		appIdentifier := getAppIdentifier(service)
+		if appIdentifier == "" {
+			fmt.Printf("Can not find the app identified name through the cached service, service name :%s\n", serviceName)
+			return nil
+		}
+
+		amc, err := kubev2eh.findAmc(appIdentifier)
+		if err != nil {
+			fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+			// TODO Is there a requirement to requeue this event?
+			return nil
+		}
+
+		// Deleting a configuration of a service is similar to setting default configurator to this service
+		dc := *DefaultConfigurator
+		dc.Key = serviceName
+		setConfig(&dc, amc, kubev2eh.meshConfig)
+
+		return kubev2eh.updateAmc(amc)
+	})
+
 }
 
 // findDefaultConfig
