@@ -16,7 +16,7 @@ func Test_watch(t *testing.T) {
 	}
 
 	//go func() {
-	p, err := newPathCache(conn, DubboRootPath)
+	p, err := newPathCache(conn, DubboRootPath, "MOCK")
 	if err != nil {
 		fmt.Printf("Create a new pathcache for [%s] has an err: %v\n", DubboRootPath, err)
 		assert.EqualError(t, err, "zk: node does not exist")

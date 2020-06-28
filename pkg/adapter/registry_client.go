@@ -11,7 +11,9 @@ type RegistryClient interface {
 	Events() <-chan events.ServiceEvent
 
 	// If you need to make the application name explicit, you can find it with a service name from registry client.
-	FindAppIdentifier(serviceName string) string
+	// FindAppIdentifier(serviceName string) string
+
+	GetCachedService(serviceName string) *events.Service
 
 	Stop()
 }

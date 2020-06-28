@@ -2,13 +2,15 @@ package adapter
 
 import (
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
+	"time"
+
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/handler"
 	"github.com/mesh-operator/pkg/adapter/zookeeper"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
-	"time"
 )
 
 // Adapter ...
@@ -61,7 +63,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	// Initializing the registry client that you want to use.
 	rConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
-		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
+		klog.Errorf("Initializing a registry client has an error: %v\n", err)
 		return nil, err
 	}
 	registryClient := zookeeper.NewRegistryClient(rConn)
@@ -69,7 +71,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	// Initializing the a client to connect to configuration center
 	cConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
-		fmt.Sprintf("Initializing a registry client has an error: %v\n", err)
+		klog.Errorf("Initializing a configuration client has an error: %v\n", err)
 		return nil, err
 	}
 	configClient := zookeeper.NewConfigClient(cConn)
@@ -79,7 +81,10 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
 	//eventHandlers = append(eventHandlers, &handler.LogEventHandler{Name: "logging events."})
 	//eventHandlers = append(eventHandlers, &handler.KubeEventHandler{K8sMgr: k8sMgr})
-	eventHandlers = append(eventHandlers, &handler.KubeV2EventHandler{K8sMgr: k8sMgr})
+	kubev2Handler := &handler.KubeV2EventHandler{K8sMgr: k8sMgr}
+	kubev2Handler.Init()
+	eventHandlers = append(eventHandlers, kubev2Handler)
+
 	adapter := &Adapter{
 		opt:            opt,
 		K8sMgr:         k8sMgr,
@@ -93,6 +98,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 
 // Start an adapter which is used for synchronizing services and instances to kubernetes cluster.
 func (a *Adapter) Start(stop <-chan struct{}) error {
+	klog.Info("====> start adapter")
 	if err := a.registryClient.Start(); err != nil {
 		fmt.Printf("Start a registry center's client has an error: %v\n", err)
 		return err
@@ -106,38 +112,48 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 	for {
 		select {
 		case event := <-a.registryClient.Events():
+			fmt.Printf("Registry events which has been reveived by adapter: %v\n", event)
 			switch event.EventType {
 			case events.ServiceAdded:
+				uuid := utils.GetUUID()
+				klog.Infof("====> Start to handle event - ADD SERVICE %s", uuid)
 				for _, h := range a.eventHandlers {
-					h.AddService(event)
+					h.AddService(event, a.configClient.FindConfiguratorConfig)
 				}
+				klog.Infof("====> end handling event - ADD SERVICE %s", uuid)
 			case events.ServiceDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteService(event)
 				}
 			case events.ServiceInstanceAdded:
+				uuid := utils.GetUUID()
+				klog.Infof("====> Start to handle event - ADD INSTANCE %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
-					h.AddInstance(event)
+					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
+				klog.Infof("====> end handling event - ADD INSTANCE %s", uuid)
 			case events.ServiceInstanceDeleted:
+				uuid := utils.GetUUID()
+				klog.Infof("====> Start to handle event - DELETE INSTANCE %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.DeleteInstance(event)
 				}
+				klog.Infof("====> end handling event - DELETE INSTANCE %s", uuid)
 			}
 		case ce := <-a.configClient.Events():
-			fmt.Printf("%v\n", ce)
+			fmt.Printf("Configuration events which has been reveived by adapter: %v\n", ce)
 			switch ce.EventType {
 			case events.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
-					h.AddConfigEntry(ce, a.registryClient.FindAppIdentifier)
+					h.AddConfigEntry(ce, a.registryClient.GetCachedService)
 				}
 			case events.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
-					h.ChangeConfigEntry(ce, a.registryClient.FindAppIdentifier)
+					h.ChangeConfigEntry(ce, a.registryClient.GetCachedService)
 				}
 			case events.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
-					h.DeleteConfigEntry(ce, a.registryClient.FindAppIdentifier)
+					h.DeleteConfigEntry(ce, a.registryClient.GetCachedService)
 				}
 			}
 		case <-stop:

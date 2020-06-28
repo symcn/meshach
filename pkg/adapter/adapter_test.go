@@ -2,18 +2,20 @@ package adapter
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/mesh-operator/pkg/adapter/constant"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"os"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
-	"strings"
-	"testing"
-	"time"
 )
 
 func Test_Start(t *testing.T) {
@@ -72,14 +74,14 @@ func Test_Start(t *testing.T) {
 
 	adapter, err := NewAdapter(&opt)
 	if err != nil {
-		fmt.Sprintf("Create an adapter has an error: %v\n", err)
+		klog.Errorf("Create an adapter has an error: %v\n", err)
 		return
 	}
 
 	stop := make(chan struct{})
 	err = adapter.Start(stop)
 	if err != nil {
-		fmt.Sprintf("Start an adaptor has an error: %v\n", err)
+		klog.Errorf("Start an adaptor has an error: %v\n", err)
 		return
 	}
 

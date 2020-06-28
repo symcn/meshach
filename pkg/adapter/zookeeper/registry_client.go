@@ -2,9 +2,12 @@ package zookeeper
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/constant"
+	"k8s.io/klog"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
@@ -85,7 +88,7 @@ func (c *ZkRegistryClient) Stop() {
 
 func (c *ZkRegistryClient) Start() error {
 	// create a cache for every service
-	scache, err := newPathCache(c.conn, DubboRootPath)
+	scache, err := newPathCache(c.conn, DubboRootPath, "REGISTRY")
 	if err != nil {
 		return err
 	}
@@ -93,51 +96,44 @@ func (c *ZkRegistryClient) Start() error {
 	go c.eventLoop()
 
 	// // FIXME just for debug: observe the status of the root path cache.
-	//go func() {
-	//	tick := time.Tick(10 * time.Second)
-	//	for {
-	//		select {
-	//		case <-tick:
-	//			fmt.Printf("Observing cache of root path:%v\n  caches: %v\n  services: %v\n",
-	//				scache.path, scache.cached, c.services)
-	//			//spew.Dump(scache)
-	//		}
-	//	}
-	//}()
+	go func() {
+		tick := time.Tick(10 * time.Second)
+		for {
+			select {
+			case <-tick:
+				fmt.Printf("Observing cache of root path:%v\n  caches: %v\n  services: %v\n",
+					scache.path, scache.cached, c.services)
+				//spew.Dump(scache)
+			}
+		}
+	}()
 
 	return nil
 }
 
-// FindAppIdentifier
-func (c *ZkRegistryClient) FindAppIdentifier(serviceName string) string {
-	var appName string
+// GetCachedService
+func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service {
 	service, ok := c.services[serviceName]
 	if !ok {
-		fmt.Printf("Can not find a service with name %s\n", service)
-		return appName
+		fmt.Printf("Can not find a service with name %s\n", serviceName)
+		return nil
 	}
-
-	if service.Instances == nil || len(service.Instances) == 0 {
-		fmt.Printf("Can not find any instance from a service %s which has an empty instances list.\n", service)
-		return appName
-	}
-	for _, ins := range service.Instances {
-		if ins != nil && ins.Labels != nil {
-			return ins.Labels[constant.ApplicationLabel]
-		}
-	}
-	return appName
-
+	return service
 }
 
 // eventLoop Creating the caches for every provider
 func (c *ZkRegistryClient) eventLoop() {
 	for event := range c.scache.events() {
+		hostname := path.Base(event.path)
+		if hostname == IgnoredHostNames[0] || hostname == IgnoredHostNames[1] {
+			klog.Infof("Path should be ignored by registry client: %s", event.path)
+			continue
+		}
+
 		switch event.eventType {
 		case pathCacheEventAdded:
-			hostname := path.Base(event.path)
 			ppath := path.Join(event.path, ProvidersPath)
-			pcache, err := newPathCache(c.conn, ppath)
+			pcache, err := newPathCache(c.conn, ppath, "REGISTRY")
 			if err != nil {
 				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
 				continue
@@ -156,7 +152,7 @@ func (c *ZkRegistryClient) eventLoop() {
 		case pathCacheEventDeleted:
 			// In fact, this snippet always won't be executed.
 			// At least one empty node of this service exists.
-			hostname := path.Base(event.path)
+			// hostname := path.Base(event.path)
 			c.deleteService(hostname)
 
 			// Especially a service node may be deleted by someone manually,
@@ -180,8 +176,10 @@ func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events
 	instance := &events.Instance{
 		Host: ep.Host,
 		Port: &events.Port{
-			Protocol: ep.Scheme,
-			Port:     ep.Port(),
+			//Protocol: ep.Scheme,
+			//Port:     ep.Port(),
+			Protocol: constant.DubboProtocol,
+			Port:     constant.MosnPort,
 		},
 		Labels: make(map[string]string),
 	}
@@ -239,6 +237,7 @@ func (c *ZkRegistryClient) addService(hostname string, instance *events.Instance
 		}
 		c.services[h] = s
 		s.AddPort(instance.Port)
+
 		go c.notify(events.ServiceEvent{
 			EventType: events.ServiceAdded,
 			Service:   s,
