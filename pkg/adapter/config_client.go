@@ -7,5 +7,7 @@ type ConfigurationCenterClient interface {
 
 	Events() <-chan *events.ConfigEvent
 
+	FindConfiguratorConfig(serviceName string) *events.ConfiguratorConfig
+
 	Stop() error
 }

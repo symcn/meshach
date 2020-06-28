@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+
 	"google.golang.org/grpc"
 	mcp "istio.io/api/mcp/v1alpha1"
 	"istio.io/istio/pilot/pkg/features"
@@ -31,7 +32,7 @@ func NewClient() (client *sink.Client, err error) {
 	var serverAddr = "10.12.210.41:20002"
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		fmt.Sprintf("Error connecting to server:%v\n", err)
+		return nil, fmt.Errorf("Error connecting to server:%v", err)
 	}
 
 	//colOptions := []sink.CollectionOptions{}

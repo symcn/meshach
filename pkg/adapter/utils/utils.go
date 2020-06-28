@@ -38,3 +38,9 @@ func ToUint32(portStr string) uint32 {
 	port, _ := strconv.ParseInt(portStr, 10, 32)
 	return uint32(port)
 }
+
+// toInt32 Convert a string variable to integer with 32 bit size.
+func ToInt32(portStr string) int32 {
+	port, _ := strconv.ParseInt(portStr, 10, 32)
+	return int32(port)
+}

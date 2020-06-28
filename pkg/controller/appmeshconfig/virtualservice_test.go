@@ -25,6 +25,7 @@ import (
 )
 
 func TestReconcileAppMeshConfig_reconcileVirtualService(t *testing.T) {
+	fakeScheme := GetFakeScheme()
 	type fields struct {
 		client     client.Client
 		scheme     *runtime.Scheme
@@ -42,7 +43,51 @@ func TestReconcileAppMeshConfig_reconcileVirtualService(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test-reconcile-virtualservice-create-ok",
+			fields: fields{
+				client:     GetFakeClient(TestMeshConfig),
+				scheme:     fakeScheme,
+				opt:        TestOpt,
+				meshConfig: TestMeshConfig,
+			},
+			args: args{
+				ctx: context.Background(),
+				cr:  amcTestOK,
+				svc: testOKService,
+			},
+			wantErr: false,
+		},
+		{
+			name: "test-reconcile-virtualservice-update-ok",
+			fields: fields{
+				client:     GetFakeClient(TestMeshConfig, amcTestOK, fakeVirtualService),
+				scheme:     fakeScheme,
+				opt:        TestOpt,
+				meshConfig: TestMeshConfig,
+			},
+			args: args{
+				ctx: context.Background(),
+				cr:  amcTestOK,
+				svc: testUpdateOKService,
+			},
+			wantErr: false,
+		},
+		{
+			name: "test-reconcile-virtualservice-delete-ok",
+			fields: fields{
+				client:     GetFakeClient(TestMeshConfig, amcTestOK, fakeVirtualService, fakeDeleteVirtualService),
+				scheme:     fakeScheme,
+				opt:        TestOpt,
+				meshConfig: TestMeshConfig,
+			},
+			args: args{
+				ctx: context.Background(),
+				cr:  amcTestOK,
+				svc: testUpdateOKService,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
