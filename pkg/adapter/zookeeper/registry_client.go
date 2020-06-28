@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
@@ -94,17 +95,17 @@ func (c *ZkRegistryClient) Start() error {
 	go c.eventLoop()
 
 	// // FIXME just for debug: observe the status of the root path cache.
-	//go func() {
-	//	tick := time.Tick(10 * time.Second)
-	//	for {
-	//		select {
-	//		case <-tick:
-	//			fmt.Printf("Observing cache of root path:%v\n  caches: %v\n  services: %v\n",
-	//				scache.path, scache.cached, c.services)
-	//			//spew.Dump(scache)
-	//		}
-	//	}
-	//}()
+	go func() {
+		tick := time.Tick(10 * time.Second)
+		for {
+			select {
+			case <-tick:
+				fmt.Printf("Observing cache of root path:%v\n  caches: %v\n  services: %v\n",
+					scache.path, scache.cached, c.services)
+				//spew.Dump(scache)
+			}
+		}
+	}()
 
 	return nil
 }
