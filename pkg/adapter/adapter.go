@@ -158,6 +158,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 			}
 		case <-stop:
 			a.registryClient.Stop()
+			a.configClient.Stop()
 			return nil
 		}
 	}
