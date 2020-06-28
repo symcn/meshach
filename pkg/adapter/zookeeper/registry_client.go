@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
 )
