@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mesh-operator/pkg/adapter/events"
+	"k8s.io/klog"
 )
 
 // LogEventHandler Using printing the event's information as a simple handling logic.
@@ -35,13 +36,13 @@ func (leh *LogEventHandler) DeleteInstance(e *events.ServiceEvent) {
 }
 
 func (leh *LogEventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Simple event handler: adding a configuration\n%v\n", e.Path)
+	klog.Infof("Simple event handler: adding a configuration\n%v", e.Path)
 }
 
 func (leh *LogEventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Simple event handler: change a configuration\n%v\n", e.Path)
+	klog.Infof("Simple event handler: change a configuration\n%v", e.Path)
 }
 
 func (leh *LogEventHandler) DeleteConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Simple event handler: delete a configuration\n%v\n", e.Path)
+	klog.Infof("Simple event handler: delete a configuration\n%v", e.Path)
 }

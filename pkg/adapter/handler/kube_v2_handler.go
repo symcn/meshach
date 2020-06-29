@@ -175,7 +175,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *events.ServiceEvent) {
 	})
 }
 
-// seekService seek a service within a service event
+// seekService seek a service within an event
 func seekService(event *events.ServiceEvent) *events.Service {
 	var svc *events.Service
 	switch {
