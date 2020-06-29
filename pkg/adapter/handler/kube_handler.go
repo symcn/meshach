@@ -27,13 +27,13 @@ func (kubeeh *KubeEventHandler) Init() {}
 
 // AddService ...
 func (kubeeh *KubeEventHandler) AddService(se events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
-	fmt.Printf("CRD event handler: Adding a service\n%v\n", se.Service)
+	klog.Infof("CRD event handler: Adding a service\n%v\n", se.Service)
 
 	// Transform a service event that noticed by zookeeper to a Service CRD
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
 	appIdentifier := resolveAppIdentifier(&se)
 	if appIdentifier == "" {
-		fmt.Printf("Can not find an application name with this adding event: %v\n", se.Service.Name)
+		klog.Infof("Can not find an application name with this adding event: %v\n", se.Service.Name)
 		return
 	}
 
@@ -47,26 +47,26 @@ func (kubeeh *KubeEventHandler) AddService(se events.ServiceEvent, configuratorF
 	_, err := kubeeh.GetAmc(amc)
 	putService(&se, amc)
 	if err != nil {
-		fmt.Printf("Can not find an existed amc CR: %v\n", err)
+		klog.Infof("Can not find an existed amc CR: %v\n", err)
 		kubeeh.CreateAmc(amc)
 	} else {
 		kubeeh.UpdateAmc(amc)
 	}
 
-	fmt.Printf("Create or update an AppMeshConfig CR after a service has beed created: %s\n", amc.Name)
+	klog.Infof("Create or update an AppMeshConfig CR after a service has beed created: %s\n", amc.Name)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
 func (kubeeh *KubeEventHandler) DeleteService(se events.ServiceEvent) {
-	fmt.Printf("CRD event handler: Deleting a service: %s\n", se.Service.Name)
+	klog.Infof("CRD event handler: Deleting a service: %s\n", se.Service.Name)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
 	appIdentifier := resolveAppIdentifier(&se)
 	// There is a chance to delete a service with an empty instances manually, but it is not be sure that which
 	// amc should be modified.
 	if appIdentifier == "" {
-		fmt.Printf("Can not find an application name with this deleting event: %v\n", se.Service.Name)
+		klog.Infof("Can not find an application name with this deleting event: %v\n", se.Service.Name)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (kubeeh *KubeEventHandler) DeleteService(se events.ServiceEvent) {
 
 // AddInstance ...
 func (kubeeh *KubeEventHandler) AddInstance(ie events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
-	fmt.Printf("CRD event handler: Adding an instance\n%v\n", ie.Instance)
+	klog.Infof("CRD event handler: Adding an instance\n%v\n", ie.Instance)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
 	appIdentifier := resolveAppIdentifier(&ie)
@@ -122,18 +122,18 @@ func (kubeeh *KubeEventHandler) AddInstance(ie events.ServiceEvent, configurator
 	_, err := kubeeh.GetAmc(amc)
 	putInstance(&ie, amc)
 	if err != nil {
-		fmt.Printf("Can not get an exist amc CR: %v\n", err)
+		klog.Infof("Can not get an exist amc CR: %v\n", err)
 		kubeeh.CreateAmc(amc)
 	} else {
 		kubeeh.UpdateAmc(amc)
 	}
 
-	fmt.Printf("Create or update an AppMeshConfig CR after an instance has beed added:%s\n", amc.Name)
+	klog.Infof("Create or update an AppMeshConfig CR after an instance has beed added:%s\n", amc.Name)
 }
 
 // DeleteInstance ...
 func (kubeeh *KubeEventHandler) DeleteInstance(ie events.ServiceEvent) {
-	fmt.Printf("CRD event handler: deleting an instance\n%v\n", ie.Instance)
+	klog.Infof("CRD event handler: deleting an instance\n%v\n", ie.Instance)
 
 	appIdentifier := resolveAppIdentifier(&ie)
 	amc := &v1.AppMeshConfig{
@@ -144,7 +144,7 @@ func (kubeeh *KubeEventHandler) DeleteInstance(ie events.ServiceEvent) {
 	}
 	_, err := kubeeh.GetAmc(amc)
 	if err != nil {
-		fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
+		klog.Infof("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
 		return
 	} else {
 		deleteInstance(&ie, amc)
@@ -159,7 +159,7 @@ func (kubeeh *KubeEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
 	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Create(context.Background(), amc)
 	if err != nil {
-		fmt.Printf("Creating an acm has an error:%v\n", err)
+		klog.Infof("Creating an acm has an error:%v\n", err)
 		return
 	}
 }
@@ -170,7 +170,7 @@ func (kubeeh *KubeEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
 	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
 	err := cluster.Client.Update(context.Background(), amc)
 	if err != nil {
-		fmt.Printf("Updating an acm has an error: %v\n", err)
+		klog.Infof("Updating an acm has an error: %v\n", err)
 		return
 	}
 }
@@ -269,7 +269,7 @@ func putInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 				hasExist = true
 				// replace the current instance by the newest one.
 				s.Instances[index] = i
-				fmt.Printf("Instance %v has exist in a service\n", i)
+				klog.Infof("Instance %v has exist in a service\n", i)
 				break
 			}
 		}
@@ -287,7 +287,7 @@ func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 	}
 
 	if amc.Spec.Services == nil || len(amc.Spec.Services) == 0 {
-		fmt.Printf("The List of services who will be changed by removing an instance is empty.")
+		klog.Infof("The List of services who will be changed by removing an instance is empty.")
 		return
 	}
 
@@ -298,7 +298,7 @@ func deleteInstance(ie *events.ServiceEvent, amc *v1.AppMeshConfig) {
 		//}
 
 		if s.Instances == nil || len(s.Instances) == 0 {
-			fmt.Printf("The list of instances who will be change by removing an instance is empty.")
+			klog.Infof("The list of instances who will be change by removing an instance is empty.")
 		}
 
 		for index, i := range s.Instances {
@@ -358,12 +358,12 @@ func findAppIdentifier(i *events.Instance) string {
 func getAppIdentifier(s *events.Service) string {
 	var appName string
 	if s == nil {
-		fmt.Printf("Can not get the application identifier with an empty service.\n")
+		klog.Infof("Can not get the application identifier with an empty service.\n")
 		return appName
 	}
 
 	if s.Instances == nil || len(s.Instances) == 0 {
-		fmt.Printf("Can not find any instance from a service %s which has an empty instances list.\n", s.Name)
+		klog.Infof("Can not find any instance from a service %s which has an empty instances list.\n", s.Name)
 		return appName
 	}
 
@@ -381,7 +381,7 @@ func getAppIdentifier(s *events.Service) string {
 // we must try to find out an valid instance who always is the first one.
 func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	if e == nil {
-		fmt.Printf("Service event is nil when start to find a valid instance from it.\n")
+		klog.Infof("Service event is nil when start to find a valid instance from it.\n")
 		return nil
 	}
 
@@ -405,7 +405,7 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 
 // AddConfigEntry
 func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Kube event handler: adding a configuration\n%v\n", e.Path)
+	klog.Infof("Kube event handler: adding a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
 	service := cachedServiceFinder(serviceName)
@@ -419,7 +419,7 @@ func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServ
 	}
 	_, err := kubeeh.GetAmc(amc)
 	if err != nil {
-		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 		// TODO Is there a requirement to requeue this event?
 	} else {
 		//for _, ci := range cc.Configs {
@@ -432,7 +432,7 @@ func (kubeeh *KubeEventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServ
 }
 
 func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Kube event handler: change a configuration\n%v\n", e.Path)
+	klog.Infof("Kube event handler: change a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
 	service := cachedServiceFinder(serviceName)
@@ -446,7 +446,7 @@ func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedS
 	}
 	_, err := kubeeh.GetAmc(amc)
 	if err != nil {
-		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 		// TODO Is there a requirement to requeue this event?
 	} else {
 		//for _, ci := range cc.Configs {
@@ -458,5 +458,9 @@ func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedS
 }
 
 func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Kube event handler: delete a configuration\n%v\n", e.Path)
+	klog.Infof("Kube event handler: delete a configuration\n%v", e.Path)
+}
+
+func (kubeeh *KubeEventHandler) ReplaceInstances(e events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
+	klog.Infof("Simple event handler: Replacing these instances\n%v", e.Instances)
 }

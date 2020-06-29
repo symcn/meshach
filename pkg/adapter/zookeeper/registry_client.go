@@ -145,7 +145,8 @@ func (c *ZkRegistryClient) eventLoop() {
 				for event := range pcache.events() {
 					switch event.eventType {
 					case pathCacheEventAdded:
-						// c.addInstance(hostname,path.Base(event.path))
+						c.addInstance(hostname, path.Base(event.path))
+					case pathCacheEventChildrenReplaced:
 						var rawUrls []string
 						for _, p := range event.paths {
 							rawUrls = append(rawUrls, path.Base(p))

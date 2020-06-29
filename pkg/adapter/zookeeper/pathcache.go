@@ -54,6 +54,7 @@ const (
 	pathCacheEventAdded pathCacheEventType = iota
 	pathCacheEventDeleted
 	pathCacheEventChanged
+	pathCacheEventChildrenReplaced
 )
 
 func newPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*pathCache, error) {
@@ -169,7 +170,7 @@ func (p *pathCache) watchChildren() error {
 	go p.forward(ch)
 
 	event := pathCacheEvent{
-		eventType: pathCacheEventAdded,
+		eventType: pathCacheEventChildrenReplaced,
 		paths:     children,
 	}
 	go p.notify(event)
