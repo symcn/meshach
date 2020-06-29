@@ -14,8 +14,8 @@ import (
 
 // Adapter ...
 type Adapter struct {
-	registryClient RegistryClient
-	configClient   ConfigurationCenterClient
+	registryClient events.Registry
+	configClient   events.ConfigurationCenter
 	eventHandlers  []events.EventHandler
 	opt            *Option
 	K8sMgr         *k8smanager.ClusterManager
