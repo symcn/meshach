@@ -5,6 +5,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
+	"k8s.io/klog"
 	"time"
 )
 
@@ -38,14 +39,14 @@ func (cc *ZkConfigClient) Start() error {
 	go cc.eventLoop()
 
 	// FIXME just for debug
-	var debug = true
-	if debug {
+	var enablePrint = false
+	if enablePrint {
 		go func() {
 			tick := time.Tick(10 * time.Second)
 			for {
 				select {
 				case <-tick:
-					fmt.Printf("Observing cache of configuration client\n  flags: %v\n  configs: %v\n",
+					klog.Infof("Observing cache of configuration client\n  flags: %v\n  configs: %v",
 						cc.rootPathCache.cached, cc.configEntries)
 				}
 			}

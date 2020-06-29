@@ -100,7 +100,7 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 func (a *Adapter) Start(stop <-chan struct{}) error {
 	klog.Info("====> start adapter")
 	if err := a.registryClient.Start(); err != nil {
-		fmt.Printf("Start a registry center's client has an error: %v\n", err)
+		klog.Errorf("Start a registry center's client has an error: %v", err)
 		return err
 	}
 

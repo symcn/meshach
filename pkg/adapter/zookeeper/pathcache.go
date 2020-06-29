@@ -18,7 +18,6 @@
 package zookeeper
 
 import (
-	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
 	"path"
@@ -73,7 +72,7 @@ func newPathCache(conn *zk.Conn, path string, owner string) (*pathCache, error) 
 
 	err := p.watchAndAddChildren()
 	if err != nil {
-		fmt.Printf("Failed to watch zk path %s, %s\n", path, err)
+		klog.Errorf("Failed to watch zk path %s, %s", path, err)
 		return nil, err
 	}
 

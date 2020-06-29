@@ -2,7 +2,6 @@ package zookeeper
 
 import (
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter/constant"
 	"k8s.io/klog"
 	"net/url"
 	"path"
@@ -96,17 +95,20 @@ func (c *ZkRegistryClient) Start() error {
 	go c.eventLoop()
 
 	// // FIXME just for debug: observe the status of the root path cache.
-	go func() {
-		tick := time.Tick(10 * time.Second)
-		for {
-			select {
-			case <-tick:
-				fmt.Printf("Observing cache of root path:%v\n  caches: %v\n  services: %v\n",
-					scache.path, scache.cached, c.services)
-				//spew.Dump(scache)
+	var enablePrint = false
+	if enablePrint {
+		go func() {
+			tick := time.Tick(10 * time.Second)
+			for {
+				select {
+				case <-tick:
+					klog.Infof("Observing cache of root path:%v\n  caches: %v\n  services: %v",
+						scache.path, scache.cached, c.services)
+					//spew.Dump(scache)
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	return nil
 }
@@ -115,7 +117,7 @@ func (c *ZkRegistryClient) Start() error {
 func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service {
 	service, ok := c.services[serviceName]
 	if !ok {
-		fmt.Printf("Can not find a service with name %s\n", serviceName)
+		klog.Errorf("Can not find a service with name %s", serviceName)
 		return nil
 	}
 	return service
