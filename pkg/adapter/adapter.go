@@ -1,9 +1,9 @@
 package adapter
 
 import (
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"time"
 
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/handler"
 	"github.com/mesh-operator/pkg/adapter/zookeeper"
