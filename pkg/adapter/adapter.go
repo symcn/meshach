@@ -1,14 +1,13 @@
 package adapter
 
 import (
-	"time"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
+	"github.com/mesh-operator/pkg/adapter/configcenter"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/handler"
-	"github.com/mesh-operator/pkg/adapter/zookeeper"
+	"github.com/mesh-operator/pkg/adapter/options"
+	"github.com/mesh-operator/pkg/adapter/registrycenter"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
-	"github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
 )
 
@@ -17,30 +16,12 @@ type Adapter struct {
 	registryClient events.Registry
 	configClient   events.ConfigurationCenter
 	eventHandlers  []events.EventHandler
-	opt            *Option
+	opt            *options.Option
 	K8sMgr         *k8smanager.ClusterManager
 }
 
-// Option ...
-type Option struct {
-	Address          []string
-	Timeout          int64
-	ClusterOwner     string
-	ClusterNamespace string
-	MasterCli        k8smanager.MasterClient
-}
-
-// DefaultOption ...
-func DefaultOption() *Option {
-	return &Option{
-		Timeout:          15,
-		ClusterOwner:     "sym-admin",
-		ClusterNamespace: "sym-admin",
-	}
-}
-
 // NewAdapter ...
-func NewAdapter(opt *Option) (*Adapter, error) {
+func NewAdapter(opt *options.Option) (*Adapter, error) {
 	// TODO init health check handler
 	// TODO init router
 
@@ -59,21 +40,30 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	}
 	//k8sMgr.GetAll()
 
-	// Initializing the registry client that you want to use.
-	rConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
-	if err != nil {
-		klog.Errorf("Initializing a registry client has an error: %v\n", err)
-		return nil, err
-	}
-	registryClient := zookeeper.NewRegistryClient(rConn)
+	// // Initializing the registry client that you want to use.
+	// rConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	// if err != nil {
+	// 	klog.Errorf("Initializing a registry client has an error: %v\n", err)
+	// 	return nil, err
+	// }
+	// registryClient := zookeeper.NewRegistryClient(rConn)
 
-	// Initializing the a client to connect to configuration center
-	cConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	// // Initializing the a client to connect to configuration center
+	// cConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	// if err != nil {
+	// 	klog.Errorf("Initializing a configuration client has an error: %v\n", err)
+	// 	return nil, err
+	// }
+	// configClient := zookeeper.NewConfigClient(cConn)
+
+	registryClient, err := registrycenter.GetRegistry(opt.Registry)
 	if err != nil {
-		klog.Errorf("Initializing a configuration client has an error: %v\n", err)
 		return nil, err
 	}
-	configClient := zookeeper.NewConfigClient(cConn)
+	configClient, err := configcenter.GetRegistry(opt.Configuration)
+	if err != nil {
+		return nil, err
+	}
 
 	eventHandlers, err := handler.Init(k8sMgr)
 	if err != nil {

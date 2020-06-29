@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mesh-operator/pkg/adapter/constant"
+	"github.com/mesh-operator/pkg/adapter/options"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +35,7 @@ func Test_Start(t *testing.T) {
 	}
 
 	// Set default manager options
-	options := ctrlmanager.Options{
+	opts := ctrlmanager.Options{
 		Namespace: namespace,
 		//MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	}
@@ -44,17 +45,17 @@ func Test_Start(t *testing.T) {
 	// Also note that you may face performance issues when using this with a high number of namespaces.
 	// More Info: https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/cache#MultiNamespacedCacheBuilder
 	if strings.Contains(namespace, ",") {
-		options.Namespace = ""
-		options.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(namespace, ","))
+		opts.Namespace = ""
+		opts.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(namespace, ","))
 	}
 
 	// Create a new manager to provide shared dependencies and start components
-	mgr, err := ctrlmanager.New(cfg, options)
+	mgr, err := ctrlmanager.New(cfg, opts)
 	if err != nil {
 		os.Exit(1)
 	}
 
-	opt := Option{
+	opt := options.Option{
 		Address:          constant.ZkServers,
 		Timeout:          5 * 1000,
 		ClusterNamespace: "sym-admin",

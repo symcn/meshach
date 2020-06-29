@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/mesh-operator/pkg/adapter"
+	"github.com/mesh-operator/pkg/adapter/options"
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/mesh-operator/pkg/option"
@@ -31,7 +32,8 @@ import (
 
 // NewAdapterCmd ...
 func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
-	opt := adapter.DefaultOption()
+	opt := options.DefaultOption()
+
 	cmd := &cobra.Command{
 		Use:     "adapter",
 		Aliases: []string{"adapter"},
