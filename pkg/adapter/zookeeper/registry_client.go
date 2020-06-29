@@ -2,8 +2,6 @@ package zookeeper
 
 import (
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"k8s.io/klog"
 	"net/url"
 	"path"
 	"strings"
@@ -12,6 +10,7 @@ import (
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/samuel/go-zookeeper/zk"
+	"k8s.io/klog"
 )
 
 type ZkRegistryClient struct {
