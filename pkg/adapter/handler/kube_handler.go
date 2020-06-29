@@ -9,6 +9,7 @@ import (
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
@@ -330,7 +331,7 @@ func convertPort(port *events.Port) *v1.Port {
 func resolveAppIdentifier(e *events.ServiceEvent) string {
 	vi := findValidInstance(e)
 	if vi == nil {
-		fmt.Printf("Can not find a valid instance with this event.")
+		klog.Errorf("Can not find a valid instance with this event %v.", e)
 		return ""
 
 		// it will use foo as the default application name with an origin dubbo SDK.
@@ -389,7 +390,7 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	}
 
 	if e.Service == nil || e.Service.Instances == nil || len(e.Service.Instances) == 0 {
-		fmt.Printf("The instances list of this service is nil or empty when start to find valid instance from it.\n")
+		klog.Warningf("The instances list of this service is nil or empty when start to find valid instance from it.")
 		return nil
 	}
 

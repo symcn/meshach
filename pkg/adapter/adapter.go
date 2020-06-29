@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"fmt"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"time"
 
@@ -105,14 +104,14 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 	}
 
 	if err := a.configClient.Start(); err != nil {
-		fmt.Printf("Start a configuration center's client has an error: %v\n", err)
+		klog.Errorf("Start a configuration center's client has an error: %v", err)
 		return err
 	}
 
 	for {
 		select {
 		case event := <-a.registryClient.Events():
-			fmt.Printf("Registry events which has been reveived by adapter: %v\n", event)
+			klog.Infof("Registry events which has been reveived by adapter: %v", event)
 			switch event.EventType {
 			case events.ServiceAdded:
 				uuid := utils.GetUUID()
@@ -132,6 +131,13 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
 				klog.Infof("====> end handling event - ADD INSTANCE %s", uuid)
+			case events.ServiceInstancesReplace:
+				uuid := utils.GetUUID()
+				klog.Infof("====> Start to handle event - REPLACES INSTANCES %s, %d", uuid, len(event.Instances))
+				for _, h := range a.eventHandlers {
+					h.ReplaceInstances(event, a.configClient.FindConfiguratorConfig)
+				}
+				klog.Infof("====> end handling event - REPLACES INSTANCES %s", uuid)
 			case events.ServiceInstanceDeleted:
 				uuid := utils.GetUUID()
 				klog.Infof("====> Start to handle event - DELETE INSTANCE %s, %s", uuid, event.Instance.Host)
@@ -141,7 +147,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				klog.Infof("====> end handling event - DELETE INSTANCE %s", uuid)
 			}
 		case ce := <-a.configClient.Events():
-			fmt.Printf("Configuration events which has been reveived by adapter: %v\n", ce)
+			klog.Infof("Configuration events which has been reveived by adapter: %v", ce)
 			switch ce.EventType {
 			case events.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {

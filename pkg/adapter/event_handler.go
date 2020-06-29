@@ -16,6 +16,8 @@ type EventHandler interface {
 	DeleteService(event events.ServiceEvent)
 	// AddInstance you should handle the event described that an instance has been registered
 	AddInstance(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig)
+	// AddInstance you should handle the event described that an instance has been registered
+	ReplaceInstances(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig)
 	// AddInstance you should handle the event describe that an instance has been unregistered
 	DeleteInstance(event events.ServiceEvent)
 
@@ -44,6 +46,10 @@ func (seh *SimpleEventHandler) DeleteService(e events.ServiceEvent) {
 
 func (seh *SimpleEventHandler) AddInstance(e events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	fmt.Printf("Simple event handler: Adding an instance\n%v\n", e.Instance)
+}
+
+func (seh *SimpleEventHandler) ReplaceInstances(e events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
+	fmt.Printf("Simple event handler: Replacing these instances\n%v\n", e.Instances)
 }
 
 func (seh *SimpleEventHandler) DeleteInstance(e events.ServiceEvent) {

@@ -47,6 +47,7 @@ type pathCache struct {
 type pathCacheEvent struct {
 	eventType pathCacheEventType
 	path      string
+	paths     []string
 }
 
 const (
@@ -55,7 +56,7 @@ const (
 	pathCacheEventChanged
 )
 
-func newPathCache(conn *zk.Conn, path string, owner string) (*pathCache, error) {
+func newPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*pathCache, error) {
 	klog.Infof("=======> Create a cache for path: [%s]", path)
 
 	p := &pathCache{
@@ -70,7 +71,13 @@ func newPathCache(conn *zk.Conn, path string, owner string) (*pathCache, error) 
 		zkEventCounter: 0,
 	}
 
-	err := p.watchAndAddChildren()
+	var err error
+	if isSvcPath {
+		err = p.watchAndAddChildren()
+	} else {
+		err = p.watchChildren()
+	}
+
 	if err != nil {
 		klog.Errorf("Failed to watch zk path %s, %s", path, err)
 		return nil, err
@@ -82,7 +89,7 @@ func newPathCache(conn *zk.Conn, path string, owner string) (*pathCache, error) 
 			case child := <-p.addChildCh:
 				p.onChildAdd(child)
 			case event := <-p.watchCh:
-				p.onEvent(&event)
+				p.onEvent(&event, isSvcPath)
 			case <-p.stopCh:
 				close(p.notifyCh)
 				return
@@ -107,11 +114,13 @@ func (p *pathCache) stop() {
 func (p *pathCache) watch(path string) error {
 	klog.Infof("[ ===== WATCHING ACTION ===== ] - GetW : path [%s]", path)
 
-	_, _, ch, err := p.conn.GetW(path)
+	_, stat, ch, err := p.conn.GetW(path)
 	if err != nil {
 		klog.Errorf("Getting and watching on path [%s] has an error: %v.", path, err)
 		return err
 	}
+	klog.Infof("GetW path: [%s], stat: [%v]", path, stat)
+
 	go p.forward(ch)
 	return nil
 }
@@ -124,12 +133,12 @@ func (p *pathCache) watch(path string) error {
 // 4.Caching every child so that we can receive the deletion event of this path later
 func (p *pathCache) watchAndAddChildren() error {
 	klog.Infof("[ ===== WATCHING ACTION ===== ] - ChildrenW : path [%s]", p.path)
-	children, _, ch, err := p.conn.ChildrenW(p.path)
+	children, stat, ch, err := p.conn.ChildrenW(p.path)
 	if err != nil {
 		klog.Errorf("Watching on path [%s]'s children has an error: %v", p.path, err)
 		return err
 	}
-	klog.Infof("The children of the watched path [%s]， size: %d:\n%v", p.path, len(children),
+	klog.Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.path, stat, len(children),
 		children)
 
 	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
@@ -142,6 +151,28 @@ func (p *pathCache) watchAndAddChildren() error {
 			go p.addChild(fp)
 		}
 	}
+	return nil
+}
+
+// watchChildren
+func (p *pathCache) watchChildren() error {
+	klog.Infof("[ ===== WATCHING ACTION ===== ] - ChildrenW : path [%s]", p.path)
+	children, stat, ch, err := p.conn.ChildrenW(p.path)
+	if err != nil {
+		klog.Errorf("Watching on path [%s]'s children has an error: %v", p.path, err)
+		return err
+	}
+	klog.Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.path, stat, len(children),
+		children)
+
+	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
+	go p.forward(ch)
+
+	event := pathCacheEvent{
+		eventType: pathCacheEventAdded,
+		paths:     children,
+	}
+	go p.notify(event)
 	return nil
 }
 
@@ -164,7 +195,7 @@ func (p *pathCache) onChildAdd(child string) {
 }
 
 // onEvent Processing event from zookeeper.
-func (p *pathCache) onEvent(event *zk.Event) {
+func (p *pathCache) onEvent(event *zk.Event, isSvePath bool) {
 	klog.Infof("[===== RECEIVED ZK ORIGINAL EVENT =====]: [%s]:[%d]:[%s]:[%v]:[%s]",
 		p.owner, p.zkEventCounter, p.path, event.Type, event.Path)
 
@@ -172,7 +203,11 @@ func (p *pathCache) onEvent(event *zk.Event) {
 	case zk.EventNodeDataChanged:
 		p.onNodeChanged(event.Path)
 	case zk.EventNodeChildrenChanged:
-		p.watchAndAddChildren()
+		if isSvePath {
+			p.watchAndAddChildren()
+		} else {
+			p.watchChildren()
+		}
 	case zk.EventNodeDeleted:
 		p.onChildDeleted(event.Path)
 	default:

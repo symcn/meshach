@@ -31,7 +31,7 @@ func (cc *ZkConfigClient) Start() error {
 	// Initializing a configuration for the service without a configurator
 	// cc.configEntries[constant.DefaultConfigName] = defaultConfig
 
-	rpc, err := newPathCache(cc.conn, ConfiguratorPath, "CONFIGURATION")
+	rpc, err := newPathCache(cc.conn, ConfiguratorPath, "CONFIGURATION", true)
 	if err != nil {
 		return err
 	}

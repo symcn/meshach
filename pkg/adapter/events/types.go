@@ -25,6 +25,7 @@ type ServiceEvent struct {
 	EventType ServiceEventType
 	Service   *Service
 	Instance  *Instance
+	Instances map[string]*Instance
 }
 
 type Port struct {
@@ -65,6 +66,7 @@ const (
 	ServiceDeleted
 	ServiceInstanceAdded
 	ServiceInstanceDeleted
+	ServiceInstancesReplace
 )
 
 type ConfigEventType int

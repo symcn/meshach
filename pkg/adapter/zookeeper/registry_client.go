@@ -87,7 +87,7 @@ func (c *ZkRegistryClient) Stop() {
 
 func (c *ZkRegistryClient) Start() error {
 	// create a cache for every service
-	scache, err := newPathCache(c.conn, DubboRootPath, "REGISTRY")
+	scache, err := newPathCache(c.conn, DubboRootPath, "REGISTRY", true)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (c *ZkRegistryClient) eventLoop() {
 		switch event.eventType {
 		case pathCacheEventAdded:
 			ppath := path.Join(event.path, ProvidersPath)
-			pcache, err := newPathCache(c.conn, ppath, "REGISTRY")
+			pcache, err := newPathCache(c.conn, ppath, "REGISTRY", false)
 			if err != nil {
 				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
 				continue
@@ -145,7 +145,12 @@ func (c *ZkRegistryClient) eventLoop() {
 				for event := range pcache.events() {
 					switch event.eventType {
 					case pathCacheEventAdded:
-						c.addInstance(hostname, path.Base(event.path))
+						// c.addInstance(hostname,path.Base(event.path))
+						var rawUrls []string
+						for _, p := range event.paths {
+							rawUrls = append(rawUrls, path.Base(p))
+						}
+						c.addInstances(hostname, rawUrls)
 					case pathCacheEventDeleted:
 						c.deleteInstance(hostname, path.Base(event.path))
 					}
@@ -213,6 +218,7 @@ func (c *ZkRegistryClient) deleteInstance(hostname string, rawUrl string) {
 	}
 }
 
+// addInstance
 func (c *ZkRegistryClient) addInstance(hostname string, rawUrl string) {
 	i, err := c.makeInstance(hostname, rawUrl)
 	if err != nil {
@@ -225,6 +231,34 @@ func (c *ZkRegistryClient) addInstance(hostname string, rawUrl string) {
 	go c.notify(events.ServiceEvent{
 		EventType: events.ServiceInstanceAdded,
 		Instance:  i,
+	})
+}
+
+// addInstances
+func (c *ZkRegistryClient) addInstances(hostname string, rawUrls []string) {
+	instances := make(map[string]*events.Instance)
+	var i *events.Instance
+	var err error
+	for _, ru := range rawUrls {
+		i, err = c.makeInstance(hostname, ru)
+		if err != nil {
+			klog.Errorf("Make a instance has an error: %v", err)
+			continue
+		}
+		instances[ru] = i
+	}
+
+	s := c.addService(hostname, i)
+
+	for k, _ := range instances {
+		instances[k].Service = s
+	}
+
+	s.Instances = instances
+	go c.notify(events.ServiceEvent{
+		EventType: events.ServiceInstancesReplace,
+		Service:   s,
+		Instances: instances,
 	})
 }
 

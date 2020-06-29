@@ -53,7 +53,7 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		// TODO we should resolve the application name from the meta data placed in a zookeeper node.
 		appIdentifier := resolveAppIdentifier(&event)
 		if appIdentifier == "" {
-			fmt.Printf("Can not find an application name with this adding event: %v\n", event.Service.Name)
+			klog.Warningf("Can not find an application name with this adding event: %s", event.Service.Name)
 			return nil
 		}
 
@@ -61,7 +61,7 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		amc, err := kubev2eh.findAmc(appIdentifier)
 
 		// Replacing service information belongs to this amc CR with this event.
-		s := getService(&event)
+		s := seekService(&event)
 		replace(s, amc)
 
 		// meanwhile we should set configurator to this service
@@ -75,20 +75,25 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		}
 
 		if err != nil {
-			fmt.Printf("Can not find an existed amc CR: %v\n", err)
+			klog.Errorf("Can not find an existed amc CR: %v", err)
 			amc.Spec.AppName = appIdentifier
 			return kubev2eh.createAmc(amc)
 		} else {
 			return kubev2eh.updateAmc(amc)
 		}
 
-		fmt.Printf("Create or update an AppMeshConfig CR after a service has beed created: %s\n", amc.Name)
+		klog.Infof("Create or update an AppMeshConfig CR after a service has been created: %s", amc.Name)
 		return nil
 	})
 }
 
 func (kubev2eh *KubeV2EventHandler) AddInstance(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Adding an instance\n%v", event.Instance)
+	kubev2eh.AddService(event, configuratorFinder)
+}
+
+func (kubev2eh *KubeV2EventHandler) ReplaceInstances(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
+	klog.Infof("Kube v2 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 	kubev2eh.AddService(event, configuratorFinder)
 }
 
@@ -159,13 +164,18 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event events.ServiceEvent) {
 	})
 }
 
-// getService Find a service within a service event
-func getService(event *events.ServiceEvent) *events.Service {
+// seekService seek a service within a service event
+func seekService(event *events.ServiceEvent) *events.Service {
 	var svc *events.Service
-	if event.Service == nil {
+	if event.Service != nil {
+		svc = event.Service
+	} else if event.Instance != nil {
 		svc = event.Instance.Service
 	} else {
-		svc = event.Service
+		for k, _ := range event.Instances {
+			svc = event.Instances[k].Service
+			break
+		}
 	}
 	return svc
 }
