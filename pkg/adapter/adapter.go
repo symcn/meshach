@@ -2,8 +2,9 @@ package adapter
 
 import (
 	"fmt"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"time"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/handler"
@@ -158,6 +159,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 			}
 		case <-stop:
 			a.registryClient.Stop()
+			a.configClient.Stop()
 			return nil
 		}
 	}
