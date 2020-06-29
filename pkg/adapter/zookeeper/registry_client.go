@@ -17,7 +17,7 @@ type ZkRegistryClient struct {
 	conn     *zk.Conn
 	root     string
 	services map[string]*events.Service
-	out      chan events.ServiceEvent
+	out      chan *events.ServiceEvent
 	scache   *pathCache
 	pcaches  map[string]*pathCache
 }
@@ -27,14 +27,14 @@ func NewRegistryClient(conn *zk.Conn) *ZkRegistryClient {
 	return &ZkRegistryClient{
 		conn:     conn,
 		services: make(map[string]*events.Service),
-		out:      make(chan events.ServiceEvent),
+		out:      make(chan *events.ServiceEvent),
 		scache:   nil,
 		pcaches:  make(map[string]*pathCache),
 	}
 }
 
 // Events channel is a stream of Service and instance updates
-func (c *ZkRegistryClient) Events() <-chan events.ServiceEvent {
+func (c *ZkRegistryClient) Events() <-chan *events.ServiceEvent {
 	return c.out
 }
 
@@ -207,7 +207,7 @@ func (c *ZkRegistryClient) deleteInstance(hostname string, rawUrl string) {
 	h := makeHostname(hostname, i)
 	if s, ok := c.services[h]; ok {
 		delete(s.Instances, rawUrl)
-		go c.notify(events.ServiceEvent{
+		go c.notify(&events.ServiceEvent{
 			EventType: events.ServiceInstanceDeleted,
 			Instance:  i,
 		})
@@ -228,7 +228,7 @@ func (c *ZkRegistryClient) addInstance(hostname string, rawUrl string) {
 	s := c.addService(hostname, i)
 	i.Service = s
 	s.Instances[rawUrl] = i
-	go c.notify(events.ServiceEvent{
+	go c.notify(&events.ServiceEvent{
 		EventType: events.ServiceInstanceAdded,
 		Instance:  i,
 	})
@@ -250,12 +250,12 @@ func (c *ZkRegistryClient) addInstances(hostname string, rawUrls []string) {
 
 	s := c.addService(hostname, i)
 
-	for k, _ := range instances {
+	for k := range instances {
 		instances[k].Service = s
 	}
 
 	s.Instances = instances
-	go c.notify(events.ServiceEvent{
+	go c.notify(&events.ServiceEvent{
 		EventType: events.ServiceInstancesReplace,
 		Service:   s,
 		Instances: instances,
@@ -274,7 +274,7 @@ func (c *ZkRegistryClient) addService(hostname string, instance *events.Instance
 		c.services[h] = s
 		s.AddPort(instance.Port)
 
-		go c.notify(events.ServiceEvent{
+		go c.notify(&events.ServiceEvent{
 			EventType: events.ServiceAdded,
 			Service:   s,
 		})
@@ -292,7 +292,7 @@ func (c *ZkRegistryClient) deleteService(hostname string) {
 	for h, s := range c.services {
 		if strings.HasSuffix(h, hostname) {
 			delete(c.services, h)
-			go c.notify(events.ServiceEvent{
+			go c.notify(&events.ServiceEvent{
 				EventType: events.ServiceDeleted,
 				Service:   s,
 			})
@@ -301,7 +301,7 @@ func (c *ZkRegistryClient) deleteService(hostname string) {
 }
 
 // notify
-func (c *ZkRegistryClient) notify(event events.ServiceEvent) {
+func (c *ZkRegistryClient) notify(event *events.ServiceEvent) {
 	c.out <- event
 }
 

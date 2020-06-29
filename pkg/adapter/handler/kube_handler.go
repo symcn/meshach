@@ -3,15 +3,16 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 var defaultNamespace = "sym-admin"
@@ -146,40 +147,54 @@ func (kubeeh *KubeEventHandler) DeleteInstance(ie events.ServiceEvent) {
 	if err != nil {
 		fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
 		return
-	} else {
-		deleteInstance(&ie, amc)
 	}
+
+	deleteInstance(&ie, amc)
 
 	kubeeh.UpdateAmc(amc)
 }
 
-// CreateAmc
+// CreateAmc ...
 func (kubeeh *KubeEventHandler) CreateAmc(amc *v1.AppMeshConfig) {
-	// TODO
-	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
-	err := cluster.Client.Create(context.Background(), amc)
+	cluster, err := kubeeh.K8sMgr.Get(clusterName)
 	if err != nil {
-		fmt.Printf("Creating an acm has an error:%v\n", err)
+		klog.Errorln(err)
+		return
+	}
+
+	err = cluster.Client.Create(context.Background(), amc)
+	if err != nil {
+		klog.Errorf("Creating an acm has an error:%v", err)
 		return
 	}
 }
 
-// UpdateAmc
+// UpdateAmc ...
 func (kubeeh *KubeEventHandler) UpdateAmc(amc *v1.AppMeshConfig) {
-	// TODO
-	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
-	err := cluster.Client.Update(context.Background(), amc)
+	cluster, err := kubeeh.K8sMgr.Get(clusterName)
 	if err != nil {
-		fmt.Printf("Updating an acm has an error: %v\n", err)
+		klog.Errorln(err)
+		return
+	}
+
+	err = cluster.Client.Update(context.Background(), amc)
+	if err != nil {
+		klog.Errorf("Updating an acm has an error: %v", err)
 		return
 	}
 }
 
-// GetAmc
+// GetAmc ...
 func (kubeeh *KubeEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig, error) {
-	cluster, _ := kubeeh.K8sMgr.Get("tcc-gz01-bj5-test")
-	key, _ := client.ObjectKeyFromObject(config)
-	err := cluster.Client.Get(context.Background(), key, config)
+	cluster, err := kubeeh.K8sMgr.Get(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cluster.Client.Get(context.Background(), types.NamespacedName{
+		Namespace: config.Namespace,
+		Name:      config.Name,
+	}, config)
 	return config, err
 }
 

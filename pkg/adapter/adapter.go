@@ -16,7 +16,7 @@ import (
 type Adapter struct {
 	registryClient RegistryClient
 	configClient   ConfigurationCenterClient
-	eventHandlers  []EventHandler
+	eventHandlers  []events.EventHandler
 	opt            *Option
 	K8sMgr         *k8smanager.ClusterManager
 }
@@ -75,14 +75,10 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 	}
 	configClient := zookeeper.NewConfigClient(cConn)
 
-	// initializing adapter
-	var eventHandlers []EventHandler
-	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
-	//eventHandlers = append(eventHandlers, &handler.LogEventHandler{Name: "logging events."})
-	//eventHandlers = append(eventHandlers, &handler.KubeEventHandler{K8sMgr: k8sMgr})
-	kubev2Handler := &handler.KubeV2EventHandler{K8sMgr: k8sMgr}
-	kubev2Handler.Init()
-	eventHandlers = append(eventHandlers, kubev2Handler)
+	eventHandlers, err := handler.Init(k8sMgr)
+	if err != nil {
+		return nil, err
+	}
 
 	adapter := &Adapter{
 		opt:            opt,

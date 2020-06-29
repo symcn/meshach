@@ -2,10 +2,11 @@ package zookeeper
 
 import (
 	"fmt"
-	"github.com/samuel/go-zookeeper/zk"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/samuel/go-zookeeper/zk"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_watch(t *testing.T) {
@@ -16,7 +17,7 @@ func Test_watch(t *testing.T) {
 	}
 
 	//go func() {
-	p, err := newPathCache(conn, DubboRootPath, "MOCK")
+	p, err := newPathCache(conn, DubboRootPath, "MOCK", true)
 	if err != nil {
 		fmt.Printf("Create a new pathcache for [%s] has an err: %v\n", DubboRootPath, err)
 		assert.EqualError(t, err, "zk: node does not exist")

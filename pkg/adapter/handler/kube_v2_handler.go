@@ -3,18 +3,23 @@ package handler
 import (
 	"context"
 	"fmt"
+	"path"
+	"strconv"
+	"strings"
+
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
-	"path"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
+)
+
+const (
+	clusterName = "tcc-gz01-bj5-test"
 )
 
 // KubeV2EventHandler it used for synchronizing the events which has been send by the adapter client
@@ -25,33 +30,42 @@ type KubeV2EventHandler struct {
 	meshConfig *v1.MeshConfig
 }
 
-// Init initialize globe setting so that there is a default setting for the services what haven't its own setting.
-func (kubev2eh *KubeV2EventHandler) Init() {
-	cluster, _ := kubev2eh.K8sMgr.Get("tcc-gz01-bj5-test")
+// NewKubeV2EventHander ...
+func NewKubeV2EventHander(cmg *k8smanager.ClusterManager) (events.EventHandler, error) {
+	cluster, err := cmg.Get(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
 	mc := &v1.MeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sym-meshconfig",
 			Namespace: defaultNamespace,
 		},
 	}
+	err = cluster.Client.Get(context.Background(), types.NamespacedName{
+		Namespace: mc.Namespace,
+		Name:      mc.Name,
+	}, mc)
 
-	key, _ := client.ObjectKeyFromObject(mc)
-	err := cluster.Client.Get(context.Background(), key, mc)
 	if err != nil {
-		fmt.Printf("Initializing mesh config has an error: %v\n", err)
-		return
+		return nil, fmt.Errorf("Initializing mesh config has an error: %v", err)
 	}
-	kubev2eh.meshConfig = mc
+
+	return &KubeV2EventHandler{
+		K8sMgr:     cmg,
+		meshConfig: mc,
+	}, nil
 }
 
 // AddService ...
-func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
+func (kubev2eh *KubeV2EventHandler) AddService(event *events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Adding a service\n%v", event)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Transform a service event that noticed by zookeeper to a Service CRD
 		// TODO we should resolve the application name from the meta data placed in a zookeeper node.
-		appIdentifier := resolveAppIdentifier(&event)
+		appIdentifier := resolveAppIdentifier(event)
 		if appIdentifier == "" {
 			klog.Warningf("Can not find an application name with this adding event: %s", event.Service.Name)
 			return nil
@@ -61,7 +75,7 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		amc, err := kubev2eh.findAmc(appIdentifier)
 
 		// Replacing service information belongs to this amc CR with this event.
-		s := seekService(&event)
+		s := seekService(event)
 		replace(s, amc)
 
 		// meanwhile we should set configurator to this service
@@ -81,30 +95,27 @@ func (kubev2eh *KubeV2EventHandler) AddService(event events.ServiceEvent, config
 		} else {
 			return kubev2eh.updateAmc(amc)
 		}
-
-		klog.Infof("Create or update an AppMeshConfig CR after a service has been created: %s", amc.Name)
-		return nil
 	})
 }
 
-func (kubev2eh *KubeV2EventHandler) AddInstance(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
+func (kubev2eh *KubeV2EventHandler) AddInstance(event *events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Adding an instance\n%v", event.Instance)
 	kubev2eh.AddService(event, configuratorFinder)
 }
 
-func (kubev2eh *KubeV2EventHandler) ReplaceInstances(event events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
+func (kubev2eh *KubeV2EventHandler) ReplaceInstances(event *events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 	kubev2eh.AddService(event, configuratorFinder)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
-func (kubev2eh *KubeV2EventHandler) DeleteService(event events.ServiceEvent) {
+func (kubev2eh *KubeV2EventHandler) DeleteService(event *events.ServiceEvent) {
 	klog.Infof("Kube v2 event handler: Deleting a service: %s", event.Service)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// TODO we should resolve the application name from the meta data placed in a zookeeper node.
-		appIdentifier := resolveAppIdentifier(&event)
+		appIdentifier := resolveAppIdentifier(event)
 		// There is a chance to delete a service with an empty instances manually, but it is not be sure that which
 		// amc should be modified.
 		if appIdentifier == "" {
@@ -141,18 +152,18 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event events.ServiceEvent) {
 }
 
 // DeleteInstance ...
-func (kubev2eh *KubeV2EventHandler) DeleteInstance(event events.ServiceEvent) {
+func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *events.ServiceEvent) {
 	fmt.Printf("Kube v2 event handler: deleting an instance\n%v\n", event.Instance)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		appIdentifier := resolveAppIdentifier(&event)
+		appIdentifier := resolveAppIdentifier(event)
 		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
 			fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
 			return nil
-		} else {
-			deleteInstance(&event, amc)
 		}
+
+		deleteInstance(event, amc)
 
 		err = kubev2eh.updateAmc(amc)
 		if err != nil {
@@ -167,12 +178,13 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event events.ServiceEvent) {
 // seekService seek a service within a service event
 func seekService(event *events.ServiceEvent) *events.Service {
 	var svc *events.Service
-	if event.Service != nil {
+	switch {
+	case event.Service != nil:
 		svc = event.Service
-	} else if event.Instance != nil {
+	case event.Instance != nil:
 		svc = event.Instance.Service
-	} else {
-		for k, _ := range event.Instances {
+	default:
+		for k := range event.Instances {
 			svc = event.Instances[k].Service
 			break
 		}
@@ -234,7 +246,7 @@ func convertService(s *events.Service) *v1.Service {
 // createAmc
 func (kubev2eh *KubeV2EventHandler) createAmc(amc *v1.AppMeshConfig) error {
 	// TODO
-	cluster, _ := kubev2eh.K8sMgr.Get("tcc-gz01-bj5-test")
+	cluster, _ := kubev2eh.K8sMgr.Get(clusterName)
 	err := cluster.Client.Create(context.Background(), amc)
 	klog.Infof("========> The generation of amc when creating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
@@ -246,9 +258,11 @@ func (kubev2eh *KubeV2EventHandler) createAmc(amc *v1.AppMeshConfig) error {
 
 // updateAmc
 func (kubev2eh *KubeV2EventHandler) updateAmc(amc *v1.AppMeshConfig) error {
-	// TODO
-	cluster, _ := kubev2eh.K8sMgr.Get("tcc-gz01-bj5-test")
-	err := cluster.Client.Update(context.Background(), amc)
+	cluster, err := kubev2eh.K8sMgr.Get(clusterName)
+	if err != nil {
+		return err
+	}
+	err = cluster.Client.Update(context.Background(), amc)
 	klog.Infof("========> The generation of amc after updating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
 		fmt.Printf("Updating an acm has an error: %v\n", err)
@@ -260,9 +274,14 @@ func (kubev2eh *KubeV2EventHandler) updateAmc(amc *v1.AppMeshConfig) error {
 
 // getAmc
 func (kubev2eh *KubeV2EventHandler) getAmc(config *v1.AppMeshConfig) (*v1.AppMeshConfig, error) {
-	cluster, _ := kubev2eh.K8sMgr.Get("tcc-gz01-bj5-test")
-	key, _ := client.ObjectKeyFromObject(config)
-	err := cluster.Client.Get(context.Background(), key, config)
+	cluster, err := kubev2eh.K8sMgr.Get(clusterName)
+	if err != nil {
+		return nil, err
+	}
+	err = cluster.Client.Get(context.Background(), types.NamespacedName{
+		Namespace: config.Namespace,
+		Name:      config.Name,
+	}, config)
 	klog.Infof("========> The generation of amc when getting: %d", config.ObjectMeta.Generation)
 	return config, err
 }
