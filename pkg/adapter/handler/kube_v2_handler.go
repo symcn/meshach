@@ -3,10 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"path"
-	"strconv"
-	"strings"
-
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/utils"
@@ -16,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"strconv"
 )
 
 const (
@@ -79,7 +76,7 @@ func (kubev2eh *KubeV2EventHandler) AddService(event *events.ServiceEvent, confi
 		s := seekService(event)
 		replace(s, amc)
 
-		// meanwhile we should set configurator to this service
+		// meanwhile we should search a configurator for such service
 		config := configuratorFinder(s.Name)
 		if config == nil {
 			dc := *DefaultConfigurator
@@ -332,7 +329,7 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, cac
 			return nil
 		}
 
-		// set the configuration into the amc CR
+		// utilize this configurator for such amc CR
 		if e.ConfigEntry == nil || !e.ConfigEntry.Enabled {
 			// TODO we really need to handle and think about the case that configuration has been disable.
 			dc := *DefaultConfigurator
@@ -354,8 +351,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, cac
 		// an example for the path: /dubbo/config/dubbo/com.dmall.mesh.test.PoviderDemo.configurators
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
-		serviceName := resolveServiceName(e.Path)
-
+		serviceName := utils.ResolveServiceName(e.Path)
 		service := cachedServiceFinder(serviceName)
 		appIdentifier := getAppIdentifier(service)
 		if appIdentifier == "" {
@@ -444,10 +440,4 @@ func setConfig(c *events.ConfiguratorConfig, amc *v1.AppMeshConfig, mc *v1.MeshC
 			amc.Spec.Services[index] = s
 		}
 	}
-}
-
-// resolveServiceName
-// configuratorPath: e.g. /dubbo/config/dubbo/foo.configurators
-func resolveServiceName(configuratorPath string) string {
-	return strings.Replace(path.Base(configuratorPath), ".configurators", "", 1)
 }

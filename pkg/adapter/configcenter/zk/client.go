@@ -2,6 +2,7 @@ package zk
 
 import (
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/utils"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -79,7 +80,7 @@ func (cc *ZkConfigClient) eventLoop() {
 			config := &events.ConfiguratorConfig{}
 			err := yaml.Unmarshal([]byte(data), config)
 			if err != nil {
-				fmt.Printf("Parsing the configuration data to a defined struct has an error: %v\n", err)
+				klog.Errorf("Parsing the configuration data to a defined struct has an error: %v", err)
 				continue
 			}
 
@@ -110,6 +111,7 @@ func (cc *ZkConfigClient) eventLoop() {
 		case zookeeper.PathCacheEventDeleted:
 			// TODO Deleting configurations about this service in the CR
 			cc.rootPathCache.Cached[event.Path] = false
+			delete(cc.configEntries, utils.ResolveServiceName(event.Path))
 			ce = &events.ConfigEvent{
 				EventType: events.ConfigEntryDeleted,
 				Path:      event.Path,
