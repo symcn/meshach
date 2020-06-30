@@ -2,23 +2,22 @@ package zk
 
 import (
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter/utils"
-	"time"
-
 	"github.com/ghodss/yaml"
 	"github.com/mesh-operator/pkg/adapter/configcenter"
 	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/options"
+	"github.com/mesh-operator/pkg/adapter/utils"
 	"github.com/mesh-operator/pkg/adapter/zookeeper"
 	zkClient "github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
+	"time"
 )
 
 func init() {
 	configcenter.Registry("zk", New)
 }
 
-type ZkConfigClient struct {
+type ConfigClient struct {
 	conn          *zkClient.Conn
 	out           chan *events.ConfigEvent
 	configEntries map[string]*events.ConfiguratorConfig
@@ -26,13 +25,16 @@ type ZkConfigClient struct {
 }
 
 func New(opt options.Configuration) (events.ConfigurationCenter, error) {
+	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	if err != nil {
+		klog.Errorf("Get zookeeper client has an error: %v", err)
+	}
 
-	conn, err := zookeeper.GetClient(opt.Address, opt.Timeout)
 	if err != nil || conn == nil {
 		return nil, fmt.Errorf("get zookeeper client fail or client is nil, err:%+v", err)
 	}
 
-	return &ZkConfigClient{
+	return &ConfigClient{
 		conn:          conn,
 		out:           make(chan *events.ConfigEvent),
 		configEntries: make(map[string]*events.ConfiguratorConfig),
@@ -40,7 +42,7 @@ func New(opt options.Configuration) (events.ConfigurationCenter, error) {
 	}, nil
 }
 
-func (cc *ZkConfigClient) Start() error {
+func (cc *ConfigClient) Start() error {
 	// Initializing a configuration for the service without a configurator
 	// cc.configEntries[constant.DefaultConfigName] = defaultConfig
 
@@ -70,7 +72,7 @@ func (cc *ZkConfigClient) Start() error {
 }
 
 // eventLoop
-func (cc *ZkConfigClient) eventLoop() {
+func (cc *ConfigClient) eventLoop() {
 	for event := range cc.rootPathCache.Events() {
 		var data []byte
 		var ce *events.ConfigEvent
@@ -124,12 +126,12 @@ func (cc *ZkConfigClient) eventLoop() {
 	}
 }
 
-func (cc *ZkConfigClient) Events() <-chan *events.ConfigEvent {
+func (cc *ConfigClient) Events() <-chan *events.ConfigEvent {
 	return cc.out
 }
 
 // getData
-func (cc *ZkConfigClient) getData(path string) []byte {
+func (cc *ConfigClient) getData(path string) []byte {
 	data, _, err := cc.conn.Get(path)
 	if err != nil {
 		fmt.Printf("Get data with path %s has an error: %v\n", path, err)
@@ -142,15 +144,15 @@ func (cc *ZkConfigClient) getData(path string) []byte {
 
 // Find the configurator from the caches for this service,
 // return a nil value if there is no result matches this service.
-func (cc *ZkConfigClient) FindConfiguratorConfig(serviceName string) *events.ConfiguratorConfig {
+func (cc *ConfigClient) FindConfiguratorConfig(serviceName string) *events.ConfiguratorConfig {
 	return cc.configEntries[serviceName]
 }
 
-func (cc *ZkConfigClient) Stop() error {
+func (cc *ConfigClient) Stop() error {
 	return nil
 }
 
 // notify
-func (cc *ZkConfigClient) notify(event *events.ConfigEvent) {
+func (cc *ConfigClient) notify(event *events.ConfigEvent) {
 	cc.out <- event
 }

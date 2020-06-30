@@ -20,7 +20,7 @@ func init() {
 	registrycenter.Registry("zk", New)
 }
 
-type ZkRegistryClient struct {
+type RegistryClient struct {
 	conn     *zkClient.Conn
 	root     string
 	services map[string]*events.Service
@@ -31,12 +31,15 @@ type ZkRegistryClient struct {
 
 // NewClient Create a new client for zookeeper
 func New(opt options.Registry) (events.Registry, error) {
-	conn, err := zookeeper.GetClient(opt.Address, opt.Timeout)
+	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	if err != nil {
+		klog.Errorf("Get zookeeper client has an error: %v", err)
+	}
 	if err != nil || conn == nil {
 		return nil, fmt.Errorf("get zookeeper client fail or client is nil, err:%+v", err)
 	}
 
-	return &ZkRegistryClient{
+	return &RegistryClient{
 		conn:     conn,
 		services: make(map[string]*events.Service),
 		out:      make(chan *events.ServiceEvent),
@@ -46,7 +49,7 @@ func New(opt options.Registry) (events.Registry, error) {
 }
 
 // Start ...
-func (c *ZkRegistryClient) Start() error {
+func (c *RegistryClient) Start() error {
 	// create a cache for every service
 	scache, err := zookeeper.NewPathCache(c.conn, zookeeper.DubboRootPath, "REGISTRY", true)
 	if err != nil {
@@ -75,7 +78,7 @@ func (c *ZkRegistryClient) Start() error {
 }
 
 // eventLoop Creating the caches for every provider
-func (c *ZkRegistryClient) eventLoop() {
+func (c *RegistryClient) eventLoop() {
 	for event := range c.scache.Events() {
 		hostname := path.Base(event.Path)
 		if zookeeper.Ignore(hostname) {
@@ -123,15 +126,15 @@ func (c *ZkRegistryClient) eventLoop() {
 }
 
 // Events channel is a stream of Service and instance updates
-func (c *ZkRegistryClient) Events() <-chan *events.ServiceEvent {
+func (c *RegistryClient) Events() <-chan *events.ServiceEvent {
 	return c.out
 }
 
-func (c *ZkRegistryClient) Service(hostname string) *events.Service {
+func (c *RegistryClient) Service(hostname string) *events.Service {
 	return c.services[hostname]
 }
 
-func (c *ZkRegistryClient) Services() []*events.Service {
+func (c *RegistryClient) Services() []*events.Service {
 	services := make([]*events.Service, 0, len(c.services))
 	for _, service := range c.services {
 		services = append(services, service)
@@ -139,7 +142,7 @@ func (c *ZkRegistryClient) Services() []*events.Service {
 	return services
 }
 
-func (c *ZkRegistryClient) Instances(hostname string) []*events.Instance {
+func (c *RegistryClient) Instances(hostname string) []*events.Instance {
 	instances := make([]*events.Instance, 0)
 	service, ok := c.services[hostname]
 	if !ok {
@@ -152,7 +155,7 @@ func (c *ZkRegistryClient) Instances(hostname string) []*events.Instance {
 	return instances
 }
 
-func (c *ZkRegistryClient) InstancesByHost(hosts []string) []*events.Instance {
+func (c *RegistryClient) InstancesByHost(hosts []string) []*events.Instance {
 	instances := make([]*events.Instance, 0)
 	for _, service := range c.services {
 		for _, instance := range service.Instances {
@@ -166,7 +169,7 @@ func (c *ZkRegistryClient) InstancesByHost(hosts []string) []*events.Instance {
 	return instances
 }
 
-func (c *ZkRegistryClient) Stop() {
+func (c *RegistryClient) Stop() {
 	c.scache.Stop()
 	for _, pcache := range c.pcaches {
 		pcache.Stop()
@@ -175,7 +178,7 @@ func (c *ZkRegistryClient) Stop() {
 }
 
 // GetCachedService
-func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service {
+func (c *RegistryClient) GetCachedService(serviceName string) *events.Service {
 	service, ok := c.services[serviceName]
 	if !ok {
 		klog.Errorf("Can not find a service with name %s", serviceName)
@@ -184,7 +187,7 @@ func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service 
 	return service
 }
 
-func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events.Instance, error) {
+func (c *RegistryClient) makeInstance(hostname string, rawUrl string) (*events.Instance, error) {
 	cleanUrl, err := url.QueryUnescape(rawUrl)
 	if err != nil {
 		return nil, err
@@ -214,7 +217,7 @@ func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events
 }
 
 // deleteInstance
-func (c *ZkRegistryClient) deleteInstance(hostname string, rawUrl string) {
+func (c *RegistryClient) deleteInstance(hostname string, rawUrl string) {
 	i, err := c.makeInstance(hostname, rawUrl)
 	if err != nil {
 		return
@@ -234,7 +237,7 @@ func (c *ZkRegistryClient) deleteInstance(hostname string, rawUrl string) {
 }
 
 // addInstance
-func (c *ZkRegistryClient) addInstance(hostname string, rawUrl string) {
+func (c *RegistryClient) addInstance(hostname string, rawUrl string) {
 	i, err := c.makeInstance(hostname, rawUrl)
 	if err != nil {
 		return
@@ -250,7 +253,7 @@ func (c *ZkRegistryClient) addInstance(hostname string, rawUrl string) {
 }
 
 // addInstances
-func (c *ZkRegistryClient) addInstances(hostname string, rawUrls []string) {
+func (c *RegistryClient) addInstances(hostname string, rawUrls []string) {
 	instances := make(map[string]*events.Instance)
 	var i *events.Instance
 	var err error
@@ -277,7 +280,7 @@ func (c *ZkRegistryClient) addInstances(hostname string, rawUrls []string) {
 }
 
 // addService
-func (c *ZkRegistryClient) addService(hostname string, instance *events.Instance) *events.Service {
+func (c *RegistryClient) addService(hostname string, instance *events.Instance) *events.Service {
 	s, ok := c.services[hostname]
 	if !ok {
 		s = &events.Service{
@@ -299,7 +302,7 @@ func (c *ZkRegistryClient) addService(hostname string, instance *events.Instance
 	return s
 }
 
-func (c *ZkRegistryClient) deleteService(hostname string) {
+func (c *RegistryClient) deleteService(hostname string) {
 	cache, ok := c.pcaches[hostname]
 	if ok {
 		cache.Stop()
@@ -317,7 +320,7 @@ func (c *ZkRegistryClient) deleteService(hostname string) {
 }
 
 // notify
-func (c *ZkRegistryClient) notify(event *events.ServiceEvent) {
+func (c *RegistryClient) notify(event *events.ServiceEvent) {
 	c.out <- event
 }
 
