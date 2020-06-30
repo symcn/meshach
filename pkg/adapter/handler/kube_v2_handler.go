@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
-	"strconv"
 )
 
 const (
@@ -374,70 +373,4 @@ func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, cac
 		return kubev2eh.updateAmc(amc)
 	})
 
-}
-
-// findDefaultConfig
-func findDefaultConfig(configs []events.ConfigItem) *events.ConfigItem {
-	var defaultConfig *events.ConfigItem
-	for _, c := range configs {
-		if c.Side == "provider" {
-			for _, a := range c.Addresses {
-				if a == "0.0.0.0" {
-					defaultConfig = &c
-					return defaultConfig
-				}
-			}
-		}
-	}
-	return defaultConfig
-}
-
-// findFlagConfig
-func findFlagConfig(configs []events.ConfigItem) *events.ConfigItem {
-	var config *events.ConfigItem
-	for _, c := range configs {
-		if c.Side == "consumer" {
-			for _, a := range c.Addresses {
-				if a == "0.0.0.0" {
-					config = &c
-					return config
-				}
-			}
-		}
-	}
-	return config
-}
-
-// matchInstance
-func matchInstance(ins *v1.Instance, configs []events.ConfigItem) (bool, *events.ConfigItem) {
-	for _, cc := range configs {
-		for _, adds := range cc.Addresses {
-			if ins.Host+":"+strconv.FormatInt(int64(ins.Port.Number), 10) == adds {
-				// found an customized configuration for this instance.
-				return true, &cc
-			}
-		}
-	}
-	return false, nil
-}
-
-// setConfig
-func setConfig(c *events.ConfiguratorConfig, amc *v1.AppMeshConfig, mc *v1.MeshConfig) {
-	for index, service := range amc.Spec.Services {
-		// find out the service we need to process
-		if service.Name == c.Key {
-			s := service
-
-			// policy's setting
-			buildPolicy(s, c, mc)
-			// subset's setting
-			buildSubsets(s, c, mc)
-			// setting source labels
-			buildSourceLabels(s, c, mc)
-			// Setting these instances's configuration such as weight
-			buildInstanceSetting(s, c, mc)
-
-			amc.Spec.Services[index] = s
-		}
-	}
 }
