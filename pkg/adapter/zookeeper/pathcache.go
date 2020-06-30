@@ -166,6 +166,10 @@ func (p *PathCache) watchChildren() error {
 	}
 	klog.Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.Path, stat, len(children),
 		children)
+	for _, child := range children {
+		klog.Infof("[SET CACHE] true pcaches[%s] %s", p.Path, child)
+		p.Cached[child] = true
+	}
 
 	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)

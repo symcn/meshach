@@ -11,6 +11,9 @@ import (
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
+
+	_ "github.com/mesh-operator/pkg/adapter/configcenter/zk"
+	_ "github.com/mesh-operator/pkg/adapter/registrycenter/zk"
 )
 
 func Test_Start(t *testing.T) {

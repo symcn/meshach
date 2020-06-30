@@ -43,7 +43,13 @@ func DefaultOption() *Option {
 
 			EnableDebugLog: false,
 		},
-		Registry:      Registry{Timeout: 15},
-		Configuration: Configuration{Timeout: 15},
+		Registry: Registry{
+			Type:    "zk",
+			Timeout: 15,
+		},
+		Configuration: Configuration{
+			Type:    "zk",
+			Timeout: 15,
+		},
 	}
 }

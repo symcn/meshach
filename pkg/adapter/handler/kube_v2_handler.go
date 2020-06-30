@@ -120,7 +120,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event *events.ServiceEvent) {
 		// There is a chance to delete a service with an empty instances manually, but it is not be sure that which
 		// amc should be modified.
 		if appIdentifier == "" {
-			fmt.Printf("Can not find an application name with this deleting event: %v\n", event.Service.Name)
+			klog.Infof("Can not find an application name with this deleting event: %v\n", event.Service.Name)
 			return nil
 		}
 
@@ -154,13 +154,13 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event *events.ServiceEvent) {
 
 // DeleteInstance ...
 func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *events.ServiceEvent) {
-	fmt.Printf("Kube v2 event handler: deleting an instance\n%v\n", event.Instance)
+	klog.Infof("Kube v2 event handler: deleting an instance\n%v\n", event.Instance)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		appIdentifier := resolveAppIdentifier(event)
 		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
-			fmt.Printf("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
+			klog.Infof("The applicatin mesh configruation can not be found with key: %s", appIdentifier)
 			return nil
 		}
 
@@ -168,7 +168,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *events.ServiceEvent) {
 
 		err = kubev2eh.updateAmc(amc)
 		if err != nil {
-			fmt.Printf("Updating amc has an error: %v\n", err)
+			klog.Infof("Updating amc has an error: %v\n", err)
 			return err
 		}
 
@@ -251,7 +251,7 @@ func (kubev2eh *KubeV2EventHandler) createAmc(amc *v1.AppMeshConfig) error {
 	err := cluster.Client.Create(context.Background(), amc)
 	klog.Infof("=The generation of amc when creating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
-		fmt.Printf("Creating an acm has an error:%v\n", err)
+		klog.Infof("Creating an acm has an error:%v\n", err)
 		return err
 	}
 	return nil
@@ -266,7 +266,7 @@ func (kubev2eh *KubeV2EventHandler) updateAmc(amc *v1.AppMeshConfig) error {
 	err = cluster.Client.Update(context.Background(), amc)
 	klog.Infof("=The generation of amc after updating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
-		fmt.Printf("Updating an acm has an error: %v\n", err)
+		klog.Infof("Updating an acm has an error: %v\n", err)
 		return err
 	}
 
@@ -297,7 +297,7 @@ func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshCon
 	}
 	amc, err := kubev2eh.getAmc(amc)
 	if err != nil {
-		fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 		// TODO Is there a requirement to requeue this event?
 		return nil, err
 	}
@@ -307,27 +307,27 @@ func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshCon
 
 // AddConfigEntry
 func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Kube v2 event handler: adding a configuration\n%v\n", e.Path)
+	klog.Infof("Kube v2 event handler: adding a configuration\n%v\n", e.Path)
 	// Adding a new configuration for a service is same as changing it.
 	kubev2eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
 // ChangeConfigEntry
 func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Kube v2 event handler: change a configuration\n%v\n", e.Path)
+	klog.Infof("Kube v2 event handler: change a configuration\n%v\n", e.Path)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
 		service := cachedServiceFinder(serviceName)
 		appIdentifier := getAppIdentifier(service)
 		if appIdentifier == "" {
-			fmt.Printf("Can not find the app identified name through the cached service, service name :%s\n", serviceName)
+			klog.Warningf("Can not find the app identified name through the cached service, service name :%s", serviceName)
 			return nil
 		}
 
 		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
-			fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+			klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
@@ -348,24 +348,24 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *events.ConfigEvent, cac
 
 // DeleteConfigEntry
 func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {
-	fmt.Printf("Kube v2 event handler: delete a configuration\n%v\n", e.Path)
+	klog.Infof("Kube v2 event handler: delete a configuration\n%v", e.Path)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// an example for the path: /dubbo/config/dubbo/com.dmall.mesh.test.PoviderDemo.configurators
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
-		serviceName := strings.Replace(path.Base(e.Path), ".configurators", "", 1)
+		serviceName := resolveServiceName(e.Path)
 
 		service := cachedServiceFinder(serviceName)
 		appIdentifier := getAppIdentifier(service)
 		if appIdentifier == "" {
-			fmt.Printf("Can not find the app identified name through the cached service, service name :%s\n", serviceName)
+			klog.Warningf("Can not find the app identified name through the cached service, service name :%s", serviceName)
 			return nil
 		}
 
 		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
-			fmt.Printf("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+			klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
@@ -444,4 +444,10 @@ func setConfig(c *events.ConfiguratorConfig, amc *v1.AppMeshConfig, mc *v1.MeshC
 			amc.Spec.Services[index] = s
 		}
 	}
+}
+
+// resolveServiceName
+// configuratorPath: e.g. /dubbo/config/dubbo/foo.configurators
+func resolveServiceName(configuratorPath string) string {
+	return strings.Replace(path.Base(configuratorPath), ".configurators", "", 1)
 }

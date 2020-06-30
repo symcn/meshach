@@ -213,6 +213,7 @@ func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events
 	return instance, nil
 }
 
+// deleteInstance
 func (c *ZkRegistryClient) deleteInstance(hostname string, rawUrl string) {
 	i, err := c.makeInstance(hostname, rawUrl)
 	if err != nil {
@@ -261,7 +262,6 @@ func (c *ZkRegistryClient) addInstances(hostname string, rawUrls []string) {
 		}
 		instances[ru] = i
 	}
-
 	s := c.addService(hostname, i)
 
 	for k := range instances {
@@ -276,17 +276,19 @@ func (c *ZkRegistryClient) addInstances(hostname string, rawUrls []string) {
 	})
 }
 
+// addService
 func (c *ZkRegistryClient) addService(hostname string, instance *events.Instance) *events.Service {
-	h := makeHostname(hostname, instance)
-	s, ok := c.services[h]
+	s, ok := c.services[hostname]
 	if !ok {
 		s = &events.Service{
-			Name:      h,
+			Name:      hostname,
 			Ports:     make([]*events.Port, 0),
 			Instances: make(map[string]*events.Instance),
 		}
-		c.services[h] = s
-		s.AddPort(instance.Port)
+		c.services[hostname] = s
+		if instance != nil {
+			s.AddPort(instance.Port)
+		}
 
 		go c.notify(&events.ServiceEvent{
 			EventType: events.ServiceAdded,
