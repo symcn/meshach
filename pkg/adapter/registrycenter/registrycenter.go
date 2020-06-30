@@ -16,7 +16,7 @@ var (
 
 func Registry(typ string, f constructor) {
 	if _, ok := registryInstance[typ]; ok {
-		klog.Fatalln("repeat registry [registry center instance]:", typ)
+		klog.Fatalln("repeat registry [registry center instance]: %s", typ)
 	}
 	registryInstance[typ] = f
 }
@@ -25,5 +25,5 @@ func GetRegistry(opt options.Registry) (events.Registry, error) {
 	if f, ok := registryInstance[opt.Type]; ok {
 		return f(opt)
 	}
-	return nil, fmt.Errorf("registry center {%s} not implement", opt.Type)
+	return nil, fmt.Errorf("registry center {%s} was not implemented", opt.Type)
 }

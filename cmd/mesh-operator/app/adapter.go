@@ -17,22 +17,18 @@ limitations under the License.
 package app
 
 import (
-	"time"
-
 	"github.com/mesh-operator/pkg/adapter"
 	"github.com/mesh-operator/pkg/adapter/options"
-	k8sclient "github.com/mesh-operator/pkg/k8s/client"
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/mesh-operator/pkg/option"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
-	"k8s.io/sample-controller/pkg/signals"
-	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // NewAdapterCmd ...
 func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 	opt := options.DefaultOption()
+	opt.EventHandlers.Kubeconfig = ropt.Kubeconfig
+	opt.EventHandlers.ConfigContext = ropt.ConfigContext
 
 	cmd := &cobra.Command{
 		Use:     "adapter",
@@ -41,72 +37,47 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			PrintFlags(cmd.Flags())
 
-			cfg, err := ropt.GetK8sConfig()
-			if err != nil {
-				klog.Fatalf("unable to get kubeconfig err: %v", err)
-			}
-
-			rp := time.Second * 120
-			mgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
-				Scheme:             k8sclient.GetScheme(),
-				MetricsBindAddress: "0",
-				LeaderElection:     false,
-				// Port:               9443,
-				SyncPeriod: &rp,
-			})
-			if err != nil {
-				klog.Fatalf("unable to new manager err: %v", err)
-			}
-
-			opt.MasterCli = k8smanager.MasterClient{
-				KubeCli: ropt.GetKubeInterfaceOrDie(),
-				Manager: mgr,
-			}
-
-			adp, err := adapter.NewAdapter(opt)
+			_, err := adapter.NewAdapter(opt)
 			if err != nil {
 				klog.Fatalf("unable to NewAdapter err: %v", err)
-			}
-
-			stopCh := signals.SetupSignalHandler()
-			mgr.Add(adp)
-			mgr.Add(adp.K8sMgr)
-
-			klog.Info("starting manager")
-			if err := mgr.Start(stopCh); err != nil {
-				klog.Fatalf("problem start running manager err: %v", err)
 			}
 		},
 	}
 
 	cmd.PersistentFlags().StringArrayVar(
-		&opt.Address,
-		"zk-addr",
-		opt.Address,
-		"the zookeeper address pool")
-
-	// cmd.PersistentFlags().StringVar(
-	// 	&opt.Root,
-	// 	"zk-root",
-	// 	opt.Root,
-	// 	"the zookeeper root")
+		&opt.Registry.Address,
+		"registry-zk-addr",
+		opt.Registry.Address,
+		"the zookeeper address pool for registry")
 
 	cmd.PersistentFlags().Int64Var(
-		&opt.Timeout,
-		"zk-timeout",
-		opt.Timeout,
-		"the zookeeper session timeout second")
+		&opt.Registry.Timeout,
+		"registry-zk-timeout",
+		opt.Registry.Timeout,
+		"the zookeeper session timeout second for registry")
+
+	cmd.PersistentFlags().StringArrayVar(
+		&opt.Configuration.Address,
+		"configcenter-zk-addr",
+		opt.Configuration.Address,
+		"the zookeeper address pool for configuration center")
+
+	cmd.PersistentFlags().Int64Var(
+		&opt.Configuration.Timeout,
+		"configcenter-zk-timeout",
+		opt.Configuration.Timeout,
+		"the zookeeper session timeout second for configuration center")
 
 	cmd.PersistentFlags().StringVar(
-		&opt.ClusterOwner,
+		&opt.EventHandlers.ClusterOwner,
 		"cluster-owner",
-		opt.ClusterOwner,
+		opt.EventHandlers.ClusterOwner,
 		"the labels that multiple cluster manager used for select clusters")
 
 	cmd.PersistentFlags().StringVar(
-		&opt.ClusterNamespace,
+		&opt.EventHandlers.ClusterNamespace,
 		"cluster-namespace",
-		opt.ClusterNamespace,
+		opt.EventHandlers.ClusterNamespace,
 		"the namesapce that multiple cluster manager uses when selecting the cluster configmaps")
 	return cmd
 }

@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"fmt"
-
 	"github.com/mesh-operator/pkg/adapter/events"
 	"k8s.io/klog"
 )
@@ -16,23 +14,23 @@ func NewLogEventHandler() (events.EventHandler, error) {
 }
 
 func (leh *LogEventHandler) AddService(e *events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
-	fmt.Printf("Simple event handler: Adding a service\n%v\n", e.Service)
+	klog.Infof("Simple event handler: Adding a service\n%v\n", e.Service)
 }
 
 func (leh *LogEventHandler) DeleteService(e *events.ServiceEvent) {
-	fmt.Printf("Simple event handler: Deleting a service\n%v\n", e.Service)
+	klog.Infof("Simple event handler: Deleting a service\n%v\n", e.Service)
 }
 
 func (leh *LogEventHandler) AddInstance(e *events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
-	fmt.Printf("Simple event handler: Adding an instance\n%v\n", e.Instance)
+	klog.Infof("Simple event handler: Adding an instance\n%v\n", e.Instance)
 }
 
 func (leh *LogEventHandler) ReplaceInstances(e *events.ServiceEvent, configuratorFinder func(s string) *events.ConfiguratorConfig) {
-	fmt.Printf("Simple event handler: Replacing these instances\n%v\n", e.Instances)
+	klog.Infof("Simple event handler: Replacing these instances\n%v\n", e.Instances)
 }
 
 func (leh *LogEventHandler) DeleteInstance(e *events.ServiceEvent) {
-	fmt.Printf("Simple event handler: Deleting an instance\n%v\n", e.Instance)
+	klog.Infof("Simple event handler: Deleting an instance\n%v\n", e.Instance)
 }
 
 func (leh *LogEventHandler) AddConfigEntry(e *events.ConfigEvent, cachedServiceFinder func(s string) *events.Service) {

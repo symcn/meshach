@@ -1,21 +1,15 @@
 package adapter
 
 import (
-	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/options"
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -29,10 +23,10 @@ func Test_Start(t *testing.T) {
 	}
 
 	// Get a config to talk to the apiserver
-	cfg, err := config.GetConfig()
-	if err != nil {
-		os.Exit(1)
-	}
+	//cfg, err := config.GetConfig()
+	//if err != nil {
+	//	os.Exit(1)
+	//}
 
 	// Set default manager options
 	opts := ctrlmanager.Options{
@@ -49,27 +43,40 @@ func Test_Start(t *testing.T) {
 		opts.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(namespace, ","))
 	}
 
-	// Create a new manager to provide shared dependencies and start components
-	mgr, err := ctrlmanager.New(cfg, opts)
-	if err != nil {
-		os.Exit(1)
-	}
+	//// Create a new manager to provide shared dependencies and start components
+	//mgr, err := ctrlmanager.New(cfg, opts)
+	//if err != nil {
+	//	os.Exit(1)
+	//}
 
 	opt := options.Option{
-		Address:          constant.ZkServers,
-		Timeout:          5 * 1000,
-		ClusterNamespace: "sym-admin",
-		ClusterOwner:     "sym-admin",
+		EventHandlers: options.EventHandlers{
+			EnableK8s:        true,
+			Kubeconfig:       "",
+			ConfigContext:    "",
+			ClusterNamespace: "sym-admin",
+			ClusterOwner:     "sym-admin",
+		},
+		Registry: options.Registry{
+			Type:    "zk",
+			Address: constant.ZkServers,
+			Timeout: 5 * 1000,
+		},
+		Configuration: options.Configuration{
+			Type:    "zk",
+			Address: constant.ZkServers,
+			Timeout: 5 * 1000,
+		},
 	}
 
-	kubeCli, err := kubernetes.NewForConfig(cfg)
-	opt.MasterCli = k8smanager.MasterClient{
-		KubeCli: kubeCli,
-		Manager: mgr,
-	}
-
-	nodes, err := kubeCli.CoreV1().Nodes().List(metav1.ListOptions{})
-	fmt.Printf("nodes : %v\n", nodes.Items[0].Name)
+	//kubeCli, err := kubernetes.NewForConfig(cfg)
+	//opt.MasterCli = k8smanager.MasterClient{
+	//	KubeCli: kubeCli,
+	//	Manager: mgr,
+	//}
+	//
+	//nodes, err := kubeCli.CoreV1().Nodes().List(metav1.ListOptions{})
+	//fmt.Printf("nodes : %v\n", nodes.Items[0].Name)
 	//clusters := k8smanager.ClusterManager.GetAll("")
 	//fmt.Sprintf("Start an adaptor has an error: %v\n", clusters)
 

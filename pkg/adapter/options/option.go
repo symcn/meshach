@@ -1,18 +1,10 @@
 package options
 
-import (
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
-)
-
 // Option ...
 type Option struct {
-	Address          []string
-	Timeout          int64
-	ClusterOwner     string
-	ClusterNamespace string
-	MasterCli        k8smanager.MasterClient
-	Registry         Registry
-	Configuration    Configuration
+	EventHandlers EventHandlers
+	Registry      Registry
+	Configuration Configuration
 }
 
 type Registry struct {
@@ -27,11 +19,31 @@ type Configuration struct {
 	Timeout int64
 }
 
+type EventHandlers struct {
+	// options for kubernetes
+	EnableK8s        bool
+	Kubeconfig       string
+	ConfigContext    string
+	ClusterOwner     string
+	ClusterNamespace string
+	Namespace        string
+	DefaultNamespace string
+
+	// you can add more options for other event handler you will utilize.
+	EnableDebugLog bool
+}
+
 // DefaultOption ...
 func DefaultOption() *Option {
 	return &Option{
-		Timeout:          15,
-		ClusterOwner:     "sym-admin",
-		ClusterNamespace: "sym-admin",
+		EventHandlers: EventHandlers{
+			EnableK8s:        true,
+			ClusterOwner:     "sym-admin",
+			ClusterNamespace: "sym-admin",
+
+			EnableDebugLog: false,
+		},
+		Registry:      Registry{Timeout: 15},
+		Configuration: Configuration{Timeout: 15},
 	}
 }

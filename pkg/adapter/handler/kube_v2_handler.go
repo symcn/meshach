@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	// FIX just for test with a fix name
 	clusterName = "tcc-gz01-bj5-test"
 )
 
@@ -31,8 +32,8 @@ type KubeV2EventHandler struct {
 }
 
 // NewKubeV2EventHander ...
-func NewKubeV2EventHander(cmg *k8smanager.ClusterManager) (events.EventHandler, error) {
-	cluster, err := cmg.Get(clusterName)
+func NewKubeV2EventHander(k8sMgr *k8smanager.ClusterManager) (events.EventHandler, error) {
+	cluster, err := k8sMgr.Get(clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func NewKubeV2EventHander(cmg *k8smanager.ClusterManager) (events.EventHandler, 
 	}
 
 	return &KubeV2EventHandler{
-		K8sMgr:     cmg,
+		K8sMgr:     k8sMgr,
 		meshConfig: mc,
 	}, nil
 }

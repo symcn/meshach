@@ -7,17 +7,15 @@ import (
 	"github.com/mesh-operator/pkg/adapter/handler"
 	"github.com/mesh-operator/pkg/adapter/options"
 	"github.com/mesh-operator/pkg/adapter/registrycenter"
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
 	"k8s.io/klog"
 )
 
 // Adapter ...
 type Adapter struct {
+	opt            *options.Option
 	registryClient events.Registry
 	configClient   events.ConfigurationCenter
 	eventHandlers  []events.EventHandler
-	opt            *options.Option
-	K8sMgr         *k8smanager.ClusterManager
 }
 
 // NewAdapter ...
@@ -25,28 +23,19 @@ func NewAdapter(opt *options.Option) (*Adapter, error) {
 	// TODO init health check handler
 	// TODO init router
 
-	// initializing multiple k8s cluster manager
-	klog.Info("start to initializing multiple cluster managers ... ")
-	labels := map[string]string{
-		"ClusterOwner": opt.ClusterOwner,
-	}
-	mgrOpt := k8smanager.DefaultClusterManagerOption(opt.ClusterNamespace, labels)
-	if opt.ClusterNamespace != "" {
-		mgrOpt.Namespace = opt.ClusterNamespace
-	}
-	k8sMgr, err := k8smanager.NewManager(opt.MasterCli, mgrOpt)
-	if err != nil {
-		klog.Fatalf("unable to create a new k8s manager, err: %v", err)
-	}
-	eventHandlers, err := handler.Init(k8sMgr)
+	// Initializing event handlers
+	eventHandlers, err := handler.Init(opt.EventHandlers)
 	if err != nil {
 		return nil, err
 	}
 
+	// Initializing registry client
 	registryClient, err := registrycenter.GetRegistry(opt.Registry)
 	if err != nil {
 		return nil, err
 	}
+
+	// Initializing config client
 	configClient, err := configcenter.GetRegistry(opt.Configuration)
 	if err != nil {
 		return nil, err
@@ -54,7 +43,6 @@ func NewAdapter(opt *options.Option) (*Adapter, error) {
 
 	adapter := &Adapter{
 		opt:            opt,
-		K8sMgr:         k8sMgr,
 		registryClient: registryClient,
 		configClient:   configClient,
 		eventHandlers:  eventHandlers,
