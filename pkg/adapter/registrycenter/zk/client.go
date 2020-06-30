@@ -45,6 +45,83 @@ func New(opt options.Registry) (events.Registry, error) {
 	}, nil
 }
 
+// Start ...
+func (c *ZkRegistryClient) Start() error {
+	// create a cache for every service
+	scache, err := zookeeper.NewPathCache(c.conn, zookeeper.DubboRootPath, "REGISTRY", true)
+	if err != nil {
+		return err
+	}
+	c.scache = scache
+	go c.eventLoop()
+
+	// // FIXME just for debug: observe the status of the root path cache.
+	var enablePrint = false
+	if enablePrint {
+		go func() {
+			tick := time.Tick(10 * time.Second)
+			for {
+				select {
+				case <-tick:
+					klog.Infof("Observing cache of root path:%v\n  caches: %v\n  services: %v",
+						scache.Path, scache.Cached, c.services)
+					//spew.Dump(scache)
+				}
+			}
+		}()
+	}
+
+	return nil
+}
+
+// eventLoop Creating the caches for every provider
+func (c *ZkRegistryClient) eventLoop() {
+	for event := range c.scache.Events() {
+		hostname := path.Base(event.Path)
+		if zookeeper.Ignore(hostname) {
+			klog.Infof("Path should be ignored by registry client: %s", event.Path)
+			continue
+		}
+
+		switch event.EventType {
+		case zookeeper.PathCacheEventAdded:
+			ppath := path.Join(event.Path, zookeeper.ProvidersPath)
+			pcache, err := zookeeper.NewPathCache(c.conn, ppath, "REGISTRY", false)
+			if err != nil {
+				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
+				continue
+			}
+			c.pcaches[hostname] = pcache
+			go func() {
+				for event := range pcache.Events() {
+					switch event.EventType {
+					case zookeeper.PathCacheEventAdded:
+						c.addInstance(hostname, path.Base(event.Path))
+					case zookeeper.PathCacheEventChildrenReplaced:
+						var rawUrls []string
+						for _, p := range event.Paths {
+							rawUrls = append(rawUrls, path.Base(p))
+						}
+						c.addInstances(hostname, rawUrls)
+					case zookeeper.PathCacheEventDeleted:
+						c.deleteInstance(hostname, path.Base(event.Path))
+					}
+				}
+			}()
+		case zookeeper.PathCacheEventDeleted:
+			// In fact, this snippet always won't be executed.
+			// At least one empty node of this service exists.
+			// hostname := path.Base(event.path)
+			c.deleteService(hostname)
+
+			// Especially a service node may be deleted by someone manually,
+			// we should avoid to maintain a service's path cache as true without the associated service node.
+			// It is very essential to clear the cache flag for this path by setting it as false.
+			c.scache.Cached[event.Path] = false
+		}
+	}
+}
+
 // Events channel is a stream of Service and instance updates
 func (c *ZkRegistryClient) Events() <-chan *events.ServiceEvent {
 	return c.out
@@ -97,34 +174,6 @@ func (c *ZkRegistryClient) Stop() {
 	close(c.out)
 }
 
-func (c *ZkRegistryClient) Start() error {
-	// create a cache for every service
-	scache, err := zookeeper.NewPathCache(c.conn, zookeeper.DubboRootPath, "REGISTRY", true)
-	if err != nil {
-		return err
-	}
-	c.scache = scache
-	go c.eventLoop()
-
-	// // FIXME just for debug: observe the status of the root path cache.
-	var enablePrint = false
-	if enablePrint {
-		go func() {
-			tick := time.Tick(10 * time.Second)
-			for {
-				select {
-				case <-tick:
-					klog.Infof("Observing cache of root path:%v\n  caches: %v\n  services: %v",
-						scache.Path, scache.Cached, c.services)
-					//spew.Dump(scache)
-				}
-			}
-		}()
-	}
-
-	return nil
-}
-
 // GetCachedService
 func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service {
 	service, ok := c.services[serviceName]
@@ -133,54 +182,6 @@ func (c *ZkRegistryClient) GetCachedService(serviceName string) *events.Service 
 		return nil
 	}
 	return service
-}
-
-// eventLoop Creating the caches for every provider
-func (c *ZkRegistryClient) eventLoop() {
-	for event := range c.scache.Events() {
-		hostname := path.Base(event.Path)
-		if hostname == zookeeper.IgnoredHostNames[0] || hostname == zookeeper.IgnoredHostNames[1] {
-			klog.Infof("Path should be ignored by registry client: %s", event.Path)
-			continue
-		}
-
-		switch event.EventType {
-		case zookeeper.PathCacheEventAdded:
-			ppath := path.Join(event.Path, zookeeper.ProvidersPath)
-			pcache, err := zookeeper.NewPathCache(c.conn, ppath, "REGISTRY", false)
-			if err != nil {
-				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
-				continue
-			}
-			c.pcaches[hostname] = pcache
-			go func() {
-				for event := range pcache.Events() {
-					switch event.EventType {
-					case zookeeper.PathCacheEventAdded:
-						c.addInstance(hostname, path.Base(event.Path))
-					case zookeeper.PathCacheEventChildrenReplaced:
-						var rawUrls []string
-						for _, p := range event.Paths {
-							rawUrls = append(rawUrls, path.Base(p))
-						}
-						c.addInstances(hostname, rawUrls)
-					case zookeeper.PathCacheEventDeleted:
-						c.deleteInstance(hostname, path.Base(event.Path))
-					}
-				}
-			}()
-		case zookeeper.PathCacheEventDeleted:
-			// In fact, this snippet always won't be executed.
-			// At least one empty node of this service exists.
-			// hostname := path.Base(event.path)
-			c.deleteService(hostname)
-
-			// Especially a service node may be deleted by someone manually,
-			// we should avoid to maintain a service's path cache as true without the associated service node.
-			// It is very essential to clear the cache flag for this path by setting it as false.
-			c.scache.Cached[event.Path] = false
-		}
-	}
 }
 
 func (c *ZkRegistryClient) makeInstance(hostname string, rawUrl string) (*events.Instance, error) {

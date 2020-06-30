@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/mesh-operator/cmd/mesh-operator/app"
+	_ "github.com/mesh-operator/pkg/adapter/configcenter/zk"
+	_ "github.com/mesh-operator/pkg/adapter/registrycenter/zk"
 )
 
 func main() {

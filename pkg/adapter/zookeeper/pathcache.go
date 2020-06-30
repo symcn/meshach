@@ -19,6 +19,7 @@ package zookeeper
 
 import (
 	"path"
+	"strings"
 
 	"github.com/samuel/go-zookeeper/zk"
 	"k8s.io/klog"
@@ -59,7 +60,7 @@ const (
 )
 
 func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*PathCache, error) {
-	klog.Infof("=======> Create a cache for path: [%s]", path)
+	klog.Infof("Create a cache for path: [%s]", path)
 
 	p := &PathCache{
 		conn:           conn,
@@ -140,8 +141,7 @@ func (p *PathCache) watchAndAddChildren() error {
 		klog.Errorf("Watching on path [%s]'s children has an error: %v", p.Path, err)
 		return err
 	}
-	klog.Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.Path, stat, len(children),
-		children)
+	klog.Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.Path, stat, len(children), children)
 
 	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)
@@ -212,6 +212,8 @@ func (p *PathCache) onEvent(event *zk.Event, isSvePath bool) {
 		}
 	case zk.EventNodeDeleted:
 		p.onChildDeleted(event.Path)
+	// case zk.EventNotWatching:
+	// // TODO reconnection or connect closed
 	default:
 		klog.Warningf("Event[%v]:[%s] has not been supported yet", event.Type, event.Path)
 	}
@@ -227,17 +229,17 @@ func (p *PathCache) onChildDeleted(child string) {
 	klog.Infof("[SET CACHE] false pcaches[%s] %s", p.Path, child)
 	p.Cached[child] = false
 
-	vent := PathCacheEvent{
+	event := PathCacheEvent{
 		EventType: PathCacheEventDeleted,
 		Path:      child,
 	}
-	go p.notify(vent)
+	go p.notify(event)
 }
 
 // onNodeChanged
 func (p *PathCache) onNodeChanged(path string) {
 	klog.Infof("Received a node changed event from zookeeper: %s", path)
-	vent := PathCacheEvent{
+	event := PathCacheEvent{
 		EventType: PathCacheEventChanged,
 		Path:      path,
 	}
@@ -250,7 +252,7 @@ func (p *PathCache) onNodeChanged(path string) {
 		go p.forward(ch)
 	}
 
-	go p.notify(vent)
+	go p.notify(event)
 
 }
 
@@ -267,4 +269,13 @@ func (p *PathCache) forward(eventCh <-chan zk.Event) {
 	if ok {
 		p.watchCh <- event
 	}
+}
+
+func Ignore(path string) bool {
+	for _, v := range IgnoredHostNames {
+		if strings.EqualFold(v, path) {
+			return true
+		}
+	}
+	return false
 }

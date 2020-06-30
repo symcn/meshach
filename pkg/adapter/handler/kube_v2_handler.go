@@ -248,7 +248,7 @@ func (kubev2eh *KubeV2EventHandler) createAmc(amc *v1.AppMeshConfig) error {
 	// TODO
 	cluster, _ := kubev2eh.K8sMgr.Get(clusterName)
 	err := cluster.Client.Create(context.Background(), amc)
-	klog.Infof("========> The generation of amc when creating: %d", amc.ObjectMeta.Generation)
+	klog.Infof("=The generation of amc when creating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
 		fmt.Printf("Creating an acm has an error:%v\n", err)
 		return err
@@ -263,7 +263,7 @@ func (kubev2eh *KubeV2EventHandler) updateAmc(amc *v1.AppMeshConfig) error {
 		return err
 	}
 	err = cluster.Client.Update(context.Background(), amc)
-	klog.Infof("========> The generation of amc after updating: %d", amc.ObjectMeta.Generation)
+	klog.Infof("=The generation of amc after updating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
 		fmt.Printf("Updating an acm has an error: %v\n", err)
 		return err
@@ -282,7 +282,7 @@ func (kubev2eh *KubeV2EventHandler) getAmc(config *v1.AppMeshConfig) (*v1.AppMes
 		Namespace: config.Namespace,
 		Name:      config.Name,
 	}, config)
-	klog.Infof("========> The generation of amc when getting: %d", config.ObjectMeta.Generation)
+	klog.Infof("=The generation of amc when getting: %d", config.ObjectMeta.Generation)
 	return config, err
 }
 
