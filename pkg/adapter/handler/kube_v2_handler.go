@@ -190,9 +190,11 @@ func seekService(event *events.ServiceEvent) *events.Service {
 }
 
 // replace Replace the whole service which belongs to this amc CR with this service entry。
+
 func replace(svc *events.Service, amc *v1.AppMeshConfig) {
 	s := convertService(svc)
-	if amc.Spec.Services == nil {
+
+	if len(amc.Spec.Services) == 0 {
 		var services []*v1.Service
 		services = append(services, s)
 		amc.Spec.Services = services
@@ -295,7 +297,7 @@ func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshCon
 	if err != nil {
 		klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
 		// TODO Is there a requirement to requeue this event?
-		return nil, err
+		return amc, err
 	}
 
 	return amc, nil

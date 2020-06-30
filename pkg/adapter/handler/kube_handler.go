@@ -410,7 +410,8 @@ func findValidInstance(e *events.ServiceEvent) *events.Instance {
 	}
 
 	for _, value := range e.Service.Instances {
-		if value != nil && value.Labels != nil && value.Labels[constant.ApplicationLabel] != "" {
+		if value != nil && value.Labels != nil {
+			//&& value.Labels[constant.ApplicationLabel] != ""
 			return value
 		}
 	}
