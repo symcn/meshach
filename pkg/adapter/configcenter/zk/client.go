@@ -3,8 +3,8 @@ package zk
 import (
 	"fmt"
 	"github.com/ghodss/yaml"
+	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/configcenter"
-	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/options"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	"github.com/mesh-operator/pkg/adapter/zookeeper"
@@ -19,12 +19,12 @@ func init() {
 
 type ConfigClient struct {
 	conn          *zkClient.Conn
-	out           chan *events.ConfigEvent
-	configEntries map[string]*events.ConfiguratorConfig
+	out           chan *component.ConfigEvent
+	configEntries map[string]*component.ConfiguratorConfig
 	rootPathCache *zookeeper.PathCache
 }
 
-func New(opt options.Configuration) (events.ConfigurationCenter, error) {
+func New(opt options.Configuration) (component.ConfigurationCenter, error) {
 	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
 		klog.Errorf("Get zookeeper client has an error: %v", err)
@@ -36,8 +36,8 @@ func New(opt options.Configuration) (events.ConfigurationCenter, error) {
 
 	return &ConfigClient{
 		conn:          conn,
-		out:           make(chan *events.ConfigEvent),
-		configEntries: make(map[string]*events.ConfiguratorConfig),
+		out:           make(chan *component.ConfigEvent),
+		configEntries: make(map[string]*component.ConfiguratorConfig),
 		rootPathCache: nil,
 	}, nil
 }
@@ -75,11 +75,11 @@ func (cc *ConfigClient) Start() error {
 func (cc *ConfigClient) eventLoop() {
 	for event := range cc.rootPathCache.Events() {
 		var data []byte
-		var ce *events.ConfigEvent
+		var ce *component.ConfigEvent
 		switch event.EventType {
 		case zookeeper.PathCacheEventAdded:
 			data = cc.getData(event.Path)
-			config := &events.ConfiguratorConfig{}
+			config := &component.ConfiguratorConfig{}
 			err := yaml.Unmarshal([]byte(data), config)
 			if err != nil {
 				klog.Errorf("Parsing the configuration data to a defined struct has an error: %v", err)
@@ -87,8 +87,8 @@ func (cc *ConfigClient) eventLoop() {
 			}
 
 			cc.configEntries[config.Key] = config
-			ce = &events.ConfigEvent{
-				EventType:   events.ConfigEntryAdded,
+			ce = &component.ConfigEvent{
+				EventType:   component.ConfigEntryAdded,
 				Path:        event.Path,
 				ConfigEntry: config,
 			}
@@ -96,15 +96,15 @@ func (cc *ConfigClient) eventLoop() {
 			break
 		case zookeeper.PathCacheEventChanged:
 			data = cc.getData(event.Path)
-			config := &events.ConfiguratorConfig{}
+			config := &component.ConfiguratorConfig{}
 			err := yaml.Unmarshal([]byte(data), config)
 			if err != nil {
 				fmt.Printf("Parsing the configuration data to a defined struct has an error: %v\n", err)
 				continue
 			}
 			cc.configEntries[config.Key] = config
-			ce = &events.ConfigEvent{
-				EventType:   events.ConfigEntryChanged,
+			ce = &component.ConfigEvent{
+				EventType:   component.ConfigEntryChanged,
 				Path:        event.Path,
 				ConfigEntry: config,
 			}
@@ -114,8 +114,8 @@ func (cc *ConfigClient) eventLoop() {
 			// TODO Deleting configurations about this service in the CR
 			cc.rootPathCache.Cached[event.Path] = false
 			delete(cc.configEntries, utils.ResolveServiceName(event.Path))
-			ce = &events.ConfigEvent{
-				EventType: events.ConfigEntryDeleted,
+			ce = &component.ConfigEvent{
+				EventType: component.ConfigEntryDeleted,
 				Path:      event.Path,
 			}
 			go cc.notify(ce)
@@ -126,7 +126,7 @@ func (cc *ConfigClient) eventLoop() {
 	}
 }
 
-func (cc *ConfigClient) Events() <-chan *events.ConfigEvent {
+func (cc *ConfigClient) Events() <-chan *component.ConfigEvent {
 	return cc.out
 }
 
@@ -144,7 +144,7 @@ func (cc *ConfigClient) getData(path string) []byte {
 
 // Find the configurator from the caches for this service,
 // return a nil value if there is no result matches this service.
-func (cc *ConfigClient) FindConfiguratorConfig(serviceName string) *events.ConfiguratorConfig {
+func (cc *ConfigClient) FindConfiguratorConfig(serviceName string) *component.ConfiguratorConfig {
 	return cc.configEntries[serviceName]
 }
 
@@ -153,6 +153,6 @@ func (cc *ConfigClient) Stop() error {
 }
 
 // notify
-func (cc *ConfigClient) notify(event *events.ConfigEvent) {
+func (cc *ConfigClient) notify(event *component.ConfigEvent) {
 	cc.out <- event
 }

@@ -52,3 +52,8 @@ func ToInt32(portStr string) int32 {
 	port, _ := strconv.ParseInt(portStr, 10, 32)
 	return int32(port)
 }
+
+// StandardizeServiceName
+func StandardizeServiceName(originName string) string {
+	return strings.ToLower(strings.ReplaceAll(originName, "-", "_"))
+}

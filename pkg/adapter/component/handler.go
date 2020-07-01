@@ -1,6 +1,6 @@
-package events
+package component
 
-// All events comes from adapter needs to be handle by various event handler.
+// All component comes from adapter needs to be handle by various event handler.
 type EventHandler interface {
 	// AddService you should handle the event described that a service has been created
 	AddService(event *ServiceEvent, configuratorFinder func(s string) *ConfiguratorConfig)

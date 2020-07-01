@@ -2,8 +2,8 @@ package adapter
 
 import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
+	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/configcenter"
-	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/handler"
 	"github.com/mesh-operator/pkg/adapter/options"
 	"github.com/mesh-operator/pkg/adapter/registrycenter"
@@ -13,9 +13,9 @@ import (
 // Adapter ...
 type Adapter struct {
 	opt            *options.Option
-	registryClient events.Registry
-	configClient   events.ConfigurationCenter
-	eventHandlers  []events.EventHandler
+	registryClient component.Registry
+	configClient   component.ConfigurationCenter
+	eventHandlers  []component.EventHandler
 }
 
 // NewAdapter ...
@@ -67,53 +67,53 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 	for {
 		select {
 		case event := <-a.registryClient.Events():
-			klog.Infof("Registry events which has been reveived by adapter: %v", event)
+			klog.Infof("Registry component which has been received by adapter: %s", event.Service.Name)
 			switch event.EventType {
-			case events.ServiceAdded:
+			case component.ServiceAdded:
 				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - ADD SERVICE %s", uuid)
+				klog.Infof("Start to handle event - ADD SERVICE with uuid: %s", uuid)
 				for _, h := range a.eventHandlers {
 					h.AddService(event, a.configClient.FindConfiguratorConfig)
 				}
-				klog.Infof("end handling event - ADD SERVICE %s", uuid)
-			case events.ServiceDeleted:
+				klog.Infof("end handling event - ADD SERVICE with uuid: %s", uuid)
+			case component.ServiceDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteService(event)
 				}
-			case events.ServiceInstanceAdded:
+			case component.ServiceInstanceAdded:
 				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - ADD INSTANCE %s, %s", uuid, event.Instance.Host)
+				klog.Infof("Start to handle event - ADD INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
-				klog.Infof("end handling event - ADD INSTANCE %s", uuid)
-			case events.ServiceInstancesReplace:
+				klog.Infof("end handling event - ADD INSTANCE with uuid: %s", uuid)
+			case component.ServiceInstancesReplace:
 				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - REPLACES INSTANCES %s, %d", uuid, len(event.Instances))
+				klog.Infof("Start to handle event - REPLACES INSTANCES with uuid: %s, %d", uuid, len(event.Instances))
 				for _, h := range a.eventHandlers {
 					h.ReplaceInstances(event, a.configClient.FindConfiguratorConfig)
 				}
-				klog.Infof("end handling event - REPLACES INSTANCES %s", uuid)
-			case events.ServiceInstanceDeleted:
+				klog.Infof("end handling event - REPLACES INSTANCES with uuid: %s", uuid)
+			case component.ServiceInstanceDeleted:
 				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - DELETE INSTANCE %s, %s", uuid, event.Instance.Host)
+				klog.Infof("Start to handle event - DELETE INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.DeleteInstance(event)
 				}
-				klog.Infof("end handling event - DELETE INSTANCE %s", uuid)
+				klog.Infof("end handling event - DELETE INSTANCE with uuid: %s", uuid)
 			}
 		case ce := <-a.configClient.Events():
-			klog.Infof("Configuration events which has been reveived by adapter: %v", ce)
+			klog.Infof("Configuration component which has been received by adapter: %v", ce)
 			switch ce.EventType {
-			case events.ConfigEntryAdded:
+			case component.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
 					h.AddConfigEntry(ce, a.registryClient.GetCachedService)
 				}
-			case events.ConfigEntryChanged:
+			case component.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
 					h.ChangeConfigEntry(ce, a.registryClient.GetCachedService)
 				}
-			case events.ConfigEntryDeleted:
+			case component.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteConfigEntry(ce, a.registryClient.GetCachedService)
 				}

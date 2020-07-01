@@ -66,8 +66,8 @@ func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*Pa
 		conn:           conn,
 		Path:           path,
 		Cached:         make(map[string]bool),
-		watchCh:        make(chan zk.Event),       // The zookeeper events will be forwarded to this channel.
-		notifyCh:       make(chan PathCacheEvent), // The notified events will be send into this channel.
+		watchCh:        make(chan zk.Event),       // The zookeeper component will be forwarded to this channel.
+		notifyCh:       make(chan PathCacheEvent), // The notified component will be send into this channel.
 		addChildCh:     make(chan string),
 		stopCh:         make(chan bool),
 		owner:          owner,
@@ -131,7 +131,7 @@ func (p *PathCache) watch(path string) error {
 // watchAndAddChildren
 //
 // 1.Watching this node's children
-// 2.Forwarding the events which has been send by zookeeper
+// 2.Forwarding the component which has been send by zookeeper
 // 3.Watching every child's node via method GetW()
 // 4.Caching every child so that we can receive the deletion event of this path later
 func (p *PathCache) watchAndAddChildren() error {
@@ -143,7 +143,7 @@ func (p *PathCache) watchAndAddChildren() error {
 	}
 	klog.Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.Path, stat, len(children), children)
 
-	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
+	// all of component was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)
 
 	// caching every child into a map
@@ -171,7 +171,7 @@ func (p *PathCache) watchChildren() error {
 		p.Cached[child] = true
 	}
 
-	// all of events was send from zookeeper will be forwarded into the channel of this path cache.
+	// all of component was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)
 
 	event := PathCacheEvent{

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/events"
 	"github.com/mesh-operator/pkg/adapter/options"
 	"github.com/mesh-operator/pkg/adapter/registrycenter"
 	"github.com/mesh-operator/pkg/adapter/zookeeper"
@@ -23,14 +23,14 @@ func init() {
 type RegistryClient struct {
 	conn     *zkClient.Conn
 	root     string
-	services map[string]*events.Service
-	out      chan *events.ServiceEvent
+	services map[string]*component.Service
+	out      chan *component.ServiceEvent
 	scache   *zookeeper.PathCache
 	pcaches  map[string]*zookeeper.PathCache
 }
 
 // NewClient Create a new client for zookeeper
-func New(opt options.Registry) (events.Registry, error) {
+func New(opt options.Registry) (component.Registry, error) {
 	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
 		klog.Errorf("Get zookeeper client has an error: %v", err)
@@ -41,8 +41,8 @@ func New(opt options.Registry) (events.Registry, error) {
 
 	return &RegistryClient{
 		conn:     conn,
-		services: make(map[string]*events.Service),
-		out:      make(chan *events.ServiceEvent),
+		services: make(map[string]*component.Service),
+		out:      make(chan *component.ServiceEvent),
 		scache:   nil,
 		pcaches:  make(map[string]*zookeeper.PathCache),
 	}, nil
@@ -126,24 +126,24 @@ func (c *RegistryClient) eventLoop() {
 }
 
 // Events channel is a stream of Service and instance updates
-func (c *RegistryClient) Events() <-chan *events.ServiceEvent {
+func (c *RegistryClient) Events() <-chan *component.ServiceEvent {
 	return c.out
 }
 
-func (c *RegistryClient) Service(hostname string) *events.Service {
+func (c *RegistryClient) Service(hostname string) *component.Service {
 	return c.services[hostname]
 }
 
-func (c *RegistryClient) Services() []*events.Service {
-	services := make([]*events.Service, 0, len(c.services))
+func (c *RegistryClient) Services() []*component.Service {
+	services := make([]*component.Service, 0, len(c.services))
 	for _, service := range c.services {
 		services = append(services, service)
 	}
 	return services
 }
 
-func (c *RegistryClient) Instances(hostname string) []*events.Instance {
-	instances := make([]*events.Instance, 0)
+func (c *RegistryClient) Instances(hostname string) []*component.Instance {
+	instances := make([]*component.Instance, 0)
 	service, ok := c.services[hostname]
 	if !ok {
 		return instances
@@ -155,8 +155,8 @@ func (c *RegistryClient) Instances(hostname string) []*events.Instance {
 	return instances
 }
 
-func (c *RegistryClient) InstancesByHost(hosts []string) []*events.Instance {
-	instances := make([]*events.Instance, 0)
+func (c *RegistryClient) InstancesByHost(hosts []string) []*component.Instance {
+	instances := make([]*component.Instance, 0)
 	for _, service := range c.services {
 		for _, instance := range service.Instances {
 			for _, host := range hosts {
@@ -178,7 +178,7 @@ func (c *RegistryClient) Stop() {
 }
 
 // GetCachedService
-func (c *RegistryClient) GetCachedService(serviceName string) *events.Service {
+func (c *RegistryClient) GetCachedService(serviceName string) *component.Service {
 	service, ok := c.services[serviceName]
 	if !ok {
 		klog.Errorf("Can not find a service with name %s", serviceName)
@@ -187,7 +187,7 @@ func (c *RegistryClient) GetCachedService(serviceName string) *events.Service {
 	return service
 }
 
-func (c *RegistryClient) makeInstance(hostname string, rawUrl string) (*events.Instance, error) {
+func (c *RegistryClient) makeInstance(hostname string, rawUrl string) (*component.Instance, error) {
 	cleanUrl, err := url.QueryUnescape(rawUrl)
 	if err != nil {
 		return nil, err
@@ -197,9 +197,9 @@ func (c *RegistryClient) makeInstance(hostname string, rawUrl string) (*events.I
 		return nil, err
 	}
 
-	instance := &events.Instance{
+	instance := &component.Instance{
 		Host: ep.Host,
-		Port: &events.Port{
+		Port: &component.Port{
 			//Protocol: ep.Scheme,
 			//Port:     ep.Port(),
 			Protocol: constant.DubboProtocol,
@@ -225,8 +225,8 @@ func (c *RegistryClient) deleteInstance(hostname string, rawUrl string) {
 	h := makeHostname(hostname, i)
 	if s, ok := c.services[h]; ok {
 		delete(s.Instances, rawUrl)
-		go c.notify(&events.ServiceEvent{
-			EventType: events.ServiceInstanceDeleted,
+		go c.notify(&component.ServiceEvent{
+			EventType: component.ServiceInstanceDeleted,
 			Instance:  i,
 		})
 		// TODO should we unregister the service when all the instances are offline?
@@ -246,16 +246,16 @@ func (c *RegistryClient) addInstance(hostname string, rawUrl string) {
 	s := c.addService(hostname, i)
 	i.Service = s
 	s.Instances[rawUrl] = i
-	go c.notify(&events.ServiceEvent{
-		EventType: events.ServiceInstanceAdded,
+	go c.notify(&component.ServiceEvent{
+		EventType: component.ServiceInstanceAdded,
 		Instance:  i,
 	})
 }
 
 // addInstances
 func (c *RegistryClient) addInstances(hostname string, rawUrls []string) {
-	instances := make(map[string]*events.Instance)
-	var i *events.Instance
+	instances := make(map[string]*component.Instance)
+	var i *component.Instance
 	var err error
 	for _, ru := range rawUrls {
 		i, err = c.makeInstance(hostname, ru)
@@ -272,29 +272,29 @@ func (c *RegistryClient) addInstances(hostname string, rawUrls []string) {
 	}
 
 	s.Instances = instances
-	go c.notify(&events.ServiceEvent{
-		EventType: events.ServiceInstancesReplace,
+	go c.notify(&component.ServiceEvent{
+		EventType: component.ServiceInstancesReplace,
 		Service:   s,
 		Instances: instances,
 	})
 }
 
 // addService
-func (c *RegistryClient) addService(hostname string, instance *events.Instance) *events.Service {
+func (c *RegistryClient) addService(hostname string, instance *component.Instance) *component.Service {
 	s, ok := c.services[hostname]
 	if !ok {
-		s = &events.Service{
+		s = &component.Service{
 			Name:      hostname,
-			Ports:     make([]*events.Port, 0),
-			Instances: make(map[string]*events.Instance),
+			Ports:     make([]*component.Port, 0),
+			Instances: make(map[string]*component.Instance),
 		}
 		c.services[hostname] = s
 		if instance != nil {
 			s.AddPort(instance.Port)
 		}
 
-		go c.notify(&events.ServiceEvent{
-			EventType: events.ServiceAdded,
+		go c.notify(&component.ServiceEvent{
+			EventType: component.ServiceAdded,
 			Service:   s,
 		})
 	}
@@ -311,8 +311,8 @@ func (c *RegistryClient) deleteService(hostname string) {
 	for h, s := range c.services {
 		if strings.HasSuffix(h, hostname) {
 			delete(c.services, h)
-			go c.notify(&events.ServiceEvent{
-				EventType: events.ServiceDeleted,
+			go c.notify(&component.ServiceEvent{
+				EventType: component.ServiceDeleted,
 				Service:   s,
 			})
 		}
@@ -320,11 +320,11 @@ func (c *RegistryClient) deleteService(hostname string) {
 }
 
 // notify
-func (c *RegistryClient) notify(event *events.ServiceEvent) {
+func (c *RegistryClient) notify(event *component.ServiceEvent) {
 	c.out <- event
 }
 
-func makeHostname(hostname string, instance *events.Instance) string {
+func makeHostname(hostname string, instance *component.Instance) string {
 	return hostname
 	// We don't need version for the moment.
 	// + ":" + instance.Labels["version"]

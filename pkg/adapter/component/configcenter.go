@@ -1,4 +1,4 @@
-package events
+package component
 
 type ConfigurationCenter interface {
 	Start() error

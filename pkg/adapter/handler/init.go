@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/mesh-operator/pkg/adapter/events"
+	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/options"
 	k8sclient "github.com/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
@@ -15,8 +15,8 @@ import (
 )
 
 // Init the handler initialization
-func Init(opt options.EventHandlers) ([]events.EventHandler, error) {
-	var eventHandlers []events.EventHandler
+func Init(opt options.EventHandlers) ([]component.EventHandler, error) {
+	var eventHandlers []component.EventHandler
 	// If this flag has been set as true, it means you want to synchronize all services to a kubernetes cluster.
 	if opt.EnableK8s {
 		var cfg *rest.Config
@@ -78,12 +78,17 @@ func Init(opt options.EventHandlers) ([]events.EventHandler, error) {
 		}()
 
 		// add kube v2 handler
-		kubev2h, err := NewKubeV2EventHander(k8sMgr)
+		//kubeh, err := NewKubeV2EventHandler(k8sMgr)
+		//if err != nil {
+		//	return nil, err
+		//}
+		// add kube v2 handler
+		kubeh, err := NewKubeV3EventHandler(k8sMgr)
 		if err != nil {
 			return nil, err
 		}
 
-		eventHandlers = append(eventHandlers, kubev2h)
+		eventHandlers = append(eventHandlers, kubeh)
 	}
 
 	if opt.EnableDebugLog {
