@@ -1,4 +1,4 @@
-package registrycenter
+package registry
 
 import (
 	"fmt"

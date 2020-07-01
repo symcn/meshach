@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/constant"
+	types2 "github.com/mesh-operator/pkg/adapter/types"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
@@ -56,7 +57,7 @@ func NewKubeV3EventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHa
 }
 
 // AddService ...
-func (kubev3eh *KubeV3EventHandler) AddService(event *component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubev3eh *KubeV3EventHandler) AddService(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v3 event handler: Adding a service: %s", event.Service.Name)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Convert a service event that noticed by zookeeper to a Service CRD
@@ -83,18 +84,18 @@ func (kubev3eh *KubeV3EventHandler) AddService(event *component.ServiceEvent, co
 	})
 }
 
-func (kubev3eh *KubeV3EventHandler) AddInstance(event *component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubev3eh *KubeV3EventHandler) AddInstance(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Warningf("Adding an instance has not been implemented yet by v3 handler.")
 }
 
-func (kubev3eh *KubeV3EventHandler) ReplaceInstances(event *component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubev3eh *KubeV3EventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v3 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 	kubev3eh.AddService(event, configuratorFinder)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
-func (kubev3eh *KubeV3EventHandler) DeleteService(event *component.ServiceEvent) {
+func (kubev3eh *KubeV3EventHandler) DeleteService(event *types2.ServiceEvent) {
 	klog.Infof("Kube v3 event handler: Deleting a service: %s", event.Service)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		err := kubev3eh.delete(&v1.ServiceMeshEntry{
@@ -109,12 +110,12 @@ func (kubev3eh *KubeV3EventHandler) DeleteService(event *component.ServiceEvent)
 }
 
 // DeleteInstance ...
-func (kubev3eh *KubeV3EventHandler) DeleteInstance(event *component.ServiceEvent) {
+func (kubev3eh *KubeV3EventHandler) DeleteInstance(event *types2.ServiceEvent) {
 	klog.Warningf("Deleting an instance has not been implemented yet by v3 handler.")
 }
 
 // convertService Convert service between these two formats
-func convertEventToSme(s *component.Service) *v1.ServiceMeshEntry {
+func convertEventToSme(s *types2.Service) *v1.ServiceMeshEntry {
 	// TODO Assuming every service can only provide an unique fixed port to adapt the dubbo case.
 	sme := &v1.ServiceMeshEntry{
 		ObjectMeta: metav1.ObjectMeta{
@@ -200,14 +201,14 @@ func (kubev3eh *KubeV3EventHandler) delete(sme *v1.ServiceMeshEntry) error {
 }
 
 // AddConfigEntry
-func (kubev3eh *KubeV3EventHandler) AddConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubev3eh *KubeV3EventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v3 event handler: adding a configuration\n%v\n", e.Path)
 	// Adding a new configuration for a service is same as changing it.
 	kubev3eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
 // ChangeConfigEntry
-func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v3 event handler: change a configuration\n%v", e.Path)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
@@ -238,7 +239,7 @@ func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *component.ConfigEvent, 
 }
 
 // DeleteConfigEntry
-func (kubev3eh *KubeV3EventHandler) DeleteConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubev3eh *KubeV3EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v3 event handler: delete a configuration\n%v", e.Path)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// an example for the path: /dubbo/config/dubbo/com.dmall.mesh.test.PoviderDemo.configurators

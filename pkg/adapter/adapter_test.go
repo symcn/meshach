@@ -13,7 +13,7 @@ import (
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 
 	_ "github.com/mesh-operator/pkg/adapter/configcenter/zk"
-	_ "github.com/mesh-operator/pkg/adapter/registrycenter/zk"
+	_ "github.com/mesh-operator/pkg/adapter/registry/zk"
 )
 
 func Test_Start(t *testing.T) {

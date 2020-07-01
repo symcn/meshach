@@ -6,7 +6,8 @@ import (
 	"github.com/mesh-operator/pkg/adapter/configcenter"
 	"github.com/mesh-operator/pkg/adapter/handler"
 	"github.com/mesh-operator/pkg/adapter/options"
-	"github.com/mesh-operator/pkg/adapter/registrycenter"
+	"github.com/mesh-operator/pkg/adapter/registry"
+	"github.com/mesh-operator/pkg/adapter/types"
 	"k8s.io/klog"
 )
 
@@ -30,7 +31,7 @@ func NewAdapter(opt *options.Option) (*Adapter, error) {
 	}
 
 	// Initializing registry client
-	registryClient, err := registrycenter.GetRegistry(opt.Registry)
+	registryClient, err := registry.GetRegistry(opt.Registry)
 	if err != nil {
 		return nil, err
 	}
@@ -69,32 +70,32 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 		case event := <-a.registryClient.Events():
 			klog.Infof("Registry component which has been received by adapter: %s", event.Service.Name)
 			switch event.EventType {
-			case component.ServiceAdded:
+			case types.ServiceAdded:
 				uuid := utils.GetUUID()
 				klog.Infof("Start to handle event - ADD SERVICE with uuid: %s", uuid)
 				for _, h := range a.eventHandlers {
 					h.AddService(event, a.configClient.FindConfiguratorConfig)
 				}
 				klog.Infof("end handling event - ADD SERVICE with uuid: %s", uuid)
-			case component.ServiceDeleted:
+			case types.ServiceDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteService(event)
 				}
-			case component.ServiceInstanceAdded:
+			case types.ServiceInstanceAdded:
 				uuid := utils.GetUUID()
 				klog.Infof("Start to handle event - ADD INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
 				klog.Infof("end handling event - ADD INSTANCE with uuid: %s", uuid)
-			case component.ServiceInstancesReplace:
+			case types.ServiceInstancesReplace:
 				uuid := utils.GetUUID()
 				klog.Infof("Start to handle event - REPLACES INSTANCES with uuid: %s, %d", uuid, len(event.Instances))
 				for _, h := range a.eventHandlers {
 					h.ReplaceInstances(event, a.configClient.FindConfiguratorConfig)
 				}
 				klog.Infof("end handling event - REPLACES INSTANCES with uuid: %s", uuid)
-			case component.ServiceInstanceDeleted:
+			case types.ServiceInstanceDeleted:
 				uuid := utils.GetUUID()
 				klog.Infof("Start to handle event - DELETE INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
@@ -105,15 +106,15 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 		case ce := <-a.configClient.Events():
 			klog.Infof("Configuration component which has been received by adapter: %v", ce)
 			switch ce.EventType {
-			case component.ConfigEntryAdded:
+			case types.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
 					h.AddConfigEntry(ce, a.registryClient.GetCachedService)
 				}
-			case component.ConfigEntryChanged:
+			case types.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
 					h.ChangeConfigEntry(ce, a.registryClient.GetCachedService)
 				}
-			case component.ConfigEntryDeleted:
+			case types.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteConfigEntry(ce, a.registryClient.GetCachedService)
 				}

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package component
+package types
 
 import "strconv"
 

@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 	"fmt"
+	types2 "github.com/mesh-operator/pkg/adapter/types"
 	"strings"
 
-	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
@@ -27,7 +27,7 @@ type KubeEventHandler struct {
 func (kubeeh *KubeEventHandler) Init() {}
 
 // AddService ...
-func (kubeeh *KubeEventHandler) AddService(se component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubeeh *KubeEventHandler) AddService(se types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("CRD event handler: Adding a service\n%v\n", se.Service)
 
 	// Transform a service event that noticed by zookeeper to a Service CRD
@@ -59,7 +59,7 @@ func (kubeeh *KubeEventHandler) AddService(se component.ServiceEvent, configurat
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
-func (kubeeh *KubeEventHandler) DeleteService(se component.ServiceEvent) {
+func (kubeeh *KubeEventHandler) DeleteService(se types2.ServiceEvent) {
 	klog.Infof("CRD event handler: Deleting a service: %s\n", se.Service.Name)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
@@ -107,7 +107,7 @@ func (kubeeh *KubeEventHandler) DeleteService(se component.ServiceEvent) {
 }
 
 // AddInstance ...
-func (kubeeh *KubeEventHandler) AddInstance(ie component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubeeh *KubeEventHandler) AddInstance(ie types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("CRD event handler: Adding an instance\n%v\n", ie.Instance)
 
 	// TODO we should resolve the application name from the meta data placed in a zookeeper node.
@@ -133,7 +133,7 @@ func (kubeeh *KubeEventHandler) AddInstance(ie component.ServiceEvent, configura
 }
 
 // DeleteInstance ...
-func (kubeeh *KubeEventHandler) DeleteInstance(ie component.ServiceEvent) {
+func (kubeeh *KubeEventHandler) DeleteInstance(ie types2.ServiceEvent) {
 	klog.Infof("CRD event handler: deleting an instance\n%v\n", ie.Instance)
 
 	appIdentifier := resolveAppIdentifier(&ie)
@@ -199,7 +199,7 @@ func (kubeeh *KubeEventHandler) GetAmc(config *v1.AppMeshConfig) (*v1.AppMeshCon
 }
 
 // putService Put a service derived from a service event into the application mesh config.
-func putService(se *component.ServiceEvent, amc *v1.AppMeshConfig) {
+func putService(se *types2.ServiceEvent, amc *v1.AppMeshConfig) {
 	// Ports
 	var ports []*v1.Port
 	for _, p := range se.Service.Ports {
@@ -234,7 +234,7 @@ func putService(se *component.ServiceEvent, amc *v1.AppMeshConfig) {
 }
 
 // putInstance put an instance into the application mesh config
-func putInstance(ie *component.ServiceEvent, amc *v1.AppMeshConfig) {
+func putInstance(ie *types2.ServiceEvent, amc *v1.AppMeshConfig) {
 	i := &v1.Instance{}
 	i.Host = utils.RemovePort(ie.Instance.Host)
 	i.Port = convertPort(ie.Instance.Port)
@@ -295,7 +295,7 @@ func putInstance(ie *component.ServiceEvent, amc *v1.AppMeshConfig) {
 }
 
 // deleteInstance Remove an instance from the amc CR
-func deleteInstance(ie *component.ServiceEvent, amc *v1.AppMeshConfig) {
+func deleteInstance(ie *types2.ServiceEvent, amc *v1.AppMeshConfig) {
 	instance := &v1.Instance{
 		Host: utils.RemovePort(ie.Instance.Host),
 		Port: convertPort(ie.Instance.Port),
@@ -332,7 +332,7 @@ func deleteInstance(ie *component.ServiceEvent, amc *v1.AppMeshConfig) {
 }
 
 // convertPort Convert the port which has been defined in zookeeper library to the one that belongs to CRD.
-func convertPort(port *component.Port) *v1.Port {
+func convertPort(port *types2.Port) *v1.Port {
 	return &v1.Port{
 		// Name:     port.Port,
 		Name:     constant.DubboPortName,
@@ -343,7 +343,7 @@ func convertPort(port *component.Port) *v1.Port {
 
 // resolveAppIdentifier Resolve the application code that was used as the key of an amc CR
 // from the instance belongs to a service event.
-func resolveAppIdentifier(e *component.ServiceEvent) string {
+func resolveAppIdentifier(e *types2.ServiceEvent) string {
 	vi := findValidInstance(e)
 	if vi == nil {
 		klog.Errorf("Can not find a valid instance with this event %v.", e)
@@ -358,7 +358,7 @@ func resolveAppIdentifier(e *component.ServiceEvent) string {
 }
 
 // FindAppIdentifier
-func findAppIdentifier(i *component.Instance) string {
+func findAppIdentifier(i *types2.Instance) string {
 	if i != nil && i.Labels != nil {
 		if appCodeLabelValue, ok := i.Labels[constant.AppCodeLabel]; ok {
 			return strings.ToLower(appCodeLabelValue + "-" + i.Labels[constant.ProjectCodeLabel])
@@ -370,7 +370,7 @@ func findAppIdentifier(i *component.Instance) string {
 }
 
 // getAppIdentifier
-func getAppIdentifier(s *component.Service) string {
+func getAppIdentifier(s *types2.Service) string {
 	var appName string
 	if s == nil {
 		klog.Infof("Can not get the application identifier with an empty service.\n")
@@ -394,7 +394,7 @@ func getAppIdentifier(s *component.Service) string {
 
 // findValidInstance because the application name was defined at an instance,
 // we must try to find out an valid instance who always is the first one.
-func findValidInstance(e *component.ServiceEvent) *component.Instance {
+func findValidInstance(e *types2.ServiceEvent) *types2.Instance {
 	if e == nil {
 		klog.Infof("Service event is nil when start to find a valid instance from it.\n")
 		return nil
@@ -420,7 +420,7 @@ func findValidInstance(e *component.ServiceEvent) *component.Instance {
 }
 
 // AddConfigEntry
-func (kubeeh *KubeEventHandler) AddConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubeeh *KubeEventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube event handler: adding a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
@@ -447,7 +447,7 @@ func (kubeeh *KubeEventHandler) AddConfigEntry(e *component.ConfigEvent, cachedS
 
 }
 
-func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube event handler: change a configuration\n%v\n", e.Path)
 
 	serviceName := e.ConfigEntry.Key
@@ -473,10 +473,10 @@ func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *component.ConfigEvent, cach
 	}
 }
 
-func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube event handler: delete a configuration\n%v", e.Path)
 }
 
-func (kubeeh *KubeEventHandler) ReplaceInstances(e component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubeeh *KubeEventHandler) ReplaceInstances(e types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Simple event handler: Replacing these instances\n%v", e.Instances)
 }

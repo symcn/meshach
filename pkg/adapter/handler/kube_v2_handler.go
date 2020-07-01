@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/constant"
+	types2 "github.com/mesh-operator/pkg/adapter/types"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
@@ -51,7 +52,7 @@ func NewKubeV2EventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHa
 }
 
 // AddService ...
-func (kubev2eh *KubeV2EventHandler) AddService(event *component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubev2eh *KubeV2EventHandler) AddService(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Adding a service\n%v", event)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -90,19 +91,19 @@ func (kubev2eh *KubeV2EventHandler) AddService(event *component.ServiceEvent, co
 	})
 }
 
-func (kubev2eh *KubeV2EventHandler) AddInstance(event *component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubev2eh *KubeV2EventHandler) AddInstance(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Adding an instance\n%v", event.Instance)
 	kubev2eh.AddService(event, configuratorFinder)
 }
 
-func (kubev2eh *KubeV2EventHandler) ReplaceInstances(event *component.ServiceEvent, configuratorFinder func(s string) *component.ConfiguratorConfig) {
+func (kubev2eh *KubeV2EventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 	kubev2eh.AddService(event, configuratorFinder)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
-func (kubev2eh *KubeV2EventHandler) DeleteService(event *component.ServiceEvent) {
+func (kubev2eh *KubeV2EventHandler) DeleteService(event *types2.ServiceEvent) {
 	klog.Infof("Kube v2 event handler: Deleting a service: %s", event.Service)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -144,7 +145,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event *component.ServiceEvent)
 }
 
 // DeleteInstance ...
-func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *component.ServiceEvent) {
+func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *types2.ServiceEvent) {
 	klog.Infof("Kube v2 event handler: deleting an instance\n%v\n", event.Instance)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -168,8 +169,8 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *component.ServiceEvent
 }
 
 // seekService seek a service within an event
-func seekService(event *component.ServiceEvent) *component.Service {
-	var svc *component.Service
+func seekService(event *types2.ServiceEvent) *types2.Service {
+	var svc *types2.Service
 	switch {
 	case event.Service != nil:
 		svc = event.Service
@@ -186,7 +187,7 @@ func seekService(event *component.ServiceEvent) *component.Service {
 
 // replace Replace the whole service which belongs to this amc CR with this service entry。
 
-func replace(svc *component.Service, amc *v1.AppMeshConfig) {
+func replace(svc *types2.Service, amc *v1.AppMeshConfig) {
 	s := convertService(svc)
 
 	if len(amc.Spec.Services) == 0 {
@@ -205,7 +206,7 @@ func replace(svc *component.Service, amc *v1.AppMeshConfig) {
 }
 
 // convertService Convert service between these two formats
-func convertService(s *component.Service) *v1.Service {
+func convertService(s *types2.Service) *v1.Service {
 	// Ports
 
 	//var ports []*v1.Port
@@ -299,14 +300,14 @@ func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshCon
 }
 
 // AddConfigEntry
-func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v2 event handler: adding a configuration\n%v\n", e.Path)
 	// Adding a new configuration for a service is same as changing it.
 	kubev2eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
 // ChangeConfigEntry
-func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v2 event handler: change a configuration\n%v\n", e.Path)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -340,7 +341,7 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *component.ConfigEvent, 
 }
 
 // DeleteConfigEntry
-func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *component.ConfigEvent, cachedServiceFinder func(s string) *component.Service) {
+func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v2 event handler: delete a configuration\n%v", e.Path)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
