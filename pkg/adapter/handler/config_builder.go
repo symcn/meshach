@@ -2,16 +2,17 @@ package handler
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/ghodss/yaml"
 	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/types"
 	"github.com/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
 	"k8s.io/klog"
-	"strconv"
 )
 
-// Default configurator for the service without a customized configurator
+// DefaultConfigurator for the service without a customized configurator
 var DefaultConfigurator = &types.ConfiguratorConfig{
 	ConfigVersion: "2.7",
 	Scope:         "service",
@@ -110,16 +111,14 @@ func buildSourceLabels(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc
 				err := yaml.Unmarshal([]byte(fc), fcp)
 				if err != nil {
 					fmt.Printf("Parsing the flag_config parameter has an error: %v\n", err)
-				} else {
-					if flagConfig.Enabled && fcp.Manual {
-						// clear the default routes firstly
-						routes = routes[:0]
-						for _, f := range fcp.Flags {
-							routes = append(routes, &v1.Destination{
-								Subset: f.Key,
-								Weight: f.Weight,
-							})
-						}
+				} else if flagConfig.Enabled && fcp.Manual {
+					// clear the default routes firstly
+					routes = routes[:0]
+					for _, f := range fcp.Flags {
+						routes = append(routes, &v1.Destination{
+							Subset: f.Key,
+							Weight: f.Weight,
+						})
 					}
 				}
 			}

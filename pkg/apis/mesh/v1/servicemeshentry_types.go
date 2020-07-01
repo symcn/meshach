@@ -4,15 +4,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ServiceMeshEntrySpec defines the desired state of ServiceMeshEntry
 type ServiceMeshEntrySpec struct {
-	// Must be formatted to conform to the DNS1123 specification.
 	// +kubebuilder:validation:MaxLength=255
 	// +kubebuilder:validation:MinLength=1
-	Name string `json:"name"`
+	OriginName string `json:"name"`
 
 	// A list describes the properties of all ports of this service.
 	// The Dubbo service port registered with MOSN is 20882,

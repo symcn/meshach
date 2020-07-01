@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+
 	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/constant"
 	types2 "github.com/mesh-operator/pkg/adapter/types"
@@ -28,7 +29,7 @@ type KubeV3EventHandler struct {
 	meshConfig *v1.MeshConfig
 }
 
-// NewKubev3EventHander ...
+// NewKubeV3EventHandler ...
 func NewKubeV3EventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
 	cluster, err := k8sMgr.Get(clusterName)
 	if err != nil {
@@ -83,17 +84,18 @@ func (kubev3eh *KubeV3EventHandler) AddService(event *types2.ServiceEvent, confi
 		if err != nil {
 			klog.Warningf("Can not find an existed sme CR: %v, then create such sme instead.", err)
 			return kubev3eh.create(sme)
-		} else {
-			foundSme.Spec = sme.Spec
-			return kubev3eh.update(foundSme)
 		}
+		foundSme.Spec = sme.Spec
+		return kubev3eh.update(foundSme)
 	})
 }
 
+// AddInstance ...
 func (kubev3eh *KubeV3EventHandler) AddInstance(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Warningf("Adding an instance has not been implemented yet by v3 handler.")
 }
 
+// ReplaceInstances ...
 func (kubev3eh *KubeV3EventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v3 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 	kubev3eh.AddService(event, configuratorFinder)
@@ -129,7 +131,7 @@ func convertEventToSme(s *types2.Service) *v1.ServiceMeshEntry {
 			Namespace: defaultNamespace,
 		},
 		Spec: v1.ServiceMeshEntrySpec{
-			Name: s.Name,
+			OriginName: s.Name,
 			Ports: []*v1.Port{{
 				Name:     constant.DubboPortName,
 				Protocol: constant.DubboProtocol,
@@ -206,14 +208,14 @@ func (kubev3eh *KubeV3EventHandler) delete(sme *v1.ServiceMeshEntry) error {
 	return err
 }
 
-// AddConfigEntry
+// AddConfigEntry ...
 func (kubev3eh *KubeV3EventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v3 event handler: adding a configuration\n%v\n", e.Path)
 	// Adding a new configuration for a service is same as changing it.
 	kubev3eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
-// ChangeConfigEntry
+// ChangeConfigEntry ...
 func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v3 event handler: change a configuration: %s", e.Path)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -244,7 +246,7 @@ func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cac
 	})
 }
 
-// DeleteConfigEntry
+// DeleteConfigEntry ...
 func (kubev3eh *KubeV3EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v3 event handler: delete a configuration\n%v", e.Path)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {

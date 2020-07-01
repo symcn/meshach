@@ -224,15 +224,9 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 		"The namespace of MeshConfig to use.",
 	)
 	cmd.PersistentFlags().StringVar(
-		&opt.WorkloadSelectLabel,
-		"workload-selectlabel",
-		opt.WorkloadSelectLabel,
-		"The key of workloadentry selectlabel. Default is service.",
-	)
-	cmd.PersistentFlags().StringVar(
-		&opt.AppSelectLabel,
-		"app-selectlabel",
-		opt.AppSelectLabel,
+		&opt.SelectLabel,
+		"selectlabel",
+		opt.SelectLabel,
 		"The key of all mesh CRs metadata labels. Default is app",
 	)
 

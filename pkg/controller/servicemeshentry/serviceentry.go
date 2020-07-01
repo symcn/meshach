@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package appmeshconfig
+package servicemeshentry
 
 import (
 	"context"
@@ -31,15 +31,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileServiceMeshEntry) reconcileServiceEntry(ctx context.Context, cr *meshv1.ServiceMeshEntry) error {
 	foundMap, err := r.getServiceEntriesMap(ctx, cr)
 	if err != nil {
-		klog.Errorf("%s/%s get ServiceEntries error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		klog.Errorf("%s/%s get ServiceEntries error: %+v", cr.Namespace, cr.Name, err)
 		return err
 	}
 
-	se := r.buildServiceEntry(cr, svc)
-	// Set AppMeshConfig instance as the owner and controller
+	se := r.buildServiceEntry(cr)
+	// Set ServiceMeshEntry instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, se, r.scheme); err != nil {
 		klog.Errorf("SetControllerReference error: %v", err)
 		return err
@@ -78,7 +78,6 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 		}
 		delete(foundMap, se.Name)
 	}
-
 	// Delete old ServiceEntry
 	for name, se := range foundMap {
 		klog.Infof("Delete unused ServiceEntry: %s", name)
@@ -92,9 +91,9 @@ func (r *ReconcileAppMeshConfig) reconcileServiceEntry(ctx context.Context, cr *
 	return nil
 }
 
-func (r *ReconcileAppMeshConfig) buildServiceEntry(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.ServiceEntry {
+func (r *ReconcileServiceMeshEntry) buildServiceEntry(svc *meshv1.ServiceMeshEntry) *networkingv1beta1.ServiceEntry {
 	var ports []*v1beta1.Port
-	for _, port := range svc.Ports {
+	for _, port := range svc.Spec.Ports {
 		ports = append(ports, &v1beta1.Port{
 			Number:   port.Number,
 			Protocol: port.Protocol,
@@ -105,8 +104,8 @@ func (r *ReconcileAppMeshConfig) buildServiceEntry(cr *meshv1.AppMeshConfig, svc
 	return &networkingv1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
-			Namespace: cr.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: cr.Spec.AppName},
+			Namespace: svc.Namespace,
+			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginName},
 		},
 		Spec: v1beta1.ServiceEntry{
 			Hosts:      []string{svc.Name},
@@ -114,9 +113,7 @@ func (r *ReconcileAppMeshConfig) buildServiceEntry(cr *meshv1.AppMeshConfig, svc
 			Location:   v1beta1.ServiceEntry_MESH_INTERNAL,
 			Resolution: v1beta1.ServiceEntry_STATIC,
 			WorkloadSelector: &v1beta1.WorkloadSelector{
-				Labels: map[string]string{
-					r.opt.SelectLabel: svc.Name,
-				},
+				Labels: map[string]string{r.opt.SelectLabel: svc.Name},
 			},
 		},
 	}
@@ -137,9 +134,9 @@ func compareServiceEntry(new, old *networkingv1beta1.ServiceEntry) bool {
 	return false
 }
 
-func (r *ReconcileAppMeshConfig) getServiceEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.ServiceEntry, error) {
+func (r *ReconcileServiceMeshEntry) getServiceEntriesMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.ServiceEntry, error) {
 	list := &networkingv1beta1.ServiceEntryList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

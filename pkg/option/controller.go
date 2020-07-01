@@ -27,8 +27,7 @@ type ControllerOption struct {
 	MeshConfigNamespace string
 
 	// Custome some labels
-	WorkloadSelectLabel string
-	AppSelectLabel      string
+	SelectLabel string
 }
 
 // DefaultControllerOption ...
@@ -51,7 +50,6 @@ func DefaultControllerOption() *ControllerOption {
 		Zone:                    "gz01",
 		MeshConfigName:          "sym-meshconfig",
 		MeshConfigNamespace:     "sym-admin",
-		WorkloadSelectLabel:     "service",
-		AppSelectLabel:          "app",
+		SelectLabel:             "service",
 	}
 }
