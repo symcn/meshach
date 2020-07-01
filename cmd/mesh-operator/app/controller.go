@@ -227,7 +227,13 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 		&opt.SelectLabel,
 		"selectlabel",
 		opt.SelectLabel,
-		"The key of all mesh CRs metadata labels. Default is app",
+		"The key of all mesh CRs metadata labels. Default is app.",
+	)
+	cmd.PersistentFlags().IntVar(
+		&opt.MaxConcurrentReconciles,
+		"max-concurrent-reconciles",
+		opt.MaxConcurrentReconciles,
+		"MaxConcurrentReconciles is the maximum number of concurrent Reconciles which can be run. Defaults to 10.",
 	)
 
 	return cmd
