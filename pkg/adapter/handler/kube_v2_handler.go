@@ -112,7 +112,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event *types2.ServiceEvent) {
 		// There is a chance to delete a service with an empty instances manually, but it is not be sure that which
 		// amc should be modified.
 		if appIdentifier == "" {
-			klog.Infof("Can not find an application name with this deleting event: %v\n", event.Service.Name)
+			klog.Infof("Can not find an application name with this deleting event: %v", event.Service.Name)
 			return nil
 		}
 
@@ -146,7 +146,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event *types2.ServiceEvent) {
 
 // DeleteInstance ...
 func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *types2.ServiceEvent) {
-	klog.Infof("Kube v2 event handler: deleting an instance\n%v\n", event.Instance)
+	klog.Infof("Kube v2 event handler: deleting an instance\n%v", event.Instance)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		appIdentifier := resolveAppIdentifier(event)
@@ -160,7 +160,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteInstance(event *types2.ServiceEvent) {
 
 		err = kubev2eh.updateAmc(amc)
 		if err != nil {
-			klog.Infof("Updating amc has an error: %v\n", err)
+			klog.Errorf("Updating amc has an error: %v", err)
 			return err
 		}
 
@@ -230,7 +230,7 @@ func convertService(s *types2.Service) *v1.Service {
 		ins.Host = utils.RemovePort(i.Host)
 		ins.Port = convertPort(i.Port)
 		ins.Labels = i.Labels
-		ins.Labels[constant.ZoneLabel] = constant.Zone
+		ins.Labels[constant.InstanceLabelZoneName] = constant.ZoneValue
 		instances = append(instances, ins)
 	}
 	service.Instances = instances
@@ -245,7 +245,7 @@ func (kubev2eh *KubeV2EventHandler) createAmc(amc *v1.AppMeshConfig) error {
 	err := cluster.Client.Create(context.Background(), amc)
 	klog.Infof("=The generation of amc when creating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Creating an acm has an error:%v\n", err)
+		klog.Errorf("Creating an acm has an error:%v", err)
 		return err
 	}
 	return nil
@@ -260,7 +260,7 @@ func (kubev2eh *KubeV2EventHandler) updateAmc(amc *v1.AppMeshConfig) error {
 	err = cluster.Client.Update(context.Background(), amc)
 	klog.Infof("=The generation of amc after updating: %d", amc.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Updating an acm has an error: %v\n", err)
+		klog.Errorf("Updating an acm has an error: %v", err)
 		return err
 	}
 
@@ -291,7 +291,7 @@ func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshCon
 	}
 	amc, err := kubev2eh.getAmc(amc)
 	if err != nil {
-		klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+		klog.Infof("Finding amc with name %s has an error: %v", appIdentifier, err)
 		// TODO Is there a requirement to requeue this event?
 		return amc, err
 	}
@@ -301,14 +301,14 @@ func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshCon
 
 // AddConfigEntry
 func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
-	klog.Infof("Kube v2 event handler: adding a configuration\n%v\n", e.Path)
+	klog.Infof("Kube v2 event handler: adding a configuration\n%v", e.Path)
 	// Adding a new configuration for a service is same as changing it.
 	kubev2eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
 // ChangeConfigEntry
 func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
-	klog.Infof("Kube v2 event handler: change a configuration\n%v\n", e.Path)
+	klog.Infof("Kube v2 event handler: change a configuration\n%v", e.Path)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
@@ -321,7 +321,7 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cac
 
 		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
-			klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+			klog.Infof("Finding amc with name %s has an error: %v", appIdentifier, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
@@ -345,7 +345,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cac
 	klog.Infof("Kube v2 event handler: delete a configuration\n%v", e.Path)
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// an example for the path: /dubbo/config/dubbo/com.dmall.mesh.test.PoviderDemo.configurators
+		// an example for the path: /dubbo/config/dubbo/com.foo.mesh.test.Demo.configurators
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.ResolveServiceName(e.Path)
@@ -358,7 +358,7 @@ func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cac
 
 		amc, err := kubev2eh.findAmc(appIdentifier)
 		if err != nil {
-			klog.Infof("Finding amc with name %s has an error: %v\n", appIdentifier, err)
+			klog.Infof("Finding amc with name %s has an error: %v", appIdentifier, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}

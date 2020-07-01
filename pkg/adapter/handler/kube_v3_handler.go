@@ -144,7 +144,7 @@ func convertEventToSme(s *types2.Service) *v1.ServiceMeshEntry {
 		ins.Host = utils.RemovePort(i.Host)
 		ins.Port = convertPort(i.Port)
 		ins.Labels = i.Labels
-		ins.Labels[constant.ZoneLabel] = constant.Zone
+		ins.Labels[constant.InstanceLabelZoneName] = constant.ZoneValue
 		instances = append(instances, ins)
 	}
 	sme.Spec.Instances = instances
@@ -215,7 +215,7 @@ func (kubev3eh *KubeV3EventHandler) AddConfigEntry(e *types2.ConfigEvent, cached
 
 // ChangeConfigEntry
 func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
-	klog.Infof("Kube v3 event handler: change a configuration\n%v", e.Path)
+	klog.Infof("Kube v3 event handler: change a configuration: %s", e.Path)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
 		sme, err := kubev3eh.get(&v1.ServiceMeshEntry{
@@ -248,7 +248,7 @@ func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cac
 func (kubev3eh *KubeV3EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v3 event handler: delete a configuration\n%v", e.Path)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// an example for the path: /dubbo/config/dubbo/com.dmall.mesh.test.PoviderDemo.configurators
+		// an example for the path: /dubbo/config/dubbo/com.foo.mesh.test.Demo.configurators
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.StandardizeServiceName(utils.ResolveServiceName(e.Path))

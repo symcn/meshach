@@ -83,7 +83,7 @@ func buildSourceLabels(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc
 		}
 		// header
 		h := make(map[string]string)
-		h["sym-zone"] = constant.Zone
+		h[constant.SourceLabelZoneName] = constant.ZoneValue
 		sl.Headers = h
 
 		// route
