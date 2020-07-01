@@ -243,7 +243,7 @@ var (
 			},
 		},
 		Spec: meshv1.ServiceMeshEntrySpec{
-			OriginName: "sme.Test.Case",
+			OriginalName: "sme.Test.Case",
 			Ports: []*meshv1.Port{{
 				Name:     "dubbo-http",
 				Protocol: "HTTP",
@@ -295,9 +295,9 @@ var (
 			},
 		},
 		Spec: meshv1.ServiceMeshEntrySpec{
-			OriginName: "dubbo.TestServiceOK",
-			Ports:      nil,
-			Instances:  []*meshv1.Instance{testWorkloadEntryOKInstance},
+			OriginalName: "dubbo.TestServiceOK",
+			Ports:        nil,
+			Instances:    []*meshv1.Instance{testWorkloadEntryOKInstance},
 			Policy: &meshv1.Policy{
 				LoadBalancer: map[string]string{
 					"simple": "ROUND_ROBIN",
@@ -327,7 +327,7 @@ var (
 			},
 		},
 		Spec: meshv1.ServiceMeshEntrySpec{
-			OriginName: "dubbo.TestServiceOK",
+			OriginalName: "dubbo.TestServiceOK",
 			Ports: []*meshv1.Port{{
 				Name:     "dubbo-http",
 				Protocol: "HTTP",

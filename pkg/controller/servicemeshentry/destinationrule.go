@@ -126,7 +126,7 @@ func (r *ReconcileServiceMeshEntry) buildDestinationRule(svc *meshv1.ServiceMesh
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: svc.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginName},
+			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginalName},
 		},
 		Spec: v1beta1.DestinationRule{
 			Host: svc.Name,
@@ -167,7 +167,7 @@ func getlb(s string) v1beta1.LoadBalancerSettings_SimpleLB {
 
 func (r *ReconcileServiceMeshEntry) getDestinationRuleMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.DestinationRule, error) {
 	list := &networkingv1beta1.DestinationRuleList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

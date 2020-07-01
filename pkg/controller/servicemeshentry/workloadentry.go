@@ -111,7 +111,7 @@ func (r *ReconcileServiceMeshEntry) buildWorkloadEntry(svc *meshv1.ServiceMeshEn
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(name),
 			Namespace: svc.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginName},
+			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginalName},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
@@ -139,7 +139,7 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 
 func (r *ReconcileServiceMeshEntry) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.WorkloadEntry, error) {
 	list := &networkingv1beta1.WorkloadEntryList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

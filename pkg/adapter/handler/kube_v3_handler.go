@@ -131,7 +131,7 @@ func convertEventToSme(s *types2.Service) *v1.ServiceMeshEntry {
 			Namespace: defaultNamespace,
 		},
 		Spec: v1.ServiceMeshEntrySpec{
-			OriginName: s.Name,
+			OriginalName: s.Name,
 			Ports: []*v1.Port{{
 				Name:     constant.DubboPortName,
 				Protocol: constant.DubboProtocol,

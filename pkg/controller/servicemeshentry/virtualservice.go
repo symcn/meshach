@@ -107,7 +107,7 @@ func (r *ReconcileServiceMeshEntry) buildVirtualService(svc *meshv1.ServiceMeshE
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: svc.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginName},
+			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginalName},
 		},
 		Spec: v1beta1.VirtualService{
 			Hosts: []string{svc.Name},
@@ -201,7 +201,7 @@ func getMatchType(matchType meshv1.StringMatchType, value string) *v1beta1.Strin
 
 func (r *ReconcileServiceMeshEntry) getVirtualServicesMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.VirtualService, error) {
 	list := &networkingv1beta1.VirtualServiceList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

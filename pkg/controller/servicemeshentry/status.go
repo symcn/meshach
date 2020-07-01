@@ -138,7 +138,7 @@ func (r *ReconcileServiceMeshEntry) getDestinationRuleStatus(ctx context.Context
 
 func (r *ReconcileServiceMeshEntry) count(ctx context.Context, cr *meshv1.ServiceMeshEntry, list runtime.Object) *int {
 	var c int
-	labels := &client.MatchingLabels{"service": cr.Spec.OriginName}
+	labels := &client.MatchingLabels{"service": cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 
