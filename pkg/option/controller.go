@@ -12,6 +12,7 @@ type ControllerOption struct {
 	GinLogSkipPath          []string
 	PprofEnabled            bool
 	GoroutineThreshold      int
+	MaxConcurrentReconciles int
 
 	// The exact zone code of current cluster, gz01/rz01/rz02
 	Zone string
@@ -43,6 +44,7 @@ func DefaultControllerOption() *ControllerOption {
 		LeaderElectionNamespace: "sym-admin",
 		PprofEnabled:            true,
 		GoroutineThreshold:      1000,
+		MaxConcurrentReconciles: 20,
 		ProxyHost:               "mosn.io.dubbo.proxy",
 		ProxyAttempts:           3,
 		ProxyPerTryTimeout:      2,
