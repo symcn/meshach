@@ -8,7 +8,7 @@ import (
 type ServiceMeshEntrySpec struct {
 	// +kubebuilder:validation:MaxLength=255
 	// +kubebuilder:validation:MinLength=1
-	OriginName string `json:"name"`
+	OriginName string `json:"originName"`
 
 	// A list describes the properties of all ports of this service.
 	// The Dubbo service port registered with MOSN is 20882,
