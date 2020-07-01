@@ -5,6 +5,7 @@ import (
 	"github.com/mesh-operator/pkg/controller/appmeshconfig"
 	"github.com/mesh-operator/pkg/controller/istioconfig"
 	"github.com/mesh-operator/pkg/controller/meshconfig"
+	"github.com/mesh-operator/pkg/controller/servicemeshentry"
 	"github.com/mesh-operator/pkg/option"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -17,6 +18,7 @@ func AddToManager(m manager.Manager, opt *option.ControllerOption) error {
 	AddToManagerFuncs = append(AddToManagerFuncs, appmeshconfig.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, istioconfig.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, meshconfig.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, servicemeshentry.Add)
 
 	for _, f := range AddToManagerFuncs {
 		if err := f(m, opt); err != nil {
