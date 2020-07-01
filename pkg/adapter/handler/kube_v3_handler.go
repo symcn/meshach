@@ -62,8 +62,6 @@ func (kubev3eh *KubeV3EventHandler) AddService(event *types2.ServiceEvent, confi
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Convert a service event that noticed by zookeeper to a Service CRD
 		sme := convertEventToSme(event.Service)
-		// loading sme CR from k8s cluster
-		sme, err := kubev3eh.get(sme)
 
 		// meanwhile we should search a configurator for such service
 		config := configuratorFinder(event.Service.Name)
@@ -75,11 +73,19 @@ func (kubev3eh *KubeV3EventHandler) AddService(event *types2.ServiceEvent, confi
 			setConfig(config, sme, kubev3eh.meshConfig)
 		}
 
+		// loading sme CR from k8s cluster
+		foundSme, err := kubev3eh.get(&v1.ServiceMeshEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      utils.StandardizeServiceName(event.Service.Name),
+				Namespace: defaultNamespace,
+			},
+		})
 		if err != nil {
 			klog.Warningf("Can not find an existed sme CR: %v, then create such sme instead.", err)
 			return kubev3eh.create(sme)
 		} else {
-			return kubev3eh.update(sme)
+			foundSme.Spec = sme.Spec
+			return kubev3eh.update(foundSme)
 		}
 	})
 }
