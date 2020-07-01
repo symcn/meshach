@@ -59,7 +59,19 @@ func NewKubeV3EventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHa
 
 // AddService ...
 func (kubev3eh *KubeV3EventHandler) AddService(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
-	klog.Infof("Kube v3 event handler: Adding a service: %s", event.Service.Name)
+	// klog.Infof("Kube v3 event handler: Adding a service: %s", event.Service.Name)
+	klog.Warningf("Adding a service has not been implemented yet by v3 handler.")
+	// kubev3eh.AddService(event, configuratorFinder)
+}
+
+// AddInstance ...
+func (kubev3eh *KubeV3EventHandler) AddInstance(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
+	klog.Warningf("Adding an instance has not been implemented yet by v3 handler.")
+}
+
+// ReplaceInstances ...
+func (kubev3eh *KubeV3EventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
+	klog.Infof("Kube v3 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Convert a service event that noticed by zookeeper to a Service CRD
 		sme := convertEventToSme(event.Service)
@@ -88,17 +100,6 @@ func (kubev3eh *KubeV3EventHandler) AddService(event *types2.ServiceEvent, confi
 		foundSme.Spec = sme.Spec
 		return kubev3eh.update(foundSme)
 	})
-}
-
-// AddInstance ...
-func (kubev3eh *KubeV3EventHandler) AddInstance(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
-	klog.Warningf("Adding an instance has not been implemented yet by v3 handler.")
-}
-
-// ReplaceInstances ...
-func (kubev3eh *KubeV3EventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
-	klog.Infof("Kube v3 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
-	kubev3eh.AddService(event, configuratorFinder)
 }
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig

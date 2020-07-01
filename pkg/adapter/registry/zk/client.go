@@ -92,7 +92,7 @@ func (c *RegistryClient) eventLoop() {
 			ppath := path.Join(event.Path, zookeeper.ProvidersPath)
 			pcache, err := zookeeper.NewPathCache(c.conn, ppath, "REGISTRY", false)
 			if err != nil {
-				fmt.Printf("Create a provider cache %s has an error:%v\n", ppath, err)
+				klog.Errorf("Create a provider cache %s has an error:%v", ppath, err)
 				continue
 			}
 			c.pcaches[hostname] = pcache
