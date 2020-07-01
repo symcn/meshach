@@ -251,7 +251,7 @@ func (kubev3eh *KubeV3EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cac
 		// an example for the path: /dubbo/config/dubbo/com.dmall.mesh.test.PoviderDemo.configurators
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
-		serviceName := utils.StandardizeServiceName(e.ConfigEntry.Key)
+		serviceName := utils.StandardizeServiceName(utils.ResolveServiceName(e.Path))
 		sme, err := kubev3eh.get(&v1.ServiceMeshEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serviceName,
