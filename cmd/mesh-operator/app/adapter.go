@@ -46,25 +46,25 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Registry.Address,
-		"registry-zk-addr",
+		"raddr",
 		opt.Registry.Address,
-		"the zookeeper address pool for registry")
+		"address for registry center, e.g. zk: 127.0.0.1:2181")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Registry.Timeout,
-		"registry-zk-timeout",
+		"rtimeout",
 		opt.Registry.Timeout,
 		"the zookeeper session timeout second for registry")
 
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Configuration.Address,
-		"configcenter-zk-addr",
+		"caddr",
 		opt.Configuration.Address,
-		"the zookeeper address pool for configuration center")
+		"address for configuration center, e.g. zk: 127.0.0.1:2181")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Configuration.Timeout,
-		"configcenter-zk-timeout",
+		"ctimeout",
 		opt.Configuration.Timeout,
 		"the zookeeper session timeout second for configuration center")
 
@@ -78,6 +78,6 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 		&opt.EventHandlers.ClusterNamespace,
 		"cluster-namespace",
 		opt.EventHandlers.ClusterNamespace,
-		"the namesapce that multiple cluster manager uses when selecting the cluster configmaps")
+		"the namespace that multiple cluster manager uses when selecting the cluster config maps")
 	return cmd
 }

@@ -16,10 +16,14 @@ spec:
       serviceAccountName: mesh-operator
       containers:
         - name: mesh-adapter
-          image: symcn.tencentcloudcr.com/symcn/mesh-operator:v0.0.1
+          image: symcn.tencentcloudcr.com/symcn/mesh-operator:v0.0.2
           imagePullPolicy: Always
           args:
           - "adapter"
+          - "-raddr"
+          - "127.0.0.1:2181"
+          - "-caddr"
+          - "127.0.0.1:2181"
           - "-v"
           - "4"
           env:

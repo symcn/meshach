@@ -1,6 +1,6 @@
 .PHONY: build deploy
 
-VERSION ?= v0.0.1
+VERSION ?= v0.0.2
 # Image URL to use all building/pushing image targets
 IMG_ADDR ?= symcn.tencentcloudcr.com/symcn/mesh-operator
 
