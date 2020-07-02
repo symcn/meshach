@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package appmeshconfig ...
-package appmeshconfig
+// Package servicemeshentry ...
+package servicemeshentry
 
 import (
 	"reflect"
@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
+func TestReconcileServiceMeshEntry_Reconcile(t *testing.T) {
 	fakeScheme := GetFakeScheme()
 	type fields struct {
 		client     client.Client
@@ -53,16 +53,16 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test-amc-reconcile-no-service-ok",
+			name: "test-sme-reconcile-no-service-ok",
 			fields: fields{
-				client:     GetFakeClient(amcNoService, TestMeshConfig),
+				client:     GetFakeClient(smeNoService, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				request: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "amc-test-case",
+					Name:      "dubbo.noservice",
 					Namespace: "sym-test",
 				}},
 			},
@@ -70,7 +70,7 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-amc-reconcile-no-meshconfig-error",
+			name: "test-sme-reconcile-no-meshconfig-error",
 			fields: fields{
 				client:     GetFakeClient(),
 				scheme:     fakeScheme,
@@ -79,7 +79,7 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			},
 			args: args{
 				request: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "amc-test-case",
+					Name:      "dubbo.nomeshconfig",
 					Namespace: "sym-test",
 				}},
 			},
@@ -87,7 +87,7 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "test-amc-reconcile-no-appmeshconfig-ok",
+			name: "test-sme-reconcile-no-servicemeshentry-ok",
 			fields: fields{
 				client:     GetFakeClient(TestMeshConfig),
 				scheme:     fakeScheme,
@@ -96,7 +96,7 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			},
 			args: args{
 				request: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "amc-test-case",
+					Name:      "test.no.servicemeshentry",
 					Namespace: "sym-test",
 				}},
 			},
@@ -104,16 +104,16 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-amc-reconcile-only-serviceentry-ok",
+			name: "test-sme-reconcile-only-serviceentry-ok",
 			fields: fields{
-				client:     GetFakeClient(amcTestServiceEntryOK, TestMeshConfig),
+				client:     GetFakeClient(smeTestServiceEntryOK, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				request: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "amc-test-case",
+					Name:      "test.serviceentry.ok",
 					Namespace: "sym-test",
 				}},
 			},
@@ -121,16 +121,16 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-amc-reconcile-only-workloadentry-ok",
+			name: "test-sme-reconcile-only-workloadentry-ok",
 			fields: fields{
-				client:     GetFakeClient(amcTestWorkloadEntryOK, TestMeshConfig),
+				client:     GetFakeClient(smeTestWorkloadEntryOK, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				request: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "amc-test-case",
+					Name:      "test.workloadentry.ok",
 					Namespace: "sym-test",
 				}},
 			},
@@ -138,16 +138,16 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-amc-reconcile-all-ok",
+			name: "test-sme-reconcile-all-ok",
 			fields: fields{
-				client:     GetFakeClient(amcTestOK, TestMeshConfig),
+				client:     GetFakeClient(smeTestOK, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				request: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "amc-test-case",
+					Name:      "test.all.ok",
 					Namespace: "sym-test",
 				}},
 			},
@@ -157,7 +157,7 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileAppMeshConfig{
+			r := &ReconcileServiceMeshEntry{
 				client:     tt.fields.client,
 				scheme:     tt.fields.scheme,
 				opt:        tt.fields.opt,
@@ -165,11 +165,11 @@ func TestReconcileAppMeshConfig_Reconcile(t *testing.T) {
 			}
 			got, err := r.Reconcile(tt.args.request)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ReconcileAppMeshConfig.Reconcile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReconcileServiceMeshEntry.Reconcile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconcileAppMeshConfig.Reconcile() = %v, want %v", got, tt.want)
+				t.Errorf("ReconcileServiceMeshEntry.Reconcile() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -234,74 +234,44 @@ var (
 		},
 	}
 
-	testService = &meshv1.Service{
-		Name:      "dubbo.TestServiceOK",
-		Ports:     nil,
-		Instances: nil,
-		Policy: &meshv1.Policy{
-			LoadBalancer: map[string]string{
-				"simple": "ROUND_ROBIN",
-			},
-			MaxConnections: 10,
-			Timeout:        "20s",
-			MaxRetries:     3,
-			SourceLabels:   nil,
-		},
-		Subsets: nil,
-	}
-	amcTestServiceEntryOK = &meshv1.AppMeshConfig{
+	smeTestServiceEntryOK = &meshv1.ServiceMeshEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "amc-test-case",
+			Name:      "test.serviceentry.ok",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				"app": "test-case-service",
+				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.AppMeshConfigSpec{
-			AppName: "test-case-app",
-			Inject: &meshv1.Inject{
-				LogLevel: "INFO",
-				Sidecar:  "mosn",
-			},
-			Services: []*meshv1.Service{testService},
+		Spec: meshv1.ServiceMeshEntrySpec{
+			OriginalName: "sme.Test.Case",
+			Ports: []*meshv1.Port{{
+				Name:     "dubbo-http",
+				Protocol: "HTTP",
+				Number:   20882,
+			}},
+			Instances: []*meshv1.Instance{},
 			Policy: &meshv1.Policy{
 				LoadBalancer: map[string]string{
 					"simple": "ROUND_ROBIN",
 				},
-				MaxConnections: 2,
-				Timeout:        "20ms",
+				MaxConnections: 10,
+				Timeout:        "20s",
 				MaxRetries:     3,
 				SourceLabels:   nil,
 			},
+			Subsets:              nil,
 			MeshConfigGeneration: 0,
 		},
 	}
-	amcNoService = &meshv1.AppMeshConfig{
+	smeNoService = &meshv1.ServiceMeshEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "amc-test-case",
+			Name:      "dubbo.noservice",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				"app": "test-case-service",
+				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.AppMeshConfigSpec{
-			AppName: "test-case-app",
-			Inject: &meshv1.Inject{
-				LogLevel: "INFO",
-				Sidecar:  "mosn",
-			},
-			Services: []*meshv1.Service{},
-			Policy: &meshv1.Policy{
-				LoadBalancer: map[string]string{
-					"simple": "ROUND_ROBIN",
-				},
-				MaxConnections: 2,
-				Timeout:        "20ms",
-				MaxRetries:     3,
-				SourceLabels:   nil,
-			},
-			MeshConfigGeneration: 0,
-		},
+		Spec: meshv1.ServiceMeshEntrySpec{},
 	}
 
 	testWorkloadEntryOKInstance = &meshv1.Instance{
@@ -316,46 +286,28 @@ var (
 		},
 		Weight: 0,
 	}
-	testWorkloadEntryService = &meshv1.Service{
-		Name:      "dubbo.TestServiceOK",
-		Ports:     nil,
-		Instances: []*meshv1.Instance{testWorkloadEntryOKInstance},
-		Policy: &meshv1.Policy{
-			LoadBalancer: map[string]string{
-				"simple": "ROUND_ROBIN",
-			},
-			MaxConnections: 10,
-			Timeout:        "20s",
-			MaxRetries:     3,
-			SourceLabels:   nil,
-		},
-		Subsets: nil,
-	}
-	amcTestWorkloadEntryOK = &meshv1.AppMeshConfig{
+	smeTestWorkloadEntryOK = &meshv1.ServiceMeshEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "amc-test-case",
+			Name:      "test.workloadentry.ok",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				"app": "test-case-service",
+				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.AppMeshConfigSpec{
-			AppName: "test-case-app",
-			Inject: &meshv1.Inject{
-				LogLevel: "INFO",
-				Sidecar:  "mosn",
-			},
-			Services: []*meshv1.Service{testWorkloadEntryService},
+		Spec: meshv1.ServiceMeshEntrySpec{
+			OriginalName: "dubbo.TestServiceOK",
+			Ports:        nil,
+			Instances:    []*meshv1.Instance{testWorkloadEntryOKInstance},
 			Policy: &meshv1.Policy{
 				LoadBalancer: map[string]string{
 					"simple": "ROUND_ROBIN",
 				},
-				MaxConnections: 2,
-				Timeout:        "20ms",
+				MaxConnections: 10,
+				Timeout:        "20s",
 				MaxRetries:     3,
 				SourceLabels:   nil,
 			},
-			MeshConfigGeneration: 0,
+			Subsets: nil,
 		},
 	}
 
@@ -366,85 +318,60 @@ var (
 		},
 		Policy: &meshv1.Policy{},
 	}
-	testOKService = &meshv1.Service{
-		Name:      "dubbo.TestServiceOK",
-		Ports:     []*meshv1.Port{},
-		Instances: []*meshv1.Instance{testWorkloadEntryOKInstance},
-		Policy: &meshv1.Policy{
-			LoadBalancer: map[string]string{
-				"simple": "ROUND_ROBIN",
-			},
-			MaxConnections: 10,
-			Timeout:        "20s",
-			MaxRetries:     3,
-			SourceLabels:   nil,
-		},
-		Subsets: []*meshv1.Subset{testOKSubSet},
-	}
-	testUpdateOKService = &meshv1.Service{
-		Name:      "dubbo.TestServiceOK",
-		Ports:     []*meshv1.Port{},
-		Instances: []*meshv1.Instance{testWorkloadEntryOKInstance},
-		Policy: &meshv1.Policy{
-			LoadBalancer: map[string]string{
-				"simple": "ROUND",
-			},
-		},
-		Subsets: []*meshv1.Subset{testOKSubSet},
-	}
-	amcTestOK = &meshv1.AppMeshConfig{
+	smeTestOK = &meshv1.ServiceMeshEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "amc-test-case",
+			Name:      "test.all.ok",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				"app": "test-case-service",
+				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.AppMeshConfigSpec{
-			AppName: "test-case-app",
-			Inject: &meshv1.Inject{
-				LogLevel: "INFO",
-				Sidecar:  "mosn",
-			},
-			Services: []*meshv1.Service{testOKService},
+		Spec: meshv1.ServiceMeshEntrySpec{
+			OriginalName: "dubbo.TestServiceOK",
+			Ports: []*meshv1.Port{{
+				Name:     "dubbo-http",
+				Protocol: "HTTP",
+				Number:   20882,
+			}},
+			Instances: []*meshv1.Instance{testWorkloadEntryOKInstance},
 			Policy: &meshv1.Policy{
 				LoadBalancer: map[string]string{
 					"simple": "ROUND_ROBIN",
 				},
-				MaxConnections: 2,
-				Timeout:        "20ms",
+				MaxConnections: 10,
+				Timeout:        "20s",
 				MaxRetries:     3,
 				SourceLabels:   nil,
 			},
-			MeshConfigGeneration: 0,
+			Subsets: []*meshv1.Subset{testOKSubSet},
 		},
 	}
 	fakeWorkloadEntry = &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "dubbo.testserviceok.10.10.10.10.20882",
+			Name:      "test.all.ok.10.10.10.10.20882",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.WorkloadEntry{},
 	}
 	fakeDeleteWorkloadEntry = &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "dubbo.testserviceok.10.10.10.11.20882",
+			Name:      "test.all.ok.10.10.10.11.20882",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.WorkloadEntry{},
 	}
 	fakeVirtualService = &networkingv1beta1.VirtualService{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "dubbo.testserviceok",
+			Name:      "test.all.ok",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.VirtualService{
@@ -456,7 +383,7 @@ var (
 			Name:      "dubbo.testserviceok.delete",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.VirtualService{
@@ -465,10 +392,10 @@ var (
 	}
 	fakeServiceEntry = &networkingv1beta1.ServiceEntry{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "dubbo.testserviceok",
+			Name:      "test.all.ok",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.ServiceEntry{
@@ -480,7 +407,7 @@ var (
 			Name:      "dubbo.testserviceok.delete",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.ServiceEntry{
@@ -489,10 +416,10 @@ var (
 	}
 	fakeDestinationRule = &networkingv1beta1.DestinationRule{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "dubbo.testserviceok",
+			Name:      "test.all.ok",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.DestinationRule{
@@ -505,7 +432,7 @@ var (
 			Name:      "dubbo.testservice.delete",
 			Namespace: "sym-test",
 			Labels: map[string]string{
-				TestOpt.SelectLabel: "test-case-app",
+				TestOpt.SelectLabel: "dubbo.TestServiceOK",
 			},
 		},
 		Spec: v1beta1.DestinationRule{
@@ -526,8 +453,8 @@ func GetFakeScheme() *runtime.Scheme {
 	s.AddKnownTypes(meshv1.SchemeGroupVersion,
 		&meshv1.MeshConfig{},
 		&meshv1.MeshConfigList{},
-		&meshv1.AppMeshConfig{},
-		&meshv1.AppMeshConfigList{},
+		&meshv1.ServiceMeshEntry{},
+		&meshv1.ServiceMeshEntryList{},
 	)
 	s.AddKnownTypes(networkingv1beta1.SchemeGroupVersion,
 		&networkingv1beta1.DestinationRule{},

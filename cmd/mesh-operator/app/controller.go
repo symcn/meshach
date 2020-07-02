@@ -224,16 +224,16 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 		"The namespace of MeshConfig to use.",
 	)
 	cmd.PersistentFlags().StringVar(
-		&opt.WorkloadSelectLabel,
-		"workload-selectlabel",
-		opt.WorkloadSelectLabel,
-		"The key of workloadentry selectlabel. Default is service.",
+		&opt.SelectLabel,
+		"selectlabel",
+		opt.SelectLabel,
+		"The key of all mesh CRs metadata labels. Default is app.",
 	)
-	cmd.PersistentFlags().StringVar(
-		&opt.AppSelectLabel,
-		"app-selectlabel",
-		opt.AppSelectLabel,
-		"The key of all mesh CRs metadata labels. Default is app",
+	cmd.PersistentFlags().IntVar(
+		&opt.MaxConcurrentReconciles,
+		"max-concurrent-reconciles",
+		opt.MaxConcurrentReconciles,
+		"MaxConcurrentReconciles is the maximum number of concurrent Reconciles which can be run. Defaults to 10.",
 	)
 
 	return cmd

@@ -12,6 +12,7 @@ type ControllerOption struct {
 	GinLogSkipPath          []string
 	PprofEnabled            bool
 	GoroutineThreshold      int
+	MaxConcurrentReconciles int
 
 	// The exact zone code of current cluster, gz01/rz01/rz02
 	Zone string
@@ -27,8 +28,7 @@ type ControllerOption struct {
 	MeshConfigNamespace string
 
 	// Custome some labels
-	WorkloadSelectLabel string
-	AppSelectLabel      string
+	SelectLabel string
 }
 
 // DefaultControllerOption ...
@@ -44,6 +44,7 @@ func DefaultControllerOption() *ControllerOption {
 		LeaderElectionNamespace: "sym-admin",
 		PprofEnabled:            true,
 		GoroutineThreshold:      1000,
+		MaxConcurrentReconciles: 20,
 		ProxyHost:               "mosn.io.dubbo.proxy",
 		ProxyAttempts:           3,
 		ProxyPerTryTimeout:      2,
@@ -51,7 +52,6 @@ func DefaultControllerOption() *ControllerOption {
 		Zone:                    "gz01",
 		MeshConfigName:          "sym-meshconfig",
 		MeshConfigNamespace:     "sym-admin",
-		WorkloadSelectLabel:     "service",
-		AppSelectLabel:          "app",
+		SelectLabel:             "service",
 	}
 }

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package appmeshconfig
+package servicemeshentry
 
 import (
 	"context"
@@ -42,17 +42,17 @@ var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 	"PASSTHROUGH": v1beta1.LoadBalancerSettings_PASSTHROUGH,
 }
 
-func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileServiceMeshEntry) reconcileDestinationRule(ctx context.Context, cr *meshv1.ServiceMeshEntry) error {
 	foundMap, err := r.getDestinationRuleMap(ctx, cr)
 	if err != nil {
-		klog.Errorf("%s/%s get DestinationRules error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		klog.Errorf("%s/%s get DestinationRules error: %+v", cr.Namespace, cr.Name, err)
 		return err
 	}
 
 	// Skip if the service's subset is none
-	if len(svc.Subsets) != 0 {
-		dr := r.buildDestinationRule(cr, svc)
-		// Set AppMeshConfig instance as the owner and controller
+	if len(cr.Spec.Subsets) != 0 {
+		dr := r.buildDestinationRule(cr)
+		// Set ServiceMeshEntry instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, dr, r.scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
 			return err
@@ -61,8 +61,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 		// Check if this DestinationRule already exists
 		found, ok := foundMap[dr.Name]
 		if !ok {
-			klog.Infof("Creating a new DestinationRule, Namespace: %s, Name: %s",
-				dr.Namespace, dr.Name)
+			klog.Infof("Creating a new DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
 			err = r.client.Create(ctx, dr)
 			if err != nil {
 				klog.Errorf("Create DestinationRule error: %+v", err)
@@ -95,6 +94,7 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 			delete(foundMap, dr.Name)
 		}
 	}
+
 	// Delete old DestinationRules
 	for name, dr := range foundMap {
 		klog.Infof("Delete unused DestinationRule: %s", name)
@@ -107,9 +107,9 @@ func (r *ReconcileAppMeshConfig) reconcileDestinationRule(ctx context.Context, c
 	return nil
 }
 
-func (r *ReconcileAppMeshConfig) buildDestinationRule(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.DestinationRule {
+func (r *ReconcileServiceMeshEntry) buildDestinationRule(svc *meshv1.ServiceMeshEntry) *networkingv1beta1.DestinationRule {
 	var subsets []*v1beta1.Subset
-	for _, sub := range svc.Subsets {
+	for _, sub := range svc.Spec.Subsets {
 		subset := &v1beta1.Subset{Name: sub.Name, Labels: sub.Labels}
 		if sub.Policy != nil {
 			subset.TrafficPolicy = &v1beta1.TrafficPolicy{
@@ -125,15 +125,15 @@ func (r *ReconcileAppMeshConfig) buildDestinationRule(cr *meshv1.AppMeshConfig, 
 	return &networkingv1beta1.DestinationRule{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
-			Namespace: cr.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: cr.Spec.AppName},
+			Namespace: svc.Namespace,
+			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginalName},
 		},
 		Spec: v1beta1.DestinationRule{
 			Host: svc.Name,
 			TrafficPolicy: &v1beta1.TrafficPolicy{
 				LoadBalancer: &v1beta1.LoadBalancerSettings{
 					LbPolicy: &v1beta1.LoadBalancerSettings_Simple{
-						Simple: getlb(svc.Policy.LoadBalancer[loadBalanceSimple]),
+						Simple: getlb(svc.Spec.Policy.LoadBalancer[loadBalanceSimple]),
 					},
 				},
 			},
@@ -165,9 +165,9 @@ func getlb(s string) v1beta1.LoadBalancerSettings_SimpleLB {
 	return lb
 }
 
-func (r *ReconcileAppMeshConfig) getDestinationRuleMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.DestinationRule, error) {
+func (r *ReconcileServiceMeshEntry) getDestinationRuleMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.DestinationRule, error) {
 	list := &networkingv1beta1.DestinationRuleList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

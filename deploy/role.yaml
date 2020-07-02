@@ -42,6 +42,7 @@ rules:
   - mesh.symcn.com
   resources:
   - '*'
+  - servicemeshentries
   verbs:
   - '*'
 - apiGroups:

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package appmeshconfig
+package servicemeshentry
 
 import (
 	"context"
@@ -32,18 +32,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
-	// Get all workloadEntry of this AppMeshConfig
+func (r *ReconcileServiceMeshEntry) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.ServiceMeshEntry) error {
+	// Get all workloadEntry of this ServiceMeshEntry
 	foundMap, err := r.getWorkloadEntriesMap(ctx, cr)
 	if err != nil {
-		klog.Errorf("%s/%s get WorkloadEntries error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		klog.Errorf("%s/%s get WorkloadEntries error: %+v", cr.Namespace, cr.Name, err)
 		return err
 	}
 
-	for _, ins := range svc.Instances {
-		we := r.buildWorkloadEntry(cr.Spec.AppName, cr.Namespace, svc, ins)
+	for _, ins := range cr.Spec.Instances {
+		we := r.buildWorkloadEntry(cr, ins)
 
-		// Set AppMeshConfig instance as the owner and controller
+		// Set ServiceMeshEntry instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, we, r.scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
 			return err
@@ -99,7 +99,7 @@ func (r *ReconcileAppMeshConfig) reconcileWorkloadEntry(ctx context.Context, cr 
 	return nil
 }
 
-func (r *ReconcileAppMeshConfig) buildWorkloadEntry(appName, namespace string, svc *meshv1.Service, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
+func (r *ReconcileServiceMeshEntry) buildWorkloadEntry(svc *meshv1.ServiceMeshEntry, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
 	name := fmt.Sprintf("%s.%s.%d", svc.Name, ins.Host, ins.Port.Number)
 	labels := make(map[string]string)
 	labels[r.opt.SelectLabel] = svc.Name
@@ -110,8 +110,8 @@ func (r *ReconcileAppMeshConfig) buildWorkloadEntry(appName, namespace string, s
 	return &networkingv1beta1.WorkloadEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(name),
-			Namespace: namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: appName},
+			Namespace: svc.Namespace,
+			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginalName},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
@@ -137,9 +137,9 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 	return false
 }
 
-func (r *ReconcileAppMeshConfig) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.WorkloadEntry, error) {
+func (r *ReconcileServiceMeshEntry) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.WorkloadEntry, error) {
 	list := &networkingv1beta1.WorkloadEntryList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 

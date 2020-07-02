@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package appmeshconfig
+package servicemeshentry
 
 import (
 	"context"
@@ -30,16 +30,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr *meshv1.AppMeshConfig, svc *meshv1.Service) error {
+func (r *ReconcileServiceMeshEntry) reconcileVirtualService(ctx context.Context, cr *meshv1.ServiceMeshEntry) error {
 	foundMap, err := r.getVirtualServicesMap(ctx, cr)
 	if err != nil {
-		klog.Errorf("%s/%s get VirtualService error: %+v", cr.Namespace, cr.Spec.AppName, err)
+		klog.Errorf("%s/%s get VirtualService error: %+v", cr.Namespace, cr.Name, err)
 		return err
 	}
+
 	// Skip if the service's subset is none
-	if len(svc.Subsets) != 0 {
-		vs := r.buildVirtualService(cr, svc)
-		// Set AppMeshConfig instance as the owner and controller
+	if len(cr.Spec.Subsets) != 0 {
+		vs := r.buildVirtualService(cr)
+		// Set ServiceMeshEntry instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, vs, r.scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
 			return err
@@ -48,8 +49,7 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 		// Check if this VirtualService already exists
 		found, ok := foundMap[vs.Name]
 		if !ok {
-			klog.Infof("Creating a new VirtualService, Namespace: %s, Name: %s",
-				vs.Namespace, vs.Name)
+			klog.Infof("Creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
 			err = r.client.Create(ctx, vs)
 			if err != nil {
 				klog.Errorf("Create VirtualService error: %+v", err)
@@ -82,6 +82,7 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 			delete(foundMap, vs.Name)
 		}
 	}
+
 	// Delete old VirtualServices
 	for name, vs := range foundMap {
 		klog.Infof("Delete unused VirtualService: %s", name)
@@ -91,13 +92,12 @@ func (r *ReconcileAppMeshConfig) reconcileVirtualService(ctx context.Context, cr
 			return err
 		}
 	}
-
 	return nil
 }
 
-func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, svc *meshv1.Service) *networkingv1beta1.VirtualService {
+func (r *ReconcileServiceMeshEntry) buildVirtualService(svc *meshv1.ServiceMeshEntry) *networkingv1beta1.VirtualService {
 	httpRoute := []*v1beta1.HTTPRoute{}
-	for _, sourceLabels := range svc.Policy.SourceLabels {
+	for _, sourceLabels := range svc.Spec.Policy.SourceLabels {
 		http := r.buildHTTPRoute(svc, sourceLabels)
 		httpRoute = append(httpRoute, http)
 	}
@@ -106,8 +106,8 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 	return &networkingv1beta1.VirtualService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
-			Namespace: cr.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: cr.Spec.AppName},
+			Namespace: svc.Namespace,
+			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginalName},
 		},
 		Spec: v1beta1.VirtualService{
 			Hosts: []string{svc.Name},
@@ -116,7 +116,7 @@ func (r *ReconcileAppMeshConfig) buildVirtualService(cr *meshv1.AppMeshConfig, s
 	}
 }
 
-func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service, sourceLabels *meshv1.SourceLabels) *v1beta1.HTTPRoute {
+func (r *ReconcileServiceMeshEntry) buildHTTPRoute(svc *meshv1.ServiceMeshEntry, sourceLabels *meshv1.SourceLabels) *v1beta1.HTTPRoute {
 	m := make(map[string]*v1beta1.StringMatch)
 	for key, matchType := range r.meshConfig.Spec.MatchHeaderLabelKeys {
 		m[key] = getMatchType(matchType, sourceLabels.Headers[key])
@@ -146,16 +146,16 @@ func (r *ReconcileAppMeshConfig) buildHTTPRoute(svc *meshv1.Service, sourceLabel
 		Name:    httpRouteName + "-" + sourceLabels.Name,
 		Match:   []*v1beta1.HTTPMatchRequest{match},
 		Route:   routes,
-		Timeout: utils.StringToDuration(svc.Policy.Timeout, int64(svc.Policy.MaxRetries)),
+		Timeout: utils.StringToDuration(svc.Spec.Policy.Timeout, int64(svc.Spec.Policy.MaxRetries)),
 		Retries: &v1beta1.HTTPRetry{
-			Attempts:      svc.Policy.MaxRetries,
-			PerTryTimeout: utils.StringToDuration(svc.Policy.Timeout, 1),
+			Attempts:      svc.Spec.Policy.MaxRetries,
+			PerTryTimeout: utils.StringToDuration(svc.Spec.Policy.Timeout, 1),
 			RetryOn:       r.opt.ProxyRetryOn,
 		},
 	}
 }
 
-func (r *ReconcileAppMeshConfig) buildProxyRoute() *v1beta1.HTTPRoute {
+func (r *ReconcileServiceMeshEntry) buildProxyRoute() *v1beta1.HTTPRoute {
 	route := &v1beta1.HTTPRouteDestination{
 		Destination: &v1beta1.Destination{
 			Host: r.opt.ProxyHost,
@@ -186,9 +186,22 @@ func compareVirtualService(new, old *networkingv1beta1.VirtualService) bool {
 	return false
 }
 
-func (r *ReconcileAppMeshConfig) getVirtualServicesMap(ctx context.Context, cr *meshv1.AppMeshConfig) (map[string]*networkingv1beta1.VirtualService, error) {
+func getMatchType(matchType meshv1.StringMatchType, value string) *v1beta1.StringMatch {
+	s := &v1beta1.StringMatch{}
+	switch matchType {
+	case meshv1.Prefix:
+		s.MatchType = &v1beta1.StringMatch_Prefix{Prefix: value}
+	case meshv1.Regex:
+		s.MatchType = &v1beta1.StringMatch_Regex{Regex: value}
+	default:
+		s.MatchType = &v1beta1.StringMatch_Exact{Exact: value}
+	}
+	return s
+}
+
+func (r *ReconcileServiceMeshEntry) getVirtualServicesMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.VirtualService, error) {
 	list := &networkingv1beta1.VirtualServiceList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.AppName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 
@@ -202,17 +215,4 @@ func (r *ReconcileAppMeshConfig) getVirtualServicesMap(ctx context.Context, cr *
 		m[item.Name] = &item
 	}
 	return m, nil
-}
-
-func getMatchType(matchType meshv1.StringMatchType, value string) *v1beta1.StringMatch {
-	s := &v1beta1.StringMatch{}
-	switch matchType {
-	case meshv1.Prefix:
-		s.MatchType = &v1beta1.StringMatch_Prefix{Prefix: value}
-	case meshv1.Regex:
-		s.MatchType = &v1beta1.StringMatch_Regex{Regex: value}
-	default:
-		s.MatchType = &v1beta1.StringMatch_Exact{Exact: value}
-	}
-	return s
 }

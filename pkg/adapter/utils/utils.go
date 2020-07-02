@@ -3,8 +3,10 @@ package utils
 import (
 	"fmt"
 	"net"
+	"path"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 // deleteInSlice Delete an element from a Slice with an index.
@@ -33,6 +35,12 @@ func RemovePort(addressWithPort string) string {
 	return host
 }
 
+// resolveServiceName
+// configuratorPath: e.g. /dubbo/config/dubbo/foo.configurators
+func ResolveServiceName(configuratorPath string) string {
+	return strings.Replace(path.Base(configuratorPath), ".configurators", "", 1)
+}
+
 // toInt32 Convert a string variable to integer with 32 bit size.
 func ToUint32(portStr string) uint32 {
 	port, _ := strconv.ParseInt(portStr, 10, 32)
@@ -43,4 +51,9 @@ func ToUint32(portStr string) uint32 {
 func ToInt32(portStr string) int32 {
 	port, _ := strconv.ParseInt(portStr, 10, 32)
 	return int32(port)
+}
+
+// StandardizeServiceName
+func StandardizeServiceName(originName string) string {
+	return strings.ToLower(strings.ReplaceAll(originName, "-", "_"))
 }

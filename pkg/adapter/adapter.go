@@ -1,93 +1,49 @@
 package adapter
 
 import (
-	"fmt"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
-	"time"
-
-	"github.com/mesh-operator/pkg/adapter/events"
+	"github.com/mesh-operator/pkg/adapter/component"
+	"github.com/mesh-operator/pkg/adapter/configcenter"
 	"github.com/mesh-operator/pkg/adapter/handler"
-	"github.com/mesh-operator/pkg/adapter/zookeeper"
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
-	"github.com/samuel/go-zookeeper/zk"
+	"github.com/mesh-operator/pkg/adapter/options"
+	"github.com/mesh-operator/pkg/adapter/registry"
+	"github.com/mesh-operator/pkg/adapter/types"
 	"k8s.io/klog"
 )
 
 // Adapter ...
 type Adapter struct {
-	registryClient RegistryClient
-	configClient   ConfigurationCenterClient
-	eventHandlers  []EventHandler
-	opt            *Option
-	K8sMgr         *k8smanager.ClusterManager
-}
-
-// Option ...
-type Option struct {
-	Address          []string
-	Timeout          int64
-	ClusterOwner     string
-	ClusterNamespace string
-	MasterCli        k8smanager.MasterClient
-}
-
-// DefaultOption ...
-func DefaultOption() *Option {
-	return &Option{
-		Timeout:          15,
-		ClusterOwner:     "sym-admin",
-		ClusterNamespace: "sym-admin",
-	}
+	opt            *options.Option
+	registryClient component.Registry
+	configClient   component.ConfigurationCenter
+	eventHandlers  []component.EventHandler
 }
 
 // NewAdapter ...
-func NewAdapter(opt *Option) (*Adapter, error) {
+func NewAdapter(opt *options.Option) (*Adapter, error) {
 	// TODO init health check handler
 	// TODO init router
 
-	// initializing multiple k8s cluster manager
-	klog.Info("start to initializing multiple cluster managers ... ")
-	labels := map[string]string{
-		"ClusterOwner": opt.ClusterOwner,
-	}
-	mgrOpt := k8smanager.DefaultClusterManagerOption(opt.ClusterNamespace, labels)
-	if opt.ClusterNamespace != "" {
-		mgrOpt.Namespace = opt.ClusterNamespace
-	}
-	k8sMgr, err := k8smanager.NewManager(opt.MasterCli, mgrOpt)
+	// Initializing event handlers
+	eventHandlers, err := handler.Init(opt.EventHandlers)
 	if err != nil {
-		klog.Fatalf("unable to create a new k8s manager, err: %v", err)
-	}
-	//k8sMgr.GetAll()
-
-	// Initializing the registry client that you want to use.
-	rConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
-	if err != nil {
-		klog.Errorf("Initializing a registry client has an error: %v\n", err)
 		return nil, err
 	}
-	registryClient := zookeeper.NewRegistryClient(rConn)
 
-	// Initializing the a client to connect to configuration center
-	cConn, _, err := zk.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+	// Initializing registry client
+	registryClient, err := registry.GetRegistry(opt.Registry)
 	if err != nil {
-		klog.Errorf("Initializing a configuration client has an error: %v\n", err)
 		return nil, err
 	}
-	configClient := zookeeper.NewConfigClient(cConn)
 
-	// initializing adapter
-	var eventHandlers []EventHandler
-	//eventHandlers = append(eventHandlers, &SimpleEventHandler{Name: "simpleHandler"})
-	//eventHandlers = append(eventHandlers, &handler.LogEventHandler{Name: "logging events."})
-	//eventHandlers = append(eventHandlers, &handler.KubeEventHandler{K8sMgr: k8sMgr})
-	kubev2Handler := &handler.KubeV2EventHandler{K8sMgr: k8sMgr}
-	kubev2Handler.Init()
-	eventHandlers = append(eventHandlers, kubev2Handler)
+	// Initializing config client
+	configClient, err := configcenter.GetRegistry(opt.Configuration)
+	if err != nil {
+		return nil, err
+	}
 
 	adapter := &Adapter{
 		opt:            opt,
-		K8sMgr:         k8sMgr,
 		registryClient: registryClient,
 		configClient:   configClient,
 		eventHandlers:  eventHandlers,
@@ -98,68 +54,75 @@ func NewAdapter(opt *Option) (*Adapter, error) {
 
 // Start an adapter which is used for synchronizing services and instances to kubernetes cluster.
 func (a *Adapter) Start(stop <-chan struct{}) error {
-	klog.Info("====> start adapter")
+	klog.Info("start adapter")
 	if err := a.registryClient.Start(); err != nil {
-		fmt.Printf("Start a registry center's client has an error: %v\n", err)
+		klog.Errorf("Start a registry center's client has an error: %v", err)
 		return err
 	}
 
 	if err := a.configClient.Start(); err != nil {
-		fmt.Printf("Start a configuration center's client has an error: %v\n", err)
+		klog.Errorf("Start a configuration center's client has an error: %v", err)
 		return err
 	}
 
 	for {
 		select {
 		case event := <-a.registryClient.Events():
-			fmt.Printf("Registry events which has been reveived by adapter: %v\n", event)
+			klog.Infof("Registry component which has been received by adapter: %s", event.Service.Name)
 			switch event.EventType {
-			case events.ServiceAdded:
+			case types.ServiceAdded:
 				uuid := utils.GetUUID()
-				klog.Infof("====> Start to handle event - ADD SERVICE %s", uuid)
+				klog.Infof("Start to handle event - ADD SERVICE with uuid: %s", uuid)
 				for _, h := range a.eventHandlers {
 					h.AddService(event, a.configClient.FindConfiguratorConfig)
 				}
-				klog.Infof("====> end handling event - ADD SERVICE %s", uuid)
-			case events.ServiceDeleted:
+				klog.Infof("end handling event - ADD SERVICE with uuid: %s", uuid)
+			case types.ServiceDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteService(event)
 				}
-			case events.ServiceInstanceAdded:
+			case types.ServiceInstanceAdded:
 				uuid := utils.GetUUID()
-				klog.Infof("====> Start to handle event - ADD INSTANCE %s, %s", uuid, event.Instance.Host)
+				klog.Infof("Start to handle event - ADD INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
 				}
-				klog.Infof("====> end handling event - ADD INSTANCE %s", uuid)
-			case events.ServiceInstanceDeleted:
+				klog.Infof("end handling event - ADD INSTANCE with uuid: %s", uuid)
+			case types.ServiceInstancesReplace:
 				uuid := utils.GetUUID()
-				klog.Infof("====> Start to handle event - DELETE INSTANCE %s, %s", uuid, event.Instance.Host)
+				klog.Infof("Start to handle event - REPLACES INSTANCES with uuid: %s, %d", uuid, len(event.Instances))
+				for _, h := range a.eventHandlers {
+					h.ReplaceInstances(event, a.configClient.FindConfiguratorConfig)
+				}
+				klog.Infof("end handling event - REPLACES INSTANCES with uuid: %s", uuid)
+			case types.ServiceInstanceDeleted:
+				uuid := utils.GetUUID()
+				klog.Infof("Start to handle event - DELETE INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
 					h.DeleteInstance(event)
 				}
-				klog.Infof("====> end handling event - DELETE INSTANCE %s", uuid)
+				klog.Infof("end handling event - DELETE INSTANCE with uuid: %s", uuid)
 			}
 		case ce := <-a.configClient.Events():
-			fmt.Printf("Configuration events which has been reveived by adapter: %v\n", ce)
+			klog.Infof("Configuration component which has been received by adapter: %v", ce)
 			switch ce.EventType {
-			case events.ConfigEntryAdded:
+			case types.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
 					h.AddConfigEntry(ce, a.registryClient.GetCachedService)
 				}
-			case events.ConfigEntryChanged:
+			case types.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
 					h.ChangeConfigEntry(ce, a.registryClient.GetCachedService)
 				}
-			case events.ConfigEntryDeleted:
+			case types.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
 					h.DeleteConfigEntry(ce, a.registryClient.GetCachedService)
 				}
 			}
 		case <-stop:
 			a.registryClient.Stop()
+			a.configClient.Stop()
 			return nil
 		}
 	}
-
 }
