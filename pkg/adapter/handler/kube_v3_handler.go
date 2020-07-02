@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/mesh-operator/pkg/adapter/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/constant"
@@ -61,7 +63,7 @@ func NewKubeV3EventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHa
 func (kubev3eh *KubeV3EventHandler) AddService(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	// klog.Infof("Kube v3 event handler: Adding a service: %s", event.Service.Name)
 	klog.Warningf("Adding a service has not been implemented yet by v3 handler.")
-	// kubev3eh.AddService(event, configuratorFinder)
+	// kubev3eh.ReplaceInstances(event, configuratorFinder)
 }
 
 // AddInstance ...
@@ -72,6 +74,12 @@ func (kubev3eh *KubeV3EventHandler) AddInstance(event *types2.ServiceEvent, conf
 // ReplaceInstances ...
 func (kubev3eh *KubeV3EventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v3 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
+
+	metrics.SynchronizedServiceCounter.Inc()
+	metrics.SynchronizedInstanceCounter.Add(float64(len(event.Instances)))
+	timer := prometheus.NewTimer(metrics.ReplacingInstancesHistogram)
+	defer timer.ObserveDuration()
+
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Convert a service event that noticed by zookeeper to a Service CRD
 		sme := convertEventToSme(event.Service)
@@ -106,6 +114,8 @@ func (kubev3eh *KubeV3EventHandler) ReplaceInstances(event *types2.ServiceEvent,
 // after received a service deleted notification.
 func (kubev3eh *KubeV3EventHandler) DeleteService(event *types2.ServiceEvent) {
 	klog.Infof("Kube v3 event handler: Deleting a service: %s", event.Service)
+	metrics.DeletedServiceCounter.Inc()
+
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		err := kubev3eh.delete(&v1.ServiceMeshEntry{
 			ObjectMeta: metav1.ObjectMeta{
@@ -211,14 +221,19 @@ func (kubev3eh *KubeV3EventHandler) delete(sme *v1.ServiceMeshEntry) error {
 
 // AddConfigEntry ...
 func (kubev3eh *KubeV3EventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
-	klog.Infof("Kube v3 event handler: adding a configuration\n%v\n", e.Path)
+	klog.Infof("Kube v3 event handler: adding a configuration: %s", e.Path)
+	metrics.AddedConfigurationCounter.Inc()
 	// Adding a new configuration for a service is same as changing it.
 	kubev3eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
 // ChangeConfigEntry ...
 func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
-	klog.Infof("Kube v3 event handler: change a configuration: %s", e.Path)
+	klog.Infof("Kube v3 event handler: changing a configuration: %s", e.Path)
+	metrics.ChangedConfigurationCounter.Inc()
+	timer := prometheus.NewTimer(metrics.ChangingConfigurationHistogram)
+	defer timer.ObserveDuration()
+
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
 		sme, err := kubev3eh.get(&v1.ServiceMeshEntry{
@@ -249,7 +264,9 @@ func (kubev3eh *KubeV3EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cac
 
 // DeleteConfigEntry ...
 func (kubev3eh *KubeV3EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
-	klog.Infof("Kube v3 event handler: delete a configuration\n%v", e.Path)
+	klog.Infof("Kube v3 event handler: deleting a configuration\n%s", e.Path)
+	metrics.DeletedConfigurationCounter.Inc()
+
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// an example for the path: /dubbo/config/dubbo/com.foo.mesh.test.Demo.configurators
 		// Usually deleting event don't include the configuration data, so that we should

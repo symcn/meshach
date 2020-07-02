@@ -4,11 +4,14 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"github.com/mesh-operator/pkg/adapter/component"
 	"github.com/mesh-operator/pkg/adapter/configcenter"
+	"github.com/mesh-operator/pkg/adapter/constant"
 	"github.com/mesh-operator/pkg/adapter/handler"
 	"github.com/mesh-operator/pkg/adapter/options"
 	"github.com/mesh-operator/pkg/adapter/registry"
 	"github.com/mesh-operator/pkg/adapter/types"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog"
+	"net/http"
 )
 
 // Adapter ...
@@ -52,18 +55,28 @@ func NewAdapter(opt *options.Option) (*Adapter, error) {
 	return adapter, nil
 }
 
-// Start an adapter which is used for synchronizing services and instances to kubernetes cluster.
+// Start start an adapter which is used for synchronizing services and instances to kubernetes cluster.
 func (a *Adapter) Start(stop <-chan struct{}) error {
 	klog.Info("start adapter")
+
+	// Start registry client
 	if err := a.registryClient.Start(); err != nil {
 		klog.Errorf("Start a registry center's client has an error: %v", err)
 		return err
 	}
+	klog.Info("Registry client started.")
 
+	// Start configuration client
 	if err := a.configClient.Start(); err != nil {
 		klog.Errorf("Start a configuration center's client has an error: %v", err)
 		return err
 	}
+	klog.Info("Configuration client started.")
+
+	// Prometheus HTTP server
+	http.Handle("/metrics", promhttp.Handler())
+	go http.ListenAndServe(constant.PromHttpPort, nil)
+	klog.Infof("Started prometheus HTTP server on port: %s", constant.PromHttpPort)
 
 	for {
 		select {
