@@ -47,4 +47,12 @@ var (
 		Help:    "The latency of changing configuration",
 		Buckets: []float64{0.01, 0.1, 0.5, 1, 5, 10},
 	})
+
+	PathCacheLengthGauge = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "mesh_adapter_path_cache_gauge",
+			Help: "The size of path cache",
+		},
+		[]string{"path"},
+	)
 )
