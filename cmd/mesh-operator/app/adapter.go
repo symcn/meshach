@@ -47,12 +47,13 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Registry.Address,
 		"raddr",
+		//"r",
 		opt.Registry.Address,
 		"address for registry center, e.g. zk: 127.0.0.1:2181")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Registry.Timeout,
-		"rtimeout",
+		"rto",
 		opt.Registry.Timeout,
 		"the zookeeper session timeout second for registry")
 
@@ -64,7 +65,7 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Configuration.Timeout,
-		"ctimeout",
+		"--cto",
 		opt.Configuration.Timeout,
 		"the zookeeper session timeout second for configuration center")
 

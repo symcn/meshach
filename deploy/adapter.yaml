@@ -20,9 +20,9 @@ spec:
           imagePullPolicy: Always
           args:
           - "adapter"
-          - "-raddr"
+          - "--raddr"
           - "127.0.0.1:2181"
-          - "-caddr"
+          - "--caddr"
           - "127.0.0.1:2181"
           - "-v"
           - "4"
