@@ -26,17 +26,16 @@ import (
 
 // NewAdapterCmd ...
 func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
-	opt := options.DefaultOption()
-	opt.EventHandlers.Kubeconfig = ropt.Kubeconfig
-	opt.EventHandlers.ConfigContext = ropt.ConfigContext
 
+	opt := options.DefaultOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
 		Aliases: []string{"adapter"},
 		Short:   "Adapters configured for different registry center",
 		Run: func(cmd *cobra.Command, args []string) {
 			PrintFlags(cmd.Flags())
-
+			opt.EventHandlers.Kubeconfig = ropt.Kubeconfig
+			opt.EventHandlers.ConfigContext = ropt.ConfigContext
 			_, err := adapter.NewAdapter(opt)
 			if err != nil {
 				klog.Fatalf("unable to NewAdapter err: %v", err)
