@@ -160,7 +160,10 @@ func convertEventToSme(s *types2.Service) *v1.ServiceMeshEntry {
 		ins := &v1.Instance{}
 		ins.Host = utils.RemovePort(i.Host)
 		ins.Port = convertPort(i.Port)
-		ins.Labels = i.Labels
+		ins.Labels = make(map[string]string)
+		for k, v := range i.Labels {
+			ins.Labels[k] = v
+		}
 		ins.Labels[constant.InstanceLabelZoneName] = constant.ZoneValue
 		instances = append(instances, ins)
 	}
