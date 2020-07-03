@@ -20,9 +20,9 @@ package app
 import (
 	"flag"
 
-	"github.com/mesh-operator/pkg/option"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 )
 

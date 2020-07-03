@@ -3,19 +3,22 @@ package handler
 import (
 	"context"
 	"fmt"
-	types2 "github.com/mesh-operator/pkg/adapter/types"
+	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	"strings"
 
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/utils"
-	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
+	"github.com/symcn/mesh-operator/pkg/adapter/utils"
+	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 )
 
-var defaultNamespace = "sym-admin"
+var (
+	defaultNamespace = "sym-admin"
+	clusterName      = ""
+)
 
 // KubeEventHandler it used for synchronizing the component which has been send by the adapter client
 // to a kubernetes cluster which has an istio controller there.

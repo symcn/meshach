@@ -1,6 +1,6 @@
 .PHONY: build deploy
 
-VERSION ?= v0.0.1
+VERSION ?= v0.0.2
 # Image URL to use all building/pushing image targets
 IMG_ADDR ?= symcn.tencentcloudcr.com/symcn/mesh-operator
 
@@ -50,7 +50,7 @@ test: set-goproxy fmt vet
 	go test -v -race -cover ./...
 
 test-controller:
-	go test -v -cover github.com/mesh-operator/pkg/controller/...
+	go test -v -cover github.com/symcn/mesh-operator/pkg/controller/...
 
 # Run go fmt against code
 fmt:

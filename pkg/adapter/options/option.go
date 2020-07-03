@@ -45,10 +45,12 @@ func DefaultOption() *Option {
 		},
 		Registry: Registry{
 			Type:    "zk",
+			Address: []string{"127.0.0.1:2181"},
 			Timeout: 15,
 		},
 		Configuration: Configuration{
 			Type:    "zk",
+			Address: []string{"127.0.0.1:2181"},
 			Timeout: 15,
 		},
 	}

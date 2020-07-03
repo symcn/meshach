@@ -5,15 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/options"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 
-	_ "github.com/mesh-operator/pkg/adapter/configcenter/zk"
-	_ "github.com/mesh-operator/pkg/adapter/registry/zk"
+	_ "github.com/symcn/mesh-operator/pkg/adapter/configcenter/zk"
+	_ "github.com/symcn/mesh-operator/pkg/adapter/registry/zk"
 )
 
 func Test_Start(t *testing.T) {
@@ -52,25 +51,7 @@ func Test_Start(t *testing.T) {
 	//	os.Exit(1)
 	//}
 
-	opt := options.Option{
-		EventHandlers: options.EventHandlers{
-			EnableK8s:        true,
-			Kubeconfig:       "",
-			ConfigContext:    "",
-			ClusterNamespace: "sym-admin",
-			ClusterOwner:     "sym-admin",
-		},
-		Registry: options.Registry{
-			Type:    "zk",
-			Address: constant.ZkServers,
-			Timeout: 5 * 1000,
-		},
-		Configuration: options.Configuration{
-			Type:    "zk",
-			Address: constant.ZkServers,
-			Timeout: 5 * 1000,
-		},
-	}
+	opt := options.DefaultOption()
 
 	//kubeCli, err := kubernetes.NewForConfig(cfg)
 	//opt.MasterCli = k8smanager.MasterClient{
@@ -83,7 +64,7 @@ func Test_Start(t *testing.T) {
 	//clusters := k8smanager.ClusterManager.GetAll("")
 	//fmt.Sprintf("Start an adaptor has an error: %v\n", clusters)
 
-	adapter, err := NewAdapter(&opt)
+	adapter, err := NewAdapter(opt)
 	if err != nil {
 		klog.Errorf("Create an adapter has an error: %v\n", err)
 		return

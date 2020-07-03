@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	"github.com/mesh-operator/pkg/option"
+	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/symcn/mesh-operator/pkg/option"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -18,6 +18,8 @@
 package zookeeper
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"path"
 	"strings"
 
@@ -153,6 +155,9 @@ func (p *PathCache) watchAndAddChildren() error {
 			go p.addChild(fp)
 		}
 	}
+
+	metrics.PathCacheLengthGauge.With(prometheus.Labels{"path": p.Path}).Set(float64(len(p.Cached)))
+
 	return nil
 }
 
@@ -179,6 +184,9 @@ func (p *PathCache) watchChildren() error {
 		Paths:     children,
 	}
 	go p.notify(event)
+
+	metrics.PathCacheLengthGauge.With(prometheus.Labels{"path": p.Path}).Set(float64(len(p.Cached)))
+
 	return nil
 }
 

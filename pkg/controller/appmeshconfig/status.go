@@ -3,7 +3,7 @@ package appmeshconfig
 import (
 	"context"
 
-	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

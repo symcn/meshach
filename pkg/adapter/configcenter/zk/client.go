@@ -3,13 +3,13 @@ package zk
 import (
 	"fmt"
 	"github.com/ghodss/yaml"
-	"github.com/mesh-operator/pkg/adapter/component"
-	"github.com/mesh-operator/pkg/adapter/configcenter"
-	"github.com/mesh-operator/pkg/adapter/options"
-	"github.com/mesh-operator/pkg/adapter/types"
-	"github.com/mesh-operator/pkg/adapter/utils"
-	"github.com/mesh-operator/pkg/adapter/zookeeper"
 	zkClient "github.com/samuel/go-zookeeper/zk"
+	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/mesh-operator/pkg/adapter/utils"
+	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
 	"k8s.io/klog"
 	"time"
 )
@@ -100,7 +100,7 @@ func (cc *ConfigClient) eventLoop() {
 			config := &types.ConfiguratorConfig{}
 			err := yaml.Unmarshal([]byte(data), config)
 			if err != nil {
-				fmt.Printf("Parsing the configuration data to a defined struct has an error: %v\n", err)
+				klog.Errorf("Parsing the configuration data to a defined struct has an error: %v", err)
 				continue
 			}
 			cc.configEntries[config.Key] = config
@@ -122,7 +122,7 @@ func (cc *ConfigClient) eventLoop() {
 			go cc.notify(ce)
 			break
 		default:
-			fmt.Printf("can not support event type yet: %v\n", event.EventType)
+			klog.Warningf("can not support event type yet: %v", event.EventType)
 		}
 	}
 }
@@ -135,11 +135,11 @@ func (cc *ConfigClient) Events() <-chan *types.ConfigEvent {
 func (cc *ConfigClient) getData(path string) []byte {
 	data, _, err := cc.conn.Get(path)
 	if err != nil {
-		fmt.Printf("Get data with path %s has an error: %v\n", path, err)
+		klog.Errorf("Get data with path %s has an error: %v", path, err)
 		return data
 	}
 
-	//fmt.Printf("Get data with path %s: \n%v\n", path, data)
+	// klog.Infof("Get data with path %s: \n%v", path, data)
 	return data
 }
 

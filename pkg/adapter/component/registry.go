@@ -1,6 +1,6 @@
 package component
 
-import "github.com/mesh-operator/pkg/adapter/types"
+import "github.com/symcn/mesh-operator/pkg/adapter/types"
 
 type Registry interface {
 	Start() error

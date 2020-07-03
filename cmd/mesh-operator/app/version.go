@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mesh-operator/pkg/version"
 	"github.com/spf13/cobra"
+	"github.com/symcn/mesh-operator/pkg/version"
 )
 
 // NewCmdVersion returns a cobra command for fetching versions

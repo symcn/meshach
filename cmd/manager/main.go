@@ -13,10 +13,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"github.com/mesh-operator/pkg/apis"
-	"github.com/mesh-operator/pkg/controller"
-	"github.com/mesh-operator/pkg/option"
-	"github.com/mesh-operator/version"
+	"github.com/symcn/mesh-operator/pkg/apis"
+	"github.com/symcn/mesh-operator/pkg/controller"
+	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/mesh-operator/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"

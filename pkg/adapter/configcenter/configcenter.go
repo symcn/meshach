@@ -3,8 +3,8 @@ package configcenter
 import (
 	"fmt"
 
-	"github.com/mesh-operator/pkg/adapter/component"
-	"github.com/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"k8s.io/klog"
 )
 

@@ -1,7 +1,7 @@
 package apis
 
 import (
-	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 )
 
 func init() {

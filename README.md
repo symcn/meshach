@@ -12,7 +12,7 @@ What are our tasks?
 
 ```shell
 ➜ make test-controller
-go test -v -cover github.com/mesh-operator/pkg/controller/appmeshconfig
+go test -v -cover github.com/symcn/mesh-operator/pkg/controller/appmeshconfig
 === RUN   TestReconcileAppMeshConfig_Reconcile
 === RUN   TestReconcileAppMeshConfig_Reconcile/test-amc-reconcile-no-service-ok
 I0618 14:32:33.097190   29000 controller.go:138] Reconciling AppMeshConfig: sym-test/amc-test-case
@@ -130,5 +130,5 @@ I0618 14:32:33.107309   29000 workloadentry.go:92] Delete unused WorkloadEntry: 
     --- PASS: TestReconcileAppMeshConfig_reconcileWorkloadEntry/test-reconcile-workloadentry-delete-ok (0.00s)
 PASS
 coverage: 72.7% of statements
-ok  	github.com/mesh-operator/pkg/controller/appmeshconfig	0.059s	coverage: 72.7% of statements
+ok  	github.com/symcn/mesh-operator/pkg/controller/appmeshconfig	0.059s	coverage: 72.7% of statements
 ```
