@@ -31,40 +31,46 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "adapter",
 		Aliases: []string{"adapter"},
-		Short:   "adapters is used for synchronizing services & instances from these different registry center and configuration center",
+		Short:   "The adapters is used for synchronizing services & instances from these different registry center and configuration center",
 		Run: func(cmd *cobra.Command, args []string) {
 			PrintFlags(cmd.Flags())
 			opt.EventHandlers.Kubeconfig = ropt.Kubeconfig
 			opt.EventHandlers.ConfigContext = ropt.ConfigContext
-			_, err := adapter.NewAdapter(opt)
+			a, err := adapter.NewAdapter(opt)
 			if err != nil {
 				klog.Fatalf("unable to NewAdapter err: %v", err)
+				return
+			}
+			stopCh := make(chan struct{})
+			if err = a.Start(stopCh); err != nil {
+				klog.Fatalf("unable to start the adapter, err: %v", err)
+				return
 			}
 		},
 	}
 
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Registry.Address,
-		"raddr",
+		"registry_addr",
 		//"r",
 		opt.Registry.Address,
 		"address for registry center, e.g. zk: 127.0.0.1:2181")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Registry.Timeout,
-		"rto",
+		"registry_timeout",
 		opt.Registry.Timeout,
 		"the zookeeper session timeout second for registry")
 
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Configuration.Address,
-		"caddr",
+		"config_center_addr",
 		opt.Configuration.Address,
 		"address for configuration center, e.g. zk: 127.0.0.1:2181")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Configuration.Timeout,
-		"--cto",
+		"config_center_timeout",
 		opt.Configuration.Timeout,
 		"the zookeeper session timeout second for configuration center")
 
