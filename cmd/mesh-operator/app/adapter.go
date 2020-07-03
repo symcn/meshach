@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/symcn/mesh-operator/pkg/adapter"
 	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 )
@@ -41,7 +42,8 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 				klog.Fatalf("unable to NewAdapter err: %v", err)
 				return
 			}
-			stopCh := make(chan struct{})
+
+			stopCh := utils.SetupSignalHandler()
 			if err = a.Start(stopCh); err != nil {
 				klog.Fatalf("unable to start the adapter, err: %v", err)
 				return
