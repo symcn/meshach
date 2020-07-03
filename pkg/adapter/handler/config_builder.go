@@ -5,10 +5,10 @@ import (
 	"strconv"
 
 	"github.com/ghodss/yaml"
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/types"
-	"github.com/mesh-operator/pkg/adapter/utils"
-	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
+	"github.com/symcn/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/mesh-operator/pkg/adapter/utils"
+	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	"k8s.io/klog"
 )
 

@@ -2,10 +2,10 @@
 package controller
 
 import (
-	"github.com/mesh-operator/pkg/controller/istioconfig"
-	"github.com/mesh-operator/pkg/controller/meshconfig"
-	"github.com/mesh-operator/pkg/controller/servicemeshentry"
-	"github.com/mesh-operator/pkg/option"
+	"github.com/symcn/mesh-operator/pkg/controller/istioconfig"
+	"github.com/symcn/mesh-operator/pkg/controller/meshconfig"
+	"github.com/symcn/mesh-operator/pkg/controller/servicemeshentry"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 

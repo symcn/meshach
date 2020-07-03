@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	utils "github.com/mesh-operator/pkg/utils"
+	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	utils "github.com/symcn/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"

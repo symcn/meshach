@@ -2,14 +2,14 @@ package adapter
 
 import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
-	"github.com/mesh-operator/pkg/adapter/component"
-	"github.com/mesh-operator/pkg/adapter/configcenter"
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/handler"
-	"github.com/mesh-operator/pkg/adapter/options"
-	"github.com/mesh-operator/pkg/adapter/registry"
-	"github.com/mesh-operator/pkg/adapter/types"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
+	"github.com/symcn/mesh-operator/pkg/adapter/handler"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/adapter/registry"
+	"github.com/symcn/mesh-operator/pkg/adapter/types"
 	"k8s.io/klog"
 	"net/http"
 )

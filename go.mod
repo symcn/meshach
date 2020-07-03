@@ -1,4 +1,4 @@
-module github.com/mesh-operator
+module github.com/symcn/mesh-operator
 
 go 1.13
 

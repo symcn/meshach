@@ -1,8 +1,8 @@
 package option
 
 import (
-	k8sclient "github.com/mesh-operator/pkg/k8s/client"
 	"github.com/pkg/errors"
+	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

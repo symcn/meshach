@@ -3,17 +3,17 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
 
-	"github.com/mesh-operator/pkg/adapter/component"
-	"github.com/mesh-operator/pkg/adapter/constant"
-	types2 "github.com/mesh-operator/pkg/adapter/types"
-	"github.com/mesh-operator/pkg/adapter/utils"
-	v1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
+	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
+	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/mesh-operator/pkg/adapter/utils"
+	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -30,16 +30,10 @@ type KubeV3EventHandler struct {
 
 // NewKubeV3EventHandler ...
 func NewKubeV3EventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
-	mc := &v1.MeshConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "sym-meshconfig",
-			Namespace: defaultNamespace,
-		},
-	}
-
+	mc := &v1.MeshConfig{}
 	err := k8sMgr.MasterClient.GetClient().Get(context.Background(), types.NamespacedName{
-		Namespace: mc.Namespace,
-		Name:      mc.Name,
+		Name:      "sym-meshconfig",
+		Namespace: defaultNamespace,
 	}, mc)
 
 	if err != nil {

@@ -17,10 +17,10 @@ limitations under the License.
 package app
 
 import (
-	"github.com/mesh-operator/pkg/adapter"
-	"github.com/mesh-operator/pkg/adapter/options"
-	"github.com/mesh-operator/pkg/option"
 	"github.com/spf13/cobra"
+	"github.com/symcn/mesh-operator/pkg/adapter"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 )
 
@@ -31,7 +31,7 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "adapter",
 		Aliases: []string{"adapter"},
-		Short:   "Adapters configured for different registry center",
+		Short:   "adapters is used for synchronizing services & instances from these different registry center and configuration center",
 		Run: func(cmd *cobra.Command, args []string) {
 			PrintFlags(cmd.Flags())
 			opt.EventHandlers.Kubeconfig = ropt.Kubeconfig

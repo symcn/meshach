@@ -18,8 +18,8 @@
 package zookeeper
 
 import (
-	"github.com/mesh-operator/pkg/adapter/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"path"
 	"strings"
 

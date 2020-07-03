@@ -2,18 +2,18 @@ package zk
 
 import (
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/mesh-operator/pkg/adapter/types"
 	"net/url"
 	"path"
 	"strings"
 	"time"
 
-	"github.com/mesh-operator/pkg/adapter/component"
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/options"
-	"github.com/mesh-operator/pkg/adapter/registry"
-	"github.com/mesh-operator/pkg/adapter/zookeeper"
 	zkClient "github.com/samuel/go-zookeeper/zk"
+	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/adapter/registry"
+	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
 	"k8s.io/klog"
 )
 

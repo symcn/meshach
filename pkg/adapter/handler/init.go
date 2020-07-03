@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"github.com/mesh-operator/pkg/adapter/component"
-	"github.com/mesh-operator/pkg/adapter/options"
-	k8sclient "github.com/mesh-operator/pkg/k8s/client"
-	k8smanager "github.com/mesh-operator/pkg/k8s/manager"
+	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
+	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"

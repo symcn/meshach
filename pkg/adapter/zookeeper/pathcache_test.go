@@ -2,9 +2,9 @@ package zookeeper
 
 import (
 	"fmt"
-	"github.com/mesh-operator/pkg/adapter/constant"
 	zkClient "github.com/samuel/go-zookeeper/zk"
 	"github.com/stretchr/testify/assert"
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	"k8s.io/klog"
 	"testing"
 	"time"

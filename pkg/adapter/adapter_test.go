@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mesh-operator/pkg/adapter/constant"
-	"github.com/mesh-operator/pkg/adapter/options"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
+	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 
-	_ "github.com/mesh-operator/pkg/adapter/configcenter/zk"
-	_ "github.com/mesh-operator/pkg/adapter/registry/zk"
+	_ "github.com/symcn/mesh-operator/pkg/adapter/configcenter/zk"
+	_ "github.com/symcn/mesh-operator/pkg/adapter/registry/zk"
 )
 
 func Test_Start(t *testing.T) {

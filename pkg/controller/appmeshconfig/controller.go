@@ -20,8 +20,8 @@ package appmeshconfig
 import (
 	"context"
 
-	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	"github.com/mesh-operator/pkg/option"
+	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/symcn/mesh-operator/pkg/option"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

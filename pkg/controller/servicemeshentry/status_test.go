@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	meshv1 "github.com/mesh-operator/pkg/apis/mesh/v1"
-	"github.com/mesh-operator/pkg/option"
+	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
