@@ -24,3 +24,7 @@ var (
 	ZoneValue             = "gz01"
 	DefaultConfigName     = "DEFAULT_SERVICE"
 )
+
+var (
+	PromHttpPort = ":8315"
+)

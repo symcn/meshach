@@ -15,7 +15,10 @@ import (
 	"k8s.io/klog"
 )
 
-var defaultNamespace = "sym-admin"
+var (
+	defaultNamespace = "sym-admin"
+	clusterName      = ""
+)
 
 // KubeEventHandler it used for synchronizing the component which has been send by the adapter client
 // to a kubernetes cluster which has an istio controller there.
