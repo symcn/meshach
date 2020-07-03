@@ -39,6 +39,7 @@ func Init(opt options.EventHandlers) ([]component.EventHandler, error) {
 			// Port:               9443,
 			SyncPeriod: &rp,
 		})
+
 		if err != nil {
 			klog.Fatalf("unable to create a manager, err: %v", err)
 		}
@@ -76,13 +77,13 @@ func Init(opt options.EventHandlers) ([]component.EventHandler, error) {
 				klog.Fatalf("problem start running manager err: %v", err)
 			}
 		}()
+		for !mgr.GetCache().WaitForCacheSync(stopCh) {
+			klog.Warningf("Waiting for caching objects to informer")
+			time.Sleep(5 * time.Second)
+		}
+		klog.Infof("caching objects to informer is successful")
 
-		// add kube v2 handler
-		//kubeh, err := NewKubeV2EventHandler(k8sMgr)
-		//if err != nil {
-		//	return nil, err
-		//}
-		// add kube v2 handler
+		// initializing the handlers that you decide to utilize
 		kubeh, err := NewKubeV3EventHandler(k8sMgr)
 		if err != nil {
 			return nil, err
