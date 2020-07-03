@@ -50,7 +50,7 @@ func DefaultOption() *Option {
 		},
 		Configuration: Configuration{
 			Type:    "zk",
-			Address: []string{"127.0.0.1:2181"},
+			Address: []string{},
 			Timeout: 15,
 		},
 	}

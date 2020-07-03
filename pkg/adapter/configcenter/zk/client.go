@@ -2,6 +2,8 @@ package zk
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ghodss/yaml"
 	zkClient "github.com/samuel/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -11,7 +13,6 @@ import (
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
 	"k8s.io/klog"
-	"time"
 )
 
 func init() {
@@ -26,15 +27,17 @@ type ConfigClient struct {
 }
 
 func New(opt options.Configuration) (component.ConfigurationCenter, error) {
-	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
-	if err != nil {
-		klog.Errorf("Get zookeeper client has an error: %v", err)
-	}
+	var conn *zkClient.Conn
+	if len(opt.Address) > 0 {
+		conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+		if err != nil {
+			klog.Errorf("Get zookeeper client has an error: %v", err)
+		}
 
-	if err != nil || conn == nil {
-		return nil, fmt.Errorf("get zookeeper client fail or client is nil, err:%+v", err)
+		if err != nil || conn == nil {
+			return nil, fmt.Errorf("get zookeeper client fail or client is nil, err:%+v", err)
+		}
 	}
-
 	return &ConfigClient{
 		conn:          conn,
 		out:           make(chan *types.ConfigEvent),
@@ -47,12 +50,14 @@ func (cc *ConfigClient) Start() error {
 	// Initializing a configuration for the service without a configurator
 	// cc.configEntries[constant.DefaultConfigName] = defaultConfig
 
-	rpc, err := zookeeper.NewPathCache(cc.conn, zookeeper.ConfiguratorPath, "CONFIGURATION", true)
-	if err != nil {
-		return err
+	if cc.conn != nil {
+		rpc, err := zookeeper.NewPathCache(cc.conn, zookeeper.ConfiguratorPath, "CONFIGURATION", true)
+		if err != nil {
+			return err
+		}
+		cc.rootPathCache = rpc
+		go cc.eventLoop()
 	}
-	cc.rootPathCache = rpc
-	go cc.eventLoop()
 
 	// FIXME just for debug
 	var enablePrint = false
