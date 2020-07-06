@@ -16,7 +16,7 @@ What are our tasks?
 Using Docker unified compilation(with version information):
 
 ```shell
-$ make docker build
+$ make docker-build
 ```
 
 Direct compilation:
