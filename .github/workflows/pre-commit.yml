@@ -9,6 +9,16 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.13
+      id: go
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
+    - name: Install pre-commit dependence
+      run: |
+        go get -u golang.org/x/lint/golint
+        GO111MODULE=on go get -v -u github.com/go-critic/go-critic/cmd/gocritic
+        GO111MODULE=on CGO_ENABLED=0 go get -v -trimpath -ldflags '-s -w' github.com/golangci/golangci-lint/cmd/golangci-lint
     - uses: pre-commit/action@v2.0.0
