@@ -28,22 +28,29 @@ type ConfigClient struct {
 
 func New(opt options.Configuration) (component.ConfigurationCenter, error) {
 	var conn *zkClient.Conn
+	// Arguments has been supplied, we will initializing a client for synchronizing with config center
 	if len(opt.Address) > 0 {
-		conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
+		var err error
+		conn, _, err = zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 		if err != nil {
-			klog.Errorf("Get zookeeper client has an error: %v", err)
+			klog.Errorf("Creating zookeeper client has an error: %v", err)
+			return nil, fmt.Errorf("creating zookeeper client has en error: %+v", err)
 		}
 
-		if err != nil || conn == nil {
-			return nil, fmt.Errorf("get zookeeper client fail or client is nil, err:%+v", err)
-		}
+		return &ConfigClient{
+			conn:          conn,
+			out:           make(chan *types.ConfigEvent),
+			configEntries: make(map[string]*types.ConfiguratorConfig),
+			rootPathCache: nil,
+		}, nil
+	} else {
+		klog.Warningf("The command arguments of config center hasn't been supplied yet, skipping to initialize it.")
+		return &ConfigClient{
+			conn:          nil,
+			rootPathCache: nil,
+		}, nil
 	}
-	return &ConfigClient{
-		conn:          conn,
-		out:           make(chan *types.ConfigEvent),
-		configEntries: make(map[string]*types.ConfiguratorConfig),
-		rootPathCache: nil,
-	}, nil
+
 }
 
 func (cc *ConfigClient) Start() error {
@@ -57,6 +64,9 @@ func (cc *ConfigClient) Start() error {
 		}
 		cc.rootPathCache = rpc
 		go cc.eventLoop()
+	} else {
+		klog.Warningf("The connection of zookeeper is nil, skipping to start config center.")
+		return nil
 	}
 
 	// FIXME just for debug
