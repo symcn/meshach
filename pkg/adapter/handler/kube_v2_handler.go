@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
@@ -85,17 +86,18 @@ func (kubev2eh *KubeV2EventHandler) AddService(event *types2.ServiceEvent, confi
 			klog.Errorf("Can not find an existed amc CR: %v", err)
 			amc.Spec.AppName = appIdentifier
 			return kubev2eh.createAmc(amc)
-		} else {
-			return kubev2eh.updateAmc(amc)
 		}
+		return kubev2eh.updateAmc(amc)
 	})
 }
 
+// AddInstance ...
 func (kubev2eh *KubeV2EventHandler) AddInstance(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Adding an instance\n%v", event.Instance)
 	kubev2eh.AddService(event, configuratorFinder)
 }
 
+// ReplaceInstances ...
 func (kubev2eh *KubeV2EventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Kube v2 event handler: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 	kubev2eh.AddService(event, configuratorFinder)
@@ -120,27 +122,27 @@ func (kubev2eh *KubeV2EventHandler) DeleteService(event *types2.ServiceEvent) {
 		if err != nil {
 			fmt.Println("amc CR can not be found, ignore it")
 			return nil
-		} else {
-			if amc.Spec.Services != nil && len(amc.Spec.Services) > 0 {
-				for i, s := range amc.Spec.Services {
-					if s.Name == event.Service.Name {
-						result := utils.DeleteInSlice(amc.Spec.Services, i)
-						amc.Spec.Services = result.([]*v1.Service)
-						break
-						// TODO break? Can I assume there is no duplicate services belongs to a same amc?
-					}
-				}
-
-				if len(amc.Spec.Services) == 0 {
-					amc.Spec.Services = nil
-				}
-
-				return kubev2eh.updateAmc(amc)
-			} else {
-				fmt.Println("The services list belongs to this amc CR is empty, ignore it")
-				return nil
-			}
 		}
+
+		if amc.Spec.Services != nil && len(amc.Spec.Services) > 0 {
+			for i, s := range amc.Spec.Services {
+				if s.Name == event.Service.Name {
+					result := utils.DeleteInSlice(amc.Spec.Services, i)
+					amc.Spec.Services = result.([]*v1.Service)
+					break
+					// TODO break? Can I assume there is no duplicate services belongs to a same amc?
+				}
+			}
+
+			if len(amc.Spec.Services) == 0 {
+				amc.Spec.Services = nil
+			}
+
+			return kubev2eh.updateAmc(amc)
+		}
+
+		fmt.Println("The services list belongs to this amc CR is empty, ignore it")
+		return nil
 	})
 }
 
@@ -299,14 +301,14 @@ func (kubev2eh KubeV2EventHandler) findAmc(appIdentifier string) (*v1.AppMeshCon
 	return amc, nil
 }
 
-// AddConfigEntry
+// AddConfigEntry ...
 func (kubev2eh *KubeV2EventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v2 event handler: adding a configuration\n%v", e.Path)
 	// Adding a new configuration for a service is same as changing it.
 	kubev2eh.ChangeConfigEntry(e, cachedServiceFinder)
 }
 
-// ChangeConfigEntry
+// ChangeConfigEntry ...
 func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v2 event handler: change a configuration\n%v", e.Path)
 
@@ -340,7 +342,7 @@ func (kubev2eh *KubeV2EventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cac
 	})
 }
 
-// DeleteConfigEntry
+// DeleteConfigEntry ...
 func (kubev2eh *KubeV2EventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube v2 event handler: delete a configuration\n%v", e.Path)
 

@@ -14,6 +14,7 @@ var (
 	configInstance = make(map[string]constructor)
 )
 
+// Registry ...
 func Registry(typ string, f constructor) {
 	if _, ok := configInstance[typ]; ok {
 		klog.Fatalln("repeat registry [config center instance]: %s", typ)
@@ -21,6 +22,7 @@ func Registry(typ string, f constructor) {
 	configInstance[typ] = f
 }
 
+// GetRegistry ...
 func GetRegistry(opt options.Configuration) (component.ConfigurationCenter, error) {
 	if f, ok := configInstance[opt.Type]; ok {
 		return f(opt)

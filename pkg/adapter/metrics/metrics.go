@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+// promauto
 var (
 	SynchronizedServiceCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "mesh_adapter_syn_service_total",

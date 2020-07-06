@@ -19,6 +19,7 @@ func init() {
 	configcenter.Registry("zk", New)
 }
 
+// ConfigClient ...
 type ConfigClient struct {
 	conn          *zkClient.Conn
 	out           chan *types.ConfigEvent
@@ -26,6 +27,7 @@ type ConfigClient struct {
 	rootPathCache *zookeeper.PathCache
 }
 
+// New ...
 func New(opt options.Configuration) (component.ConfigurationCenter, error) {
 	var conn *zkClient.Conn
 	// Arguments has been supplied, we will initializing a client for synchronizing with config center
@@ -53,6 +55,7 @@ func New(opt options.Configuration) (component.ConfigurationCenter, error) {
 
 }
 
+// Start ...
 func (cc *ConfigClient) Start() error {
 	// Initializing a configuration for the service without a configurator
 	// cc.configEntries[constant.DefaultConfigName] = defaultConfig
@@ -142,6 +145,7 @@ func (cc *ConfigClient) eventLoop() {
 	}
 }
 
+// Events ...
 func (cc *ConfigClient) Events() <-chan *types.ConfigEvent {
 	return cc.out
 }
@@ -158,12 +162,13 @@ func (cc *ConfigClient) getData(path string) []byte {
 	return data
 }
 
-// Find the configurator from the caches for this service,
+// FindConfiguratorConfig find the configurator from the caches for this service,
 // return a nil value if there is no result matches this service.
 func (cc *ConfigClient) FindConfiguratorConfig(serviceName string) *types.ConfiguratorConfig {
 	return cc.configEntries[serviceName]
 }
 
+// Stop ...
 func (cc *ConfigClient) Stop() error {
 	return nil
 }

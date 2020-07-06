@@ -1,11 +1,12 @@
 package nacos
 
 import (
+	"sync"
+
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sync"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 )
 var log = logf.Log.WithName("nacos")
 
+// NewClient ...
 func NewClient() (naming_client.INamingClient, error) {
 	var err error
 	lock.Lock()

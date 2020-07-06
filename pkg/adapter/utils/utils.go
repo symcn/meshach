@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// deleteInSlice Delete an element from a Slice with an index.
+// DeleteInSlice delete an element from a Slice with an index.
 // return the original parameter as the result instead if it is not a slice.
 func DeleteInSlice(s interface{}, index int) interface{} {
 	value := reflect.ValueOf(s)
@@ -17,13 +17,13 @@ func DeleteInSlice(s interface{}, index int) interface{} {
 		//|| value.Kind() == reflect.Array {
 		result := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, value.Len()))
 		return result.Interface()
-	} else {
-		fmt.Printf("Only a slice can be passed into this method for deleting an element of it.")
-		return s
 	}
+
+	fmt.Printf("Only a slice can be passed into this method for deleting an element of it.")
+	return s
 }
 
-// Removing the port part of a service name is necessary due to istio requirement.
+// RemovePort removing the port part of a service name is necessary due to istio requirement.
 // 127.0.0.1:10000 -> 127.0.0.1
 func RemovePort(addressWithPort string) string {
 	host, _, err := net.SplitHostPort(addressWithPort)
@@ -35,25 +35,25 @@ func RemovePort(addressWithPort string) string {
 	return host
 }
 
-// resolveServiceName
+// ResolveServiceName ...
 // configuratorPath: e.g. /dubbo/config/dubbo/foo.configurators
 func ResolveServiceName(configuratorPath string) string {
 	return strings.Replace(path.Base(configuratorPath), ".configurators", "", 1)
 }
 
-// toInt32 Convert a string variable to integer with 32 bit size.
+// ToUint32 Convert a string variable to integer with 32 bit size.
 func ToUint32(portStr string) uint32 {
 	port, _ := strconv.ParseInt(portStr, 10, 32)
 	return uint32(port)
 }
 
-// toInt32 Convert a string variable to integer with 32 bit size.
+// ToInt32 Convert a string variable to integer with 32 bit size.
 func ToInt32(portStr string) int32 {
 	port, _ := strconv.ParseInt(portStr, 10, 32)
 	return int32(port)
 }
 
-// StandardizeServiceName
+// StandardizeServiceName ...
 func StandardizeServiceName(originName string) string {
 	return strings.ToLower(strings.ReplaceAll(originName, "-", "_"))
 }

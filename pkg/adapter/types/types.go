@@ -19,8 +19,10 @@ package types
 
 import "strconv"
 
+// ServiceEventType ...
 type ServiceEventType int
 
+// ServiceEvent ...
 type ServiceEvent struct {
 	EventType ServiceEventType
 	Service   *Service
@@ -28,11 +30,13 @@ type ServiceEvent struct {
 	Instances map[string]*Instance
 }
 
+// Port ...
 type Port struct {
 	Protocol string
 	Port     string
 }
 
+// Service ...
 type Service struct {
 	Name      string
 	Ports     []*Port
@@ -61,6 +65,7 @@ type Instance struct {
 	Labels  map[string]string
 }
 
+// Enumeration of ServiceEventType
 const (
 	ServiceAdded ServiceEventType = iota
 	ServiceDeleted
@@ -69,14 +74,17 @@ const (
 	ServiceInstancesReplace
 )
 
+// ConfigEventType ...
 type ConfigEventType int
 
+// Enumeration of ConfigEventType
 const (
 	ConfigEntryAdded ConfigEventType = iota
 	ConfigEntryDeleted
 	ConfigEntryChanged
 )
 
+// Portoi convert port to int
 func (p *Port) Portoi() int {
 	port, err := strconv.Atoi(p.Port)
 	if err != nil {
@@ -85,6 +93,7 @@ func (p *Port) Portoi() int {
 	return port
 }
 
+// AddPort ...
 func (s *Service) AddPort(port *Port) {
 	exist := false
 	for _, p := range s.Ports {
@@ -98,14 +107,17 @@ func (s *Service) AddPort(port *Port) {
 	}
 }
 
+// Hostname ...
 func (s *Service) Hostname() string {
 	return s.Name
 }
 
+// GetPorts ...
 func (s *Service) GetPorts() []*Port {
 	return s.Ports
 }
 
+// GetInstances ...
 func (s *Service) GetInstances() map[string]*Instance {
 	return s.Instances
 }
@@ -131,17 +143,20 @@ type ConfigItem struct {
 	Side              string            `yaml:"side"`
 }
 
+// ConfigEvent ...
 type ConfigEvent struct {
 	EventType   ConfigEventType
 	Path        string
 	ConfigEntry *ConfiguratorConfig
 }
 
-// just for customized setting
+// FlagConfigParameter just for customized setting
 type FlagConfigParameter struct {
 	Flags  []*Flag
 	Manual bool
 }
+
+// Flag ...
 type Flag struct {
 	Key    string
 	Weight int32

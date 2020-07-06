@@ -3,10 +3,10 @@ package handler
 import (
 	"context"
 	"fmt"
-	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	"strings"
 
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
+	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
@@ -27,6 +27,7 @@ type KubeEventHandler struct {
 	K8sMgr *k8smanager.ClusterManager
 }
 
+// Init ...
 func (kubeeh *KubeEventHandler) Init() {}
 
 // AddService ...
@@ -85,28 +86,27 @@ func (kubeeh *KubeEventHandler) DeleteService(se types2.ServiceEvent) {
 	if err != nil {
 		fmt.Println("amc CR can not be found, ignore it")
 		return
-	} else {
-		if amc.Spec.Services != nil && len(amc.Spec.Services) > 0 {
-			for i, s := range amc.Spec.Services {
-				if s.Name == se.Service.Name {
-					result := utils.DeleteInSlice(amc.Spec.Services, i)
-					amc.Spec.Services = result.([]*v1.Service)
-					break
-					// TODO break? Can I assume there is no duplicate services belongs to a same amc?
-				}
-			}
-
-			if len(amc.Spec.Services) == 0 {
-				amc.Spec.Services = nil
-			}
-
-			kubeeh.UpdateAmc(amc)
-		} else {
-			fmt.Println("The services list belongs to this amc CR is empty, ignore it")
-			return
-		}
 	}
 
+	if amc.Spec.Services != nil && len(amc.Spec.Services) > 0 {
+		for i, s := range amc.Spec.Services {
+			if s.Name == se.Service.Name {
+				result := utils.DeleteInSlice(amc.Spec.Services, i)
+				amc.Spec.Services = result.([]*v1.Service)
+				break
+				// TODO break? Can I assume there is no duplicate services belongs to a same amc?
+			}
+		}
+
+		if len(amc.Spec.Services) == 0 {
+			amc.Spec.Services = nil
+		}
+
+		kubeeh.UpdateAmc(amc)
+	}
+
+	fmt.Println("The services list belongs to this amc CR is empty, ignore it")
+	return
 }
 
 // AddInstance ...
@@ -422,7 +422,7 @@ func findValidInstance(e *types2.ServiceEvent) *types2.Instance {
 	return nil
 }
 
-// AddConfigEntry
+// AddConfigEntry ...
 func (kubeeh *KubeEventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube event handler: adding a configuration\n%v\n", e.Path)
 
@@ -450,6 +450,7 @@ func (kubeeh *KubeEventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServ
 
 }
 
+// ChangeConfigEntry ...
 func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube event handler: change a configuration\n%v\n", e.Path)
 
@@ -476,10 +477,12 @@ func (kubeeh *KubeEventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedS
 	}
 }
 
+// DeleteConfigEntry ...
 func (kubeeh *KubeEventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("Kube event handler: delete a configuration\n%v", e.Path)
 }
 
+// ReplaceInstances ...
 func (kubeeh *KubeEventHandler) ReplaceInstances(e types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
 	klog.Infof("Simple event handler: Replacing these instances\n%v", e.Instances)
 }

@@ -18,15 +18,16 @@
 package zookeeper
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"path"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/samuel/go-zookeeper/zk"
+	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"k8s.io/klog"
 )
 
+// Some default settings.
 var (
 	DubboRootPath    = "/dubbo"
 	ProvidersPath    = "providers"
@@ -34,8 +35,10 @@ var (
 	ConfiguratorPath = DubboRootPath + "/config/dubbo"
 )
 
+// PathCacheEventType ...
 type PathCacheEventType int
 
+// PathCache ...
 type PathCache struct {
 	conn           *zk.Conn
 	watchCh        chan zk.Event
@@ -48,12 +51,14 @@ type PathCache struct {
 	zkEventCounter int64
 }
 
+// PathCacheEvent ...
 type PathCacheEvent struct {
 	EventType PathCacheEventType
 	Path      string
 	Paths     []string
 }
 
+// Enumeration of PathCacheEventType
 const (
 	PathCacheEventAdded PathCacheEventType = iota
 	PathCacheEventDeleted
@@ -61,6 +66,7 @@ const (
 	PathCacheEventChildrenReplaced
 )
 
+// NewPathCache ...
 func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*PathCache, error) {
 	klog.Infof("Create a cache for path: [%s]", path)
 
@@ -105,10 +111,12 @@ func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*Pa
 	return p, nil
 }
 
+// Events ...
 func (p *PathCache) Events() <-chan PathCacheEvent {
 	return p.notifyCh
 }
 
+// Stop ...
 func (p *PathCache) Stop() {
 	go func() {
 		p.stopCh <- true
@@ -283,6 +291,7 @@ func (p *PathCache) forward(eventCh <-chan zk.Event) {
 	}
 }
 
+// Ignore ...
 func Ignore(path string) bool {
 	for _, v := range IgnoredHostNames {
 		if strings.EqualFold(v, path) {

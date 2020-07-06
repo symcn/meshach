@@ -15,11 +15,13 @@ import (
 type clientStreamCreator struct {
 }
 
+// EstablishResourceStream ...
 func (c *clientStreamCreator) EstablishResourceStream(ctx context.Context, opts ...grpc.CallOption) (mcp.ResourceSource_EstablishResourceStreamClient, error) {
 	handler := &Handler{}
 	return handler, nil
 }
 
+// NewClient ...
 func NewClient() (client *sink.Client, err error) {
 	_, cancel := context.WithCancel(context.Background())
 	defer func() {

@@ -1,3 +1,4 @@
+// Package debounce provides a debouncer func.
 package debounce
 
 import (
@@ -5,11 +6,12 @@ import (
 	"time"
 )
 
+// Request ...
 type Request interface {
 	Merge(Request) Request
 }
 
-// Package debounce provides a debouncer func.
+// Debounce ...
 type Debounce struct {
 	ch          chan Request
 	waitTime    time.Duration     // The duration it should wait when there is no request has been put.
@@ -17,6 +19,7 @@ type Debounce struct {
 	pushFn      func(req Request) // Debounced func
 }
 
+// New ...
 func New(waitTime, maxWaitTime time.Duration, pushFn func(req Request)) *Debounce {
 	d := &Debounce{
 		ch:          make(chan Request, 0),
@@ -93,11 +96,13 @@ func (d *Debounce) start() {
 
 }
 
+// Put ...
 func (d *Debounce) Put(req Request) {
 	fmt.Printf("Putting request:%v\n", req)
 	d.ch <- req
 }
 
+// Close ...
 func (d *Debounce) Close() {
 	close(d.ch)
 }

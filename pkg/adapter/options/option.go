@@ -7,18 +7,21 @@ type Option struct {
 	Configuration Configuration
 }
 
+// Registry ...
 type Registry struct {
 	Type    string
 	Address []string
 	Timeout int64
 }
 
+// Configuration ...
 type Configuration struct {
 	Type    string
 	Address []string
 	Timeout int64
 }
 
+// EventHandlers ...
 type EventHandlers struct {
 	// options for kubernetes
 	EnableK8s        bool

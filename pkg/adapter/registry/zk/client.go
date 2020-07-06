@@ -2,11 +2,12 @@ package zk
 
 import (
 	"fmt"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
 	"net/url"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/symcn/mesh-operator/pkg/adapter/types"
 
 	zkClient "github.com/samuel/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -21,6 +22,7 @@ func init() {
 	registry.Registry("zk", New)
 }
 
+// RegistryClient ...
 type RegistryClient struct {
 	conn     *zkClient.Conn
 	root     string
@@ -30,7 +32,7 @@ type RegistryClient struct {
 	pcaches  map[string]*zookeeper.PathCache
 }
 
-// NewClient Create a new client for zookeeper
+// New Create a new client for zookeeper
 func New(opt options.Registry) (component.Registry, error) {
 	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
@@ -102,11 +104,11 @@ func (c *RegistryClient) eventLoop() {
 					case zookeeper.PathCacheEventAdded:
 						c.addInstance(hostname, path.Base(event.Path))
 					case zookeeper.PathCacheEventChildrenReplaced:
-						var rawUrls []string
+						var rawURLs []string
 						for _, p := range event.Paths {
-							rawUrls = append(rawUrls, path.Base(p))
+							rawURLs = append(rawURLs, path.Base(p))
 						}
-						c.addInstances(hostname, rawUrls)
+						c.addInstances(hostname, rawURLs)
 					case zookeeper.PathCacheEventDeleted:
 						c.deleteInstance(hostname, path.Base(event.Path))
 					}
@@ -131,10 +133,12 @@ func (c *RegistryClient) Events() <-chan *types.ServiceEvent {
 	return c.out
 }
 
+// Service ...
 func (c *RegistryClient) Service(hostname string) *types.Service {
 	return c.services[hostname]
 }
 
+// Services ...
 func (c *RegistryClient) Services() []*types.Service {
 	services := make([]*types.Service, 0, len(c.services))
 	for _, service := range c.services {
@@ -143,6 +147,7 @@ func (c *RegistryClient) Services() []*types.Service {
 	return services
 }
 
+// Instances ...
 func (c *RegistryClient) Instances(hostname string) []*types.Instance {
 	instances := make([]*types.Instance, 0)
 	service, ok := c.services[hostname]
@@ -156,6 +161,7 @@ func (c *RegistryClient) Instances(hostname string) []*types.Instance {
 	return instances
 }
 
+// InstancesByHost ...
 func (c *RegistryClient) InstancesByHost(hosts []string) []*types.Instance {
 	instances := make([]*types.Instance, 0)
 	for _, service := range c.services {
@@ -170,6 +176,7 @@ func (c *RegistryClient) InstancesByHost(hosts []string) []*types.Instance {
 	return instances
 }
 
+// Stop ...
 func (c *RegistryClient) Stop() {
 	c.scache.Stop()
 	for _, pcache := range c.pcaches {
@@ -178,7 +185,7 @@ func (c *RegistryClient) Stop() {
 	close(c.out)
 }
 
-// GetCachedService
+// GetCachedService ...
 func (c *RegistryClient) GetCachedService(serviceName string) *types.Service {
 	service, ok := c.services[serviceName]
 	if !ok {
@@ -188,12 +195,12 @@ func (c *RegistryClient) GetCachedService(serviceName string) *types.Service {
 	return service
 }
 
-func (c *RegistryClient) makeInstance(hostname string, rawUrl string) (*types.Instance, error) {
-	cleanUrl, err := url.QueryUnescape(rawUrl)
+func (c *RegistryClient) makeInstance(hostname string, rawURL string) (*types.Instance, error) {
+	cleanURL, err := url.QueryUnescape(rawURL)
 	if err != nil {
 		return nil, err
 	}
-	ep, err := url.Parse(cleanUrl)
+	ep, err := url.Parse(cleanURL)
 	if err != nil {
 		return nil, err
 	}
@@ -218,14 +225,14 @@ func (c *RegistryClient) makeInstance(hostname string, rawUrl string) (*types.In
 }
 
 // deleteInstance
-func (c *RegistryClient) deleteInstance(hostname string, rawUrl string) {
-	i, err := c.makeInstance(hostname, rawUrl)
+func (c *RegistryClient) deleteInstance(hostname string, rawURL string) {
+	i, err := c.makeInstance(hostname, rawURL)
 	if err != nil {
 		return
 	}
 	h := makeHostname(hostname, i)
 	if s, ok := c.services[h]; ok {
-		delete(s.Instances, rawUrl)
+		delete(s.Instances, rawURL)
 		go c.notify(&types.ServiceEvent{
 			EventType: types.ServiceInstanceDeleted,
 			Instance:  i,
@@ -238,15 +245,15 @@ func (c *RegistryClient) deleteInstance(hostname string, rawUrl string) {
 }
 
 // addInstance
-func (c *RegistryClient) addInstance(hostname string, rawUrl string) {
-	i, err := c.makeInstance(hostname, rawUrl)
+func (c *RegistryClient) addInstance(hostname string, rawURL string) {
+	i, err := c.makeInstance(hostname, rawURL)
 	if err != nil {
 		return
 	}
 
 	s := c.addService(hostname, i)
 	i.Service = s
-	s.Instances[rawUrl] = i
+	s.Instances[rawURL] = i
 	go c.notify(&types.ServiceEvent{
 		EventType: types.ServiceInstanceAdded,
 		Instance:  i,
@@ -254,11 +261,11 @@ func (c *RegistryClient) addInstance(hostname string, rawUrl string) {
 }
 
 // addInstances
-func (c *RegistryClient) addInstances(hostname string, rawUrls []string) {
+func (c *RegistryClient) addInstances(hostname string, rawURLs []string) {
 	instances := make(map[string]*types.Instance)
 	var i *types.Instance
 	var err error
-	for _, ru := range rawUrls {
+	for _, ru := range rawURLs {
 		i, err = c.makeInstance(hostname, ru)
 		if err != nil {
 			klog.Errorf("Make a instance has an error: %v", err)

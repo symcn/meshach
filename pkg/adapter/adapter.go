@@ -1,6 +1,8 @@
 package adapter
 
 import (
+	"net/http"
+
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -11,7 +13,6 @@ import (
 	"github.com/symcn/mesh-operator/pkg/adapter/registry"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
 	"k8s.io/klog"
-	"net/http"
 )
 
 // Adapter ...
@@ -75,8 +76,8 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 
 	// Prometheus HTTP server
 	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(constant.PromHttpPort, nil)
-	klog.Infof("Started prometheus HTTP server on port: %s", constant.PromHttpPort)
+	go http.ListenAndServe(constant.PromHTTPPort, nil)
+	klog.Infof("Started prometheus HTTP server on port: %s", constant.PromHTTPPort)
 
 	for {
 		select {

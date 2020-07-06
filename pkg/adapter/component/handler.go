@@ -2,7 +2,7 @@ package component
 
 import "github.com/symcn/mesh-operator/pkg/adapter/types"
 
-// All component comes from adapter needs to be handle by various event handler.
+// EventHandler described all component comes from adapter needs to be handle by various event handler.
 type EventHandler interface {
 	// AddService you should handle the event described that a service has been created
 	AddService(event *types.ServiceEvent, configuratorFinder func(s string) *types.ConfiguratorConfig)

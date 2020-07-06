@@ -1,5 +1,6 @@
 package constant
 
+// ZkServers ...
 var ZkServers = []string{
 	// local
 	//"10.12.210.70:2181",
@@ -12,6 +13,7 @@ var ZkServers = []string{
 
 }
 
+// test constant
 var (
 	ApplicationLabel      = "application"
 	AppCodeLabel          = "app_code"
@@ -25,6 +27,7 @@ var (
 	DefaultConfigName     = "DEFAULT_SERVICE"
 )
 
+// test constant
 var (
-	PromHttpPort = ":8315"
+	PromHTTPPort = ":8315"
 )
