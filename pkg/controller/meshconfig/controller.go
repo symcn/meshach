@@ -99,19 +99,19 @@ func (r *ReconcileMeshConfig) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	amcList := &meshv1.AppMeshConfigList{}
-	err = r.client.List(context.TODO(), amcList, &client.ListOptions{Namespace: corev1.NamespaceAll})
+	smeList := &meshv1.ServiceMeshEntryList{}
+	err = r.client.List(context.TODO(), smeList, &client.ListOptions{Namespace: corev1.NamespaceAll})
 	if err != nil {
-		klog.Infof("Get AppMeshConfig error: %s", err)
+		klog.Infof("Get ServiceMeshEntry error: %s", err)
 	}
-	for i := range amcList.Items {
-		amc := amcList.Items[i]
-		if amc.Spec.MeshConfigGeneration != instance.Generation {
-			amc.Spec.MeshConfigGeneration = instance.Generation
-			err := r.client.Update(context.TODO(), &amc)
+	for i := range smeList.Items {
+		sme := smeList.Items[i]
+		if sme.Spec.MeshConfigGeneration != instance.Generation {
+			sme.Spec.MeshConfigGeneration = instance.Generation
+			err := r.client.Update(context.TODO(), &sme)
 			if err != nil {
-				klog.Errorf("Update AppMeshConfig[%s/%s] in MeshConfig reconcile error: %+v",
-					amc.Namespace, amc.Name, err)
+				klog.Errorf("Update ServiceMeshEntry[%s/%s] in MeshConfig reconcile error: %+v",
+					sme.Namespace, sme.Name, err)
 			}
 		}
 	}
