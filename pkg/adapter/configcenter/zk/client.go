@@ -45,13 +45,13 @@ func New(opt options.Configuration) (component.ConfigurationCenter, error) {
 			configEntries: make(map[string]*types.ConfiguratorConfig),
 			rootPathCache: nil,
 		}, nil
-	} else {
-		klog.Warningf("The command arguments of config center hasn't been supplied yet, skipping to initialize it.")
-		return &ConfigClient{
-			conn:          nil,
-			rootPathCache: nil,
-		}, nil
 	}
+
+	klog.Warningf("The command arguments of config center hasn't been supplied yet, skipping to initialize it.")
+	return &ConfigClient{
+		conn:          nil,
+		rootPathCache: nil,
+	}, nil
 
 }
 

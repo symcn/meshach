@@ -2,6 +2,7 @@ package component
 
 import "github.com/symcn/mesh-operator/pkg/adapter/types"
 
+// Registry ...
 type Registry interface {
 	Start() error
 
