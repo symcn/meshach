@@ -94,8 +94,7 @@ spec:
                   when MeshConfig changes.
                 format: int64
                 type: integer
-              name:
-                description: Must be formatted to conform to the DNS1123 specification.
+              originalName:
                 maxLength: 255
                 minLength: 1
                 type: string
@@ -324,7 +323,7 @@ spec:
                 type: array
             required:
             - meshConfigGeneration
-            - name
+            - originalName
             type: object
           status:
             description: ServiceMeshEntryStatus defines the observed state of ServiceMeshEntry

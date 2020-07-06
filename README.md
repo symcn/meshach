@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/symcn/mesh-operator/workflows/Go/badge.svg)](https://github.com/symcn/mesh-operator/actions)
+[![Actions Status](https://github.com/symcn/mesh-operator/workflows/pre-commit/badge.svg)](https://github.com/symcn/mesh-operator/actions)
 # mesh-operator
 It is in charge of all things about implementation of Service Mesh.
 
