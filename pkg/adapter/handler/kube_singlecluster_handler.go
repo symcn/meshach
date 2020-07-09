@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
@@ -16,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// KubeSingleClusterEventHandler ...
 type KubeSingleClusterEventHandler struct {
 	meshConfig  *v1.MeshConfig
 	ctrlManager manager.Manager
