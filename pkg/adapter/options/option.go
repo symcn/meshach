@@ -25,6 +25,7 @@ type Configuration struct {
 type EventHandlers struct {
 	// options for kubernetes
 	EnableK8s        bool
+	IsMultiClusters  bool
 	Kubeconfig       string
 	ConfigContext    string
 	ClusterOwner     string
@@ -41,6 +42,7 @@ func DefaultOption() *Option {
 	return &Option{
 		EventHandlers: EventHandlers{
 			EnableK8s:        true,
+			IsMultiClusters:  false,
 			ClusterOwner:     "sym-admin",
 			ClusterNamespace: "sym-admin",
 

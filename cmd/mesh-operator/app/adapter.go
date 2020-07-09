@@ -27,7 +27,6 @@ import (
 
 // NewAdapterCmd ...
 func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
-
 	opt := options.DefaultOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
@@ -75,6 +74,12 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 		"config_center_timeout",
 		opt.Configuration.Timeout,
 		"the zookeeper session timeout second for configuration center")
+
+	cmd.PersistentFlags().BoolVar(
+		&opt.EventHandlers.IsMultiClusters,
+		"is-multi-clusters",
+		opt.EventHandlers.IsMultiClusters,
+		"deciding if it will synchronizes to more than one kubernetes cluster")
 
 	cmd.PersistentFlags().StringVar(
 		&opt.EventHandlers.ClusterOwner,
