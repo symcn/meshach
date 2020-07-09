@@ -22,7 +22,6 @@ import (
 
 	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	"github.com/symcn/mesh-operator/pkg/option"
-	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,46 +68,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to primary resource AppMeshConfig
 	err = c.Watch(&source.Kind{Type: &meshv1.AppMeshConfig{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	err = c.Watch(&source.Kind{
-		Type: &networkingv1beta1.WorkloadEntry{}},
-		&handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &meshv1.AppMeshConfig{},
-		})
-	if err != nil {
-		return err
-	}
-
-	err = c.Watch(&source.Kind{
-		Type: &networkingv1beta1.VirtualService{}},
-		&handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &meshv1.AppMeshConfig{},
-		})
-	if err != nil {
-		return err
-	}
-
-	err = c.Watch(&source.Kind{
-		Type: &networkingv1beta1.DestinationRule{}},
-		&handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &meshv1.AppMeshConfig{},
-		})
-	if err != nil {
-		return err
-	}
-
-	err = c.Watch(&source.Kind{
-		Type: &networkingv1beta1.ServiceEntry{}},
-		&handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &meshv1.AppMeshConfig{},
-		})
 	if err != nil {
 		return err
 	}
@@ -161,23 +120,6 @@ func (r *ReconcileAppMeshConfig) Reconcile(request reconcile.Request) (reconcile
 		return reconcile.Result{}, err
 	}
 
-	// TODO(haidong): Is it requeue request after Spec changed 5 seconds later to update Status?
-	for _, svc := range instance.Spec.Services {
-		if err := r.reconcileWorkloadEntry(ctx, instance, svc); err != nil {
-			return reconcile.Result{}, err
-		}
-		if err := r.reconcileServiceEntry(ctx, instance, svc); err != nil {
-			return reconcile.Result{}, err
-		}
-		if err := r.reconcileDestinationRule(ctx, instance, svc); err != nil {
-			return reconcile.Result{}, err
-		}
-		if err := r.reconcileVirtualService(ctx, instance, svc); err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
-	// Update Status
 	klog.Infof("Update AppMeshConfig[%s/%s] status...", request.Namespace, request.Name)
 	err = r.updateStatus(ctx, request, instance)
 	if err != nil {

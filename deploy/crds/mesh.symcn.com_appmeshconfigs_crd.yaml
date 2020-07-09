@@ -31,114 +31,6 @@ spec:
           spec:
             description: AppMeshConfigSpec ...
             properties:
-              appName:
-                description: The name corresponding to the business application.
-                type: string
-              inject:
-                description: Inject set the relevant parameters of the data plane.
-                properties:
-                  logLevel:
-                    description: The log level of sidecar
-                    enum:
-                    - error
-                    - warning
-                    - info
-                    - debug
-                    type: string
-                  sidecar:
-                    description: Set the sidecar type, must one of mosn|envoy
-                    enum:
-                    - mosn
-                    - envoy
-                    type: string
-                required:
-                - sidecar
-                type: object
-              meshConfigGeneration:
-                description: The Generation of MeshConfig, which to reconcile AppMeshConfig
-                  when MeshConfig changes.
-                format: int64
-                type: integer
-              policy:
-                description: Policy defines load balancing, retry, and other policies
-                  for a service.
-                properties:
-                  loadBalancer:
-                    additionalProperties:
-                      type: string
-                    description: Load balancing is a way of distributing traffic between
-                      multiple hosts within a single upstream cluster in order to
-                      effectively make use of available resources. There are many
-                      different ways of accomplishing this, like ROUND_ROBIN, LEAST_CONN
-                      RANDOM and RASSTHROUGN
-                    type: object
-                  maxConnections:
-                    description: Maximum number of HTTP1 connections to a destination
-                      host. Default 2^32-1.
-                    format: int32
-                    type: integer
-                  maxRetries:
-                    description: Maximum number of retries that can be outstanding
-                      to all hosts in a cluster at a given time. Defaults to 2^32-1.
-                    format: int32
-                    type: integer
-                  sourceLabels:
-                    description: One or more labels that constrain the applicability
-                      of a rule to workloads with the given labels.
-                    items:
-                      description: SourceLabels is one or more labels that constrain
-                        the applicability of a rule to workloads with the given labels.
-                      properties:
-                        headers:
-                          additionalProperties:
-                            type: string
-                          description: The HTTP route match headers.
-                          type: object
-                        labels:
-                          additionalProperties:
-                            type: string
-                          description: One or more labels that constrain the applicability
-                            of a rule to workloads with the given labels.
-                          type: object
-                        name:
-                          description: The name of specific subset.
-                          type: string
-                        route:
-                          description: Each routing rule is associated with one or
-                            more service versions.
-                          items:
-                            description: Destination indicates the network addressable
-                              service to which the request/connection will be sent
-                              after processing a routing rule.
-                            properties:
-                              subset:
-                                description: The name of a subset within the service.
-                                  Applicable only to services within the mesh. The
-                                  subset must be defined in a corresponding DestinationRule.
-                                maxLength: 15
-                                minLength: 1
-                                type: string
-                              weight:
-                                description: The proportion of traffic to be forwarded
-                                  to the service version. (0-100). Sum of weights
-                                  across destinations SHOULD BE == 100. If there is
-                                  only one destination in a rule, the weight value
-                                  is assumed to be 100.
-                                format: int32
-                                maximum: 100
-                                minimum: 0
-                                type: integer
-                            required:
-                            - subset
-                            type: object
-                          type: array
-                      type: object
-                    type: array
-                  timeout:
-                    description: 'Connection timeout. format: 1h/1m/1s/1ms. MUST BE
-                      >=1ms. Default is 10s.'
-                    type: string
-                type: object
               services:
                 description: Service describes Dubbo services, will be registered
                   as ServiceEntries in istio's internal service registry.
@@ -210,6 +102,8 @@ spec:
                       description: Must be formatted to conform to the DNS1123 specification.
                       maxLength: 255
                       minLength: 1
+                      type: string
+                    originalName:
                       type: string
                     policy:
                       description: Traffic policies of service-level
@@ -444,10 +338,10 @@ spec:
                       type: array
                   required:
                   - name
+                  - originalName
                   type: object
                 type: array
             required:
-            - meshConfigGeneration
             - services
             type: object
           status:

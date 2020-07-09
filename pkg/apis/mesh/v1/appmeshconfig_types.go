@@ -80,6 +80,8 @@ type Service struct {
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
+	OriginalName string `json:"originalName"`
+
 	// A list describes the properties of all ports of this service.
 	// The Dubbo service port registered with MOSN is 20882,
 	// otherwize the native Dubbo service port is 20880.
@@ -155,21 +157,9 @@ type SourceLabels struct {
 
 // AppMeshConfigSpec ...
 type AppMeshConfigSpec struct {
-	// The name corresponding to the business application.
-	AppName string `json:"appName,omitempty"`
-
-	// Inject set the relevant parameters of the data plane.
-	Inject *Inject `json:"inject,omitempty"`
-
 	// Service describes Dubbo services, will be registered as ServiceEntries
 	// in istio's internal service registry.
 	Services []*Service `json:"services"`
-
-	// Policy defines load balancing, retry, and other policies for a service.
-	Policy *Policy `json:"policy,omitempty"`
-
-	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
-	MeshConfigGeneration int64 `json:"meshConfigGeneration"`
 }
 
 // ConfigPhase describes the phase of the configuration file destribution.
