@@ -62,10 +62,7 @@ func (r *ReconcileAppMeshConfig) buildStatus(cr *meshv1.AppMeshConfig) *meshv1.A
 func (r *ReconcileAppMeshConfig) getServiceEntryStatus(ctx context.Context, cr *meshv1.AppMeshConfig) *meshv1.SubStatus {
 	svcCount := len(cr.Spec.Services)
 	list := &networkingv1beta1.ServiceEntryList{}
-	var count *int
-	for _, svc := range cr.Spec.Services {
-		*count += *r.count(ctx, cr.Namespace, svc, list)
-	}
+	count := r.count(ctx, cr, list)
 	status := &meshv1.SubStatus{Desired: svcCount, Distributed: count}
 
 	var undistributed int
@@ -82,10 +79,7 @@ func (r *ReconcileAppMeshConfig) getWorkloadEntryStatus(ctx context.Context, cr 
 		insCount += len(svc.Instances)
 	}
 	list := &networkingv1beta1.WorkloadEntryList{}
-	var count *int
-	for _, svc := range cr.Spec.Services {
-		*count += *r.count(ctx, cr.Namespace, svc, list)
-	}
+	count := r.count(ctx, cr, list)
 	status := &meshv1.SubStatus{Desired: insCount, Distributed: count}
 
 	var undistributed int
@@ -110,10 +104,7 @@ func (r *ReconcileAppMeshConfig) getVirtualServiceStatus(ctx context.Context, cr
 	}
 
 	list := &networkingv1beta1.VirtualServiceList{}
-	var count *int
-	for _, svc := range cr.Spec.Services {
-		*count += *r.count(ctx, cr.Namespace, svc, list)
-	}
+	count := r.count(ctx, cr, list)
 	status := &meshv1.SubStatus{Desired: svcCount, Distributed: count}
 
 	var undistributed int
@@ -138,10 +129,7 @@ func (r *ReconcileAppMeshConfig) getDestinationRuleStatus(ctx context.Context, c
 	}
 
 	list := &networkingv1beta1.DestinationRuleList{}
-	var count *int
-	for _, svc := range cr.Spec.Services {
-		*count += *r.count(ctx, cr.Namespace, svc, list)
-	}
+	count := r.count(ctx, cr, list)
 	status := &meshv1.SubStatus{Desired: svcCount, Distributed: count}
 
 	var undistributed int
@@ -152,31 +140,43 @@ func (r *ReconcileAppMeshConfig) getDestinationRuleStatus(ctx context.Context, c
 	return status
 }
 
-func (r *ReconcileAppMeshConfig) count(ctx context.Context, namespace string, cr *meshv1.Service, list runtime.Object) *int {
-	var c int
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.OriginalName}
-	opts := &client.ListOptions{Namespace: namespace}
-	labels.ApplyToList(opts)
+func (r *ReconcileAppMeshConfig) count(ctx context.Context, cr *meshv1.AppMeshConfig, list runtime.Object) *int {
+	var zero int
+	var count *int
+	for _, svc := range cr.Spec.Services {
+		var c int
+		labels := &client.MatchingLabels{r.opt.SelectLabel: svc.OriginalName}
+		opts := &client.ListOptions{Namespace: cr.Namespace}
+		labels.ApplyToList(opts)
 
-	err := r.client.List(ctx, list, opts)
-	if err != nil {
-		klog.Errorf("%s/%s/%s collecting the substatus error: %v", namespace, cr.Name, list, err)
-		return nil
+		err := r.client.List(ctx, list, opts)
+		if err != nil {
+			klog.Errorf("%s/%s/%s collecting the substatus error: %v", cr.Namespace, svc.Name, list, err)
+			return nil
+		}
+
+		switch v := list.(type) {
+		case *networkingv1beta1.VirtualServiceList:
+			c = len(v.Items)
+		case *networkingv1beta1.ServiceEntryList:
+			c = len(v.Items)
+		case *networkingv1beta1.WorkloadEntryList:
+			c = len(v.Items)
+		case *networkingv1beta1.DestinationRuleList:
+			c = len(v.Items)
+		default:
+			klog.Errorf("invalid list type: %v", list)
+		}
+
+		if &c != nil {
+			if count == nil {
+				count = &zero
+			}
+			*count += c
+		}
 	}
 
-	switch v := list.(type) {
-	case *networkingv1beta1.VirtualServiceList:
-		c = len(v.Items)
-	case *networkingv1beta1.ServiceEntryList:
-		c = len(v.Items)
-	case *networkingv1beta1.WorkloadEntryList:
-		c = len(v.Items)
-	case *networkingv1beta1.DestinationRuleList:
-		c = len(v.Items)
-	default:
-		klog.Errorf("invalid list type: %v", list)
-	}
-	return &c
+	return count
 }
 
 func calcPhase(status *meshv1.Status) meshv1.ConfigPhase {

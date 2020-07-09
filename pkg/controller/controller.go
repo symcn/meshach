@@ -2,6 +2,7 @@
 package controller
 
 import (
+	"github.com/symcn/mesh-operator/pkg/controller/appmeshconfig"
 	"github.com/symcn/mesh-operator/pkg/controller/istioconfig"
 	"github.com/symcn/mesh-operator/pkg/controller/meshconfig"
 	"github.com/symcn/mesh-operator/pkg/controller/servicemeshentry"
@@ -17,6 +18,7 @@ func AddToManager(m manager.Manager, opt *option.ControllerOption) error {
 	AddToManagerFuncs = append(AddToManagerFuncs, servicemeshentry.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, istioconfig.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, meshconfig.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, appmeshconfig.Add)
 
 	for _, f := range AddToManagerFuncs {
 		if err := f(m, opt); err != nil {
