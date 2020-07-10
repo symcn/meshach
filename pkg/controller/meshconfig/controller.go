@@ -55,9 +55,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
 			},
+			// Ignore delete event
 			DeleteFunc: func(e event.DeleteEvent) bool {
-				// Evaluates to false if the object has been confirmed deleted.
-				return !e.DeleteStateUnknown
+				return false
 			},
 		},
 	)
