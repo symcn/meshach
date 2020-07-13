@@ -53,9 +53,9 @@ func TestReconcileConfiguraredService_Reconcile(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test-sme-reconcile-no-service-ok",
+			name: "test-cs-reconcile-no-service-ok",
 			fields: fields{
-				client:     GetFakeClient(smeNoService, TestMeshConfig),
+				client:     GetFakeClient(csNoService, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -70,7 +70,7 @@ func TestReconcileConfiguraredService_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-sme-reconcile-no-meshconfig-error",
+			name: "test-cs-reconcile-no-meshconfig-error",
 			fields: fields{
 				client:     GetFakeClient(),
 				scheme:     fakeScheme,
@@ -87,7 +87,7 @@ func TestReconcileConfiguraredService_Reconcile(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "test-sme-reconcile-no-configuraredservice-ok",
+			name: "test-cs-reconcile-no-configuraredservice-ok",
 			fields: fields{
 				client:     GetFakeClient(TestMeshConfig),
 				scheme:     fakeScheme,
@@ -104,9 +104,9 @@ func TestReconcileConfiguraredService_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-sme-reconcile-only-serviceentry-ok",
+			name: "test-cs-reconcile-only-serviceentry-ok",
 			fields: fields{
-				client:     GetFakeClient(smeTestServiceEntryOK, TestMeshConfig),
+				client:     GetFakeClient(csTestServiceEntryOK, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -121,9 +121,9 @@ func TestReconcileConfiguraredService_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-sme-reconcile-only-workloadentry-ok",
+			name: "test-cs-reconcile-only-workloadentry-ok",
 			fields: fields{
-				client:     GetFakeClient(smeTestWorkloadEntryOK, TestMeshConfig),
+				client:     GetFakeClient(csTestWorkloadEntryOK, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -138,9 +138,9 @@ func TestReconcileConfiguraredService_Reconcile(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-sme-reconcile-all-ok",
+			name: "test-cs-reconcile-all-ok",
 			fields: fields{
-				client:     GetFakeClient(smeTestOK, TestMeshConfig),
+				client:     GetFakeClient(csTestOK, TestMeshConfig),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -234,7 +234,7 @@ var (
 		},
 	}
 
-	smeTestServiceEntryOK = &meshv1.ConfiguraredService{
+	csTestServiceEntryOK = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.serviceentry.ok",
 			Namespace: "sym-test",
@@ -243,7 +243,7 @@ var (
 			},
 		},
 		Spec: meshv1.ConfiguraredServiceSpec{
-			OriginalName: "sme.Test.Case",
+			OriginalName: "cs.Test.Case",
 			Ports: []*meshv1.Port{{
 				Name:     "dubbo-http",
 				Protocol: "HTTP",
@@ -263,7 +263,7 @@ var (
 			MeshConfigGeneration: 0,
 		},
 	}
-	smeNoService = &meshv1.ConfiguraredService{
+	csNoService = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "dubbo.noservice",
 			Namespace: "sym-test",
@@ -286,7 +286,7 @@ var (
 		},
 		Weight: 0,
 	}
-	smeTestWorkloadEntryOK = &meshv1.ConfiguraredService{
+	csTestWorkloadEntryOK = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.workloadentry.ok",
 			Namespace: "sym-test",
@@ -318,7 +318,7 @@ var (
 		},
 		Policy: &meshv1.Policy{},
 	}
-	smeTestOK = &meshv1.ConfiguraredService{
+	csTestOK = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.all.ok",
 			Namespace: "sym-test",

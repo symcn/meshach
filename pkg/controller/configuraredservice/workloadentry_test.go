@@ -54,35 +54,35 @@ func TestReconcileConfiguraredService_reconcileWorkloadEntry(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-workloadentry-update-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeWorkloadEntry),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeWorkloadEntry),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-workloadentry-delete-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeWorkloadEntry, fakeDeleteWorkloadEntry),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeWorkloadEntry, fakeDeleteWorkloadEntry),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
