@@ -149,15 +149,3 @@ type ConfigEvent struct {
 	Path        string
 	ConfigEntry *ConfiguratorConfig
 }
-
-// FlagConfigParameter just for customized setting
-type FlagConfigParameter struct {
-	Flags  []*Flag
-	Manual bool
-}
-
-// Flag ...
-type Flag struct {
-	Key    string
-	Weight int32
-}

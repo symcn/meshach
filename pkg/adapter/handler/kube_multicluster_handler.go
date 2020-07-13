@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,25 +23,29 @@ import (
 // to a kubernetes cluster which has an istio controller there.
 // It usually uses a CRD group to depict both registered services and instances.
 type KubeMultiClusterEventHandler struct {
-	k8sMgr     *k8smanager.ClusterManager
-	meshConfig *v1.MeshConfig
+	k8sMgr        *k8smanager.ClusterManager
+	configBuilder configcenter.ConfigBuilder
 }
 
 // NewKubeMultiClusterEventHandler ...
 func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
 	mc := &v1.MeshConfig{}
 	err := k8sMgr.MasterClient.GetClient().Get(context.Background(), types.NamespacedName{
-		Name:      "sym-meshconfig",
+		Name:      meshConfigNamespace,
 		Namespace: defaultNamespace,
 	}, mc)
-
 	if err != nil {
 		return nil, fmt.Errorf("loading mesh config has an error: %v", err)
 	}
 
+	dcb := &DubboConfiguratorBuilder{
+		globalConfig:  mc,
+		defaultConfig: DubboDefaultConfig,
+	}
+
 	return &KubeMultiClusterEventHandler{
-		k8sMgr:     k8sMgr,
-		meshConfig: mc,
+		k8sMgr:        k8sMgr,
+		configBuilder: dcb,
 	}, nil
 }
 
@@ -78,11 +83,9 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 				// meanwhile we should search a configurator for such service
 				config := configuratorFinder(event.Service.Name)
 				if config == nil {
-					dc := *DefaultConfigurator
-					dc.Key = event.Service.Name
-					setConfig(&dc, cs, kubeMceh.meshConfig)
+					kubeMceh.configBuilder.SetConfig(cs, kubeMceh.configBuilder.GetDefaultConfig())
 				} else {
-					setConfig(config, cs, kubeMceh.meshConfig)
+					kubeMceh.configBuilder.SetConfig(cs, config)
 				}
 
 				// loading cs CR from k8s cluster
@@ -107,7 +110,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
 func (kubeMceh *KubeMultiClusterEventHandler) DeleteService(event *types2.ServiceEvent) {
-	klog.Infof("event handler for multiple clusters: Deleting a service: %s", event.Service)
+	klog.Infof("event handler for multiple clusters: Deleting a service: \n%v", event.Service)
 	metrics.DeletedServiceCounter.Inc()
 
 	wg := sync.WaitGroup{}
@@ -171,11 +174,9 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 				// utilize this configurator for such amc CR
 				if e.ConfigEntry == nil || !e.ConfigEntry.Enabled {
 					// TODO we really need to handle and think about the case that configuration has been disable.
-					dc := *DefaultConfigurator
-					dc.Key = serviceName
-					setConfig(&dc, cs, kubeMceh.meshConfig)
+					kubeMceh.configBuilder.SetConfig(cs, kubeMceh.configBuilder.GetDefaultConfig())
 				} else {
-					setConfig(e.ConfigEntry, cs, kubeMceh.meshConfig)
+					kubeMceh.configBuilder.SetConfig(cs, e.ConfigEntry)
 				}
 
 				return update(cs, cluster.Client)
@@ -187,7 +188,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 
 // DeleteConfigEntry ...
 func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
-	klog.Infof("event handler for multiple clusters: deleting a configuration\n%s", e.Path)
+	klog.Infof("event handler for multiple clusters: deleting a configuration %s", e.Path)
 	metrics.DeletedConfigurationCounter.Inc()
 
 	wg := sync.WaitGroup{}
@@ -212,9 +213,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.Config
 				}
 
 				// Deleting a configuration of a service is similar to setting default configurator to this service
-				dc := *DefaultConfigurator
-				dc.Key = serviceName
-				setConfig(&dc, cs, kubeMceh.meshConfig)
+				kubeMceh.configBuilder.SetConfig(cs, kubeMceh.configBuilder.GetDefaultConfig())
 
 				return update(cs, cluster.Client)
 			})

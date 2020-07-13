@@ -11,8 +11,8 @@ import (
 	"k8s.io/klog"
 )
 
-// DefaultConfigurator for the service without a customized configurator
-var DefaultConfigurator = &types.ConfiguratorConfig{
+// DefaultConfigurator it is used when the service has not a customized configurator
+var DubboDefaultConfig = &types.ConfiguratorConfig{
 	ConfigVersion: "2.7",
 	Scope:         "service",
 	Key:           constant.DefaultConfigName,
@@ -42,18 +42,45 @@ var DefaultConfigurator = &types.ConfiguratorConfig{
 	},
 }
 
-// buildPolicy
-func buildPolicy(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
+// DubboConfiguratorBuilder it is just an implementing for dubbo.
+type DubboConfiguratorBuilder struct {
+	globalConfig  *v1.MeshConfig
+	defaultConfig *types.ConfiguratorConfig
+}
+
+// FlagConfigParameter just for customized setting of dubbo
+type FlagConfigParameter struct {
+	Flags  []*Flag
+	Manual bool
+}
+
+// Flag ...
+type Flag struct {
+	Key    string
+	Weight int32
+}
+
+func (dcb *DubboConfiguratorBuilder) GetGlobalConfig() *v1.MeshConfig {
+	return dcb.globalConfig
+}
+
+func (dcb *DubboConfiguratorBuilder) GetDefaultConfig() *types.ConfiguratorConfig {
+	return dcb.defaultConfig
+}
+
+// BuildPolicy configurator of this service belongs to the zNode with path looks like following:
+// e.g. /dubbo/config/dubbo/fooService.configurator
+func (dcb *DubboConfiguratorBuilder) BuildPolicy(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
 	cs.Spec.Policy = &v1.Policy{
-		LoadBalancer:   mc.Spec.GlobalPolicy.LoadBalancer,
-		MaxConnections: mc.Spec.GlobalPolicy.MaxConnections,
-		Timeout:        mc.Spec.GlobalPolicy.Timeout,
-		MaxRetries:     mc.Spec.GlobalPolicy.MaxRetries,
+		LoadBalancer:   dcb.GetGlobalConfig().Spec.GlobalPolicy.LoadBalancer,
+		MaxConnections: dcb.GetGlobalConfig().Spec.GlobalPolicy.MaxConnections,
+		Timeout:        dcb.GetGlobalConfig().Spec.GlobalPolicy.Timeout,
+		MaxRetries:     dcb.GetGlobalConfig().Spec.GlobalPolicy.MaxRetries,
 	}
 
 	// find out the default configuration if it presents.
 	// it will be used to assemble both the service and instances without customized configurations.
-	defaultConfig := findDefaultConfig(e.Configs)
+	defaultConfig := findDefaultConfig(cc.Configs)
 	// Setting the service's configuration such as policy
 	if defaultConfig != nil && defaultConfig.Enabled {
 		if t, ok := defaultConfig.Parameters["timeout"]; ok {
@@ -68,15 +95,15 @@ func buildPolicy(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1
 }
 
 // buildSubsets
-func buildSubsets(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
-	cs.Spec.Subsets = mc.Spec.GlobalSubsets
+func (dcb *DubboConfiguratorBuilder) BuildSubsets(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
+	cs.Spec.Subsets = dcb.GetGlobalConfig().Spec.GlobalSubsets
 	return cs
 }
 
 // buildSourceLabels
-func buildSourceLabels(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
+func (dcb *DubboConfiguratorBuilder) BuildSourceLabels(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
 	var sls []*v1.SourceLabels
-	for _, subset := range mc.Spec.GlobalSubsets {
+	for _, subset := range dcb.GetGlobalConfig().Spec.GlobalSubsets {
 		sl := &v1.SourceLabels{
 			Name:   subset.Name,
 			Labels: subset.Labels,
@@ -91,7 +118,7 @@ func buildSourceLabels(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, 
 		var routes []*v1.Destination
 		// By default the consumer can only visit the providers
 		// whose group is same as itself.
-		for _, ss := range mc.Spec.GlobalSubsets {
+		for _, ss := range dcb.GetGlobalConfig().Spec.GlobalSubsets {
 			d := &v1.Destination{Subset: ss.Name}
 			if ss.Name == sl.Name {
 				d.Weight = 100
@@ -101,12 +128,12 @@ func buildSourceLabels(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, 
 			routes = append(routes, d)
 		}
 		// setting flag configurator
-		flagConfig := findFlagConfig(e.Configs)
+		flagConfig := findFlagConfig(cc.Configs)
 		if flagConfig != nil {
 			fc, ok := flagConfig.Parameters["flag_config"]
 			if ok {
 				klog.Infof("Flag config: %s", fc)
-				fcp := &types.FlagConfigParameter{}
+				fcp := &FlagConfigParameter{}
 				err := yaml.Unmarshal([]byte(fc), fcp)
 				if err != nil {
 					klog.Errorf("Parsing the flag_config parameter has an error: %v", err)
@@ -131,9 +158,9 @@ func buildSourceLabels(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, 
 }
 
 // buildInstanceSetting
-func buildInstanceSetting(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
+func (dcb *DubboConfiguratorBuilder) BuildInstanceSetting(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
 	for index, ins := range cs.Spec.Instances {
-		if matched, c := matchInstance(ins, e.Configs); matched {
+		if matched, c := matchInstance(ins, cc.Configs); matched {
 			cs.Spec.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
 		} else {
 			cs.Spec.Instances[index].Weight = 100
@@ -187,20 +214,14 @@ func matchInstance(ins *v1.Instance, configs []types.ConfigItem) (bool, *types.C
 	return false, nil
 }
 
-// setConfig
-func setConfig(c *types.ConfiguratorConfig, cs *v1.ConfiguraredService, mc *v1.MeshConfig) {
-	// find out the service we need to process
-	if cs.Name == utils.StandardizeServiceName(c.Key) {
-		// policy's setting
-		buildPolicy(cs, c, mc)
-		// subset's setting
-		buildSubsets(cs, c, mc)
-		// setting source labels
-		buildSourceLabels(cs, c, mc)
-		// Setting these instances's configuration such as weight
-		buildInstanceSetting(cs, c, mc)
-	} else {
-		klog.Warningf("Set configuration failed: the cs's name [%s] is difference from the configurator's name [%s]",
-			cs.Name, c.Key)
-	}
+// SetConfig ...
+func (dcb *DubboConfiguratorBuilder) SetConfig(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) {
+	// policy's setting
+	dcb.BuildPolicy(cs, cc)
+	// subset's setting
+	dcb.BuildSubsets(cs, cc)
+	// setting source labels
+	dcb.BuildSourceLabels(cs, cc)
+	// Setting these instances's configuration such as weight
+	dcb.BuildInstanceSetting(cs, cc)
 }
