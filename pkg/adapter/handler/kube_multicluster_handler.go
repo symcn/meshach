@@ -10,12 +10,9 @@ import (
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 )
 
@@ -25,6 +22,7 @@ import (
 type KubeMultiClusterEventHandler struct {
 	k8sMgr        *k8smanager.ClusterManager
 	configBuilder configcenter.ConfigBuilder
+	handlers      []component.EventHandler
 }
 
 // NewKubeMultiClusterEventHandler ...
@@ -43,9 +41,21 @@ func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (compone
 		defaultConfig: DubboDefaultConfig,
 	}
 
+	var kubeHandlers []component.EventHandler
+	for _, c := range k8sMgr.GetAll() {
+		h, err := NewKubeSingleClusterEventHandler(c.Mgr)
+		if err != nil {
+			klog.Errorf("initializing kube handler with a manager failed: %v", err)
+			return nil, err
+		}
+
+		kubeHandlers = append(kubeHandlers, h)
+	}
+
 	return &KubeMultiClusterEventHandler{
 		k8sMgr:        k8sMgr,
 		configBuilder: dcb,
+		handlers:      kubeHandlers,
 	}, nil
 }
 
@@ -71,37 +81,12 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 	defer timer.ObserveDuration()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.k8sMgr.GetAll()))
-	for _, cluster := range kubeMceh.k8sMgr.GetAll() {
+	wg.Add(len(kubeMceh.handlers))
+	for _, h := range kubeMceh.handlers {
 		go func() {
 			defer wg.Done()
 
-			retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				// Convert a service event that noticed by zookeeper to a Service CRD
-				cs := convertEvent(event.Service)
-
-				// meanwhile we should search a configurator for such service
-				config := configuratorFinder(event.Service.Name)
-				if config == nil {
-					kubeMceh.configBuilder.SetConfig(cs, kubeMceh.configBuilder.GetDefaultConfig())
-				} else {
-					kubeMceh.configBuilder.SetConfig(cs, config)
-				}
-
-				// loading cs CR from k8s cluster
-				foundCs, err := get(&v1.ConfiguraredService{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      utils.StandardizeServiceName(event.Service.Name),
-						Namespace: defaultNamespace,
-					},
-				}, cluster.Client)
-				if err != nil {
-					klog.Warningf("Can not find an existed cs CR: %v, then create such cs instead.", err)
-					return create(cs, cluster.Client)
-				}
-				foundCs.Spec = cs.Spec
-				return update(foundCs, cluster.Client)
-			})
+			h.ReplaceInstances(event, configuratorFinder)
 		}()
 	}
 	wg.Wait()
@@ -114,20 +99,12 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteService(event *types2.Servic
 	metrics.DeletedServiceCounter.Inc()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.k8sMgr.GetAll()))
-	for _, cluster := range kubeMceh.k8sMgr.GetAll() {
+	wg.Add(len(kubeMceh.handlers))
+	for _, h := range kubeMceh.handlers {
 		go func() {
 			defer wg.Done()
-			retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				err := delete(&v1.ConfiguraredService{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      utils.StandardizeServiceName(event.Service.Name),
-						Namespace: defaultNamespace,
-					},
-				}, cluster.Client)
 
-				return err
-			})
+			h.DeleteService(event)
 		}()
 	}
 	wg.Wait()
@@ -154,33 +131,12 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 	defer timer.ObserveDuration()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.k8sMgr.GetAll()))
-	for _, cluster := range kubeMceh.k8sMgr.GetAll() {
+	wg.Add(len(kubeMceh.handlers))
+	for _, h := range kubeMceh.handlers {
 		go func() {
-			retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				serviceName := e.ConfigEntry.Key
-				cs, err := get(&v1.ConfiguraredService{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      utils.StandardizeServiceName(serviceName),
-						Namespace: defaultNamespace,
-					},
-				}, cluster.Client)
-				if err != nil {
-					klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
-					// TODO Is there a requirement to requeue this event?
-					return nil
-				}
+			defer wg.Done()
 
-				// utilize this configurator for such cs CR
-				if e.ConfigEntry == nil || !e.ConfigEntry.Enabled {
-					// TODO we really need to handle and think about the case that configuration has been disable.
-					kubeMceh.configBuilder.SetConfig(cs, kubeMceh.configBuilder.GetDefaultConfig())
-				} else {
-					kubeMceh.configBuilder.SetConfig(cs, e.ConfigEntry)
-				}
-
-				return update(cs, cluster.Client)
-			})
+			h.ChangeConfigEntry(e, cachedServiceFinder)
 		}()
 	}
 	wg.Wait()
@@ -192,31 +148,12 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.Config
 	metrics.DeletedConfigurationCounter.Inc()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.k8sMgr.GetAll()))
-	for _, cluster := range kubeMceh.k8sMgr.GetAll() {
+	wg.Add(len(kubeMceh.handlers))
+	for _, h := range kubeMceh.handlers {
 		go func() {
-			retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				// an example for the path: /dubbo/config/dubbo/com.foo.mesh.test.Demo.configurators
-				// Usually deleting event don't include the configuration data, so that we should
-				// parse the zNode path to decide what is the service name.
-				serviceName := utils.StandardizeServiceName(utils.ResolveServiceName(e.Path))
-				cs, err := get(&v1.ConfiguraredService{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      serviceName,
-						Namespace: defaultNamespace,
-					},
-				}, cluster.Client)
-				if err != nil {
-					klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
-					// TODO Is there a requirement to requeue this event?
-					return nil
-				}
+			defer wg.Done()
 
-				// Deleting a configuration of a service is similar to setting default configurator to this service
-				kubeMceh.configBuilder.SetConfig(cs, kubeMceh.configBuilder.GetDefaultConfig())
-
-				return update(cs, cluster.Client)
-			})
+			h.DeleteConfigEntry(e, cachedServiceFinder)
 		}()
 	}
 	wg.Wait()

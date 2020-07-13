@@ -69,8 +69,13 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 		// Convert a service event that noticed by zookeeper to a Service CRD
 		cs := convertEvent(event.Service)
 
-		// meanwhile we should search a configurator for such service
-		config := configuratorFinder(event.Service.Name)
+		var config *types.ConfiguratorConfig
+		if configuratorFinder == nil {
+			config = nil
+		} else {
+			// meanwhile we should search a configurator for such service
+			config = configuratorFinder(event.Service.Name)
+		}
 		if config == nil {
 			kubeSceh.configBuilder.SetConfig(cs, kubeSceh.configBuilder.GetDefaultConfig())
 		} else {
