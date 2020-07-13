@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package servicemeshentry
+package configuraredservice
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestReconcileServiceMeshEntry_reconcileWorkloadEntry(t *testing.T) {
+func TestReconcileConfiguraredService_reconcileServiceEntry(t *testing.T) {
 	fakeScheme := GetFakeScheme()
 	type fields struct {
 		client     client.Client
@@ -36,7 +36,7 @@ func TestReconcileServiceMeshEntry_reconcileWorkloadEntry(t *testing.T) {
 	}
 	type args struct {
 		ctx context.Context
-		cr  *meshv1.ServiceMeshEntry
+		cr  *meshv1.ConfiguraredService
 	}
 	tests := []struct {
 		name    string
@@ -45,7 +45,7 @@ func TestReconcileServiceMeshEntry_reconcileWorkloadEntry(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test-reconcile-workloadentry-create-ok",
+			name: "test-reconcile-serviceentry-create-ok",
 			fields: fields{
 				client:     GetFakeClient(TestMeshConfig),
 				scheme:     fakeScheme,
@@ -59,9 +59,9 @@ func TestReconcileServiceMeshEntry_reconcileWorkloadEntry(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-reconcile-workloadentry-update-ok",
+			name: "test-reconcile-serviceentry-update-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeWorkloadEntry),
+				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeServiceEntry),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -73,9 +73,9 @@ func TestReconcileServiceMeshEntry_reconcileWorkloadEntry(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-reconcile-workloadentry-delete-ok",
+			name: "test-reconcile-serviceentry-delete-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeWorkloadEntry, fakeDeleteWorkloadEntry),
+				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeServiceEntry, fakeDeleteServiceEntry),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -89,14 +89,14 @@ func TestReconcileServiceMeshEntry_reconcileWorkloadEntry(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileServiceMeshEntry{
+			r := &ReconcileConfiguraredService{
 				client:     tt.fields.client,
 				scheme:     tt.fields.scheme,
 				opt:        tt.fields.opt,
 				meshConfig: tt.fields.meshConfig,
 			}
-			if err := r.reconcileWorkloadEntry(tt.args.ctx, tt.args.cr); (err != nil) != tt.wantErr {
-				t.Errorf("ReconcileServiceMeshEntry.reconcileWorkloadEntry() error = %v, wantErr %v", err, tt.wantErr)
+			if err := r.reconcileServiceEntry(tt.args.ctx, tt.args.cr); (err != nil) != tt.wantErr {
+				t.Errorf("ReconcileConfiguraredService.reconcileServiceEntry() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

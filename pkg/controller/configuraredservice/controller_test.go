@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package servicemeshentry ...
-package servicemeshentry
+// Package configuraredservice ...
+package configuraredservice
 
 import (
 	"reflect"
@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileServiceMeshEntry_Reconcile(t *testing.T) {
+func TestReconcileConfiguraredService_Reconcile(t *testing.T) {
 	fakeScheme := GetFakeScheme()
 	type fields struct {
 		client     client.Client
@@ -87,7 +87,7 @@ func TestReconcileServiceMeshEntry_Reconcile(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "test-sme-reconcile-no-servicemeshentry-ok",
+			name: "test-sme-reconcile-no-configuraredservice-ok",
 			fields: fields{
 				client:     GetFakeClient(TestMeshConfig),
 				scheme:     fakeScheme,
@@ -96,7 +96,7 @@ func TestReconcileServiceMeshEntry_Reconcile(t *testing.T) {
 			},
 			args: args{
 				request: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "test.no.servicemeshentry",
+					Name:      "test.no.configuraredservice",
 					Namespace: "sym-test",
 				}},
 			},
@@ -157,7 +157,7 @@ func TestReconcileServiceMeshEntry_Reconcile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileServiceMeshEntry{
+			r := &ReconcileConfiguraredService{
 				client:     tt.fields.client,
 				scheme:     tt.fields.scheme,
 				opt:        tt.fields.opt,
@@ -165,11 +165,11 @@ func TestReconcileServiceMeshEntry_Reconcile(t *testing.T) {
 			}
 			got, err := r.Reconcile(tt.args.request)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ReconcileServiceMeshEntry.Reconcile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReconcileConfiguraredService.Reconcile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconcileServiceMeshEntry.Reconcile() = %v, want %v", got, tt.want)
+				t.Errorf("ReconcileConfiguraredService.Reconcile() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -234,7 +234,7 @@ var (
 		},
 	}
 
-	smeTestServiceEntryOK = &meshv1.ServiceMeshEntry{
+	smeTestServiceEntryOK = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.serviceentry.ok",
 			Namespace: "sym-test",
@@ -242,7 +242,7 @@ var (
 				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.ServiceMeshEntrySpec{
+		Spec: meshv1.ConfiguraredServiceSpec{
 			OriginalName: "sme.Test.Case",
 			Ports: []*meshv1.Port{{
 				Name:     "dubbo-http",
@@ -263,7 +263,7 @@ var (
 			MeshConfigGeneration: 0,
 		},
 	}
-	smeNoService = &meshv1.ServiceMeshEntry{
+	smeNoService = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "dubbo.noservice",
 			Namespace: "sym-test",
@@ -271,7 +271,7 @@ var (
 				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.ServiceMeshEntrySpec{},
+		Spec: meshv1.ConfiguraredServiceSpec{},
 	}
 
 	testWorkloadEntryOKInstance = &meshv1.Instance{
@@ -286,7 +286,7 @@ var (
 		},
 		Weight: 0,
 	}
-	smeTestWorkloadEntryOK = &meshv1.ServiceMeshEntry{
+	smeTestWorkloadEntryOK = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.workloadentry.ok",
 			Namespace: "sym-test",
@@ -294,7 +294,7 @@ var (
 				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.ServiceMeshEntrySpec{
+		Spec: meshv1.ConfiguraredServiceSpec{
 			OriginalName: "dubbo.TestServiceOK",
 			Ports:        nil,
 			Instances:    []*meshv1.Instance{testWorkloadEntryOKInstance},
@@ -318,7 +318,7 @@ var (
 		},
 		Policy: &meshv1.Policy{},
 	}
-	smeTestOK = &meshv1.ServiceMeshEntry{
+	smeTestOK = &meshv1.ConfiguraredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.all.ok",
 			Namespace: "sym-test",
@@ -326,7 +326,7 @@ var (
 				"app_code": "test-case-service",
 			},
 		},
-		Spec: meshv1.ServiceMeshEntrySpec{
+		Spec: meshv1.ConfiguraredServiceSpec{
 			OriginalName: "dubbo.TestServiceOK",
 			Ports: []*meshv1.Port{{
 				Name:     "dubbo-http",
@@ -453,8 +453,8 @@ func GetFakeScheme() *runtime.Scheme {
 	s.AddKnownTypes(meshv1.SchemeGroupVersion,
 		&meshv1.MeshConfig{},
 		&meshv1.MeshConfigList{},
-		&meshv1.ServiceMeshEntry{},
-		&meshv1.ServiceMeshEntryList{},
+		&meshv1.ConfiguraredService{},
+		&meshv1.ConfiguraredServiceList{},
 	)
 	s.AddKnownTypes(networkingv1beta1.SchemeGroupVersion,
 		&networkingv1beta1.DestinationRule{},

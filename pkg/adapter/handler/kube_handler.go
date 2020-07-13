@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
@@ -32,14 +33,14 @@ func convertPort(port *types2.Port) *v1.Port {
 }
 
 // convertService Convert service between these two formats
-func convertEventToSme(s *types2.Service) *v1.ServiceMeshEntry {
+func convertEventToSme(s *types2.Service) *v1.ConfiguraredService {
 	// TODO Assuming every service can only provide an unique fixed port to adapt the dubbo case.
-	sme := &v1.ServiceMeshEntry{
+	sme := &v1.ConfiguraredService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.StandardizeServiceName(s.Name),
 			Namespace: defaultNamespace,
 		},
-		Spec: v1.ServiceMeshEntrySpec{
+		Spec: v1.ConfiguraredServiceSpec{
 			OriginalName: s.Name,
 			Ports: []*v1.Port{{
 				Name:     constant.DubboPortName,
@@ -67,7 +68,7 @@ func convertEventToSme(s *types2.Service) *v1.ServiceMeshEntry {
 }
 
 // create
-func create(sme *v1.ServiceMeshEntry, c client.Client) error {
+func create(sme *v1.ConfiguraredService, c client.Client) error {
 	err := c.Create(context.Background(), sme)
 	klog.Infof("The generation of sme when creating: %d", sme.ObjectMeta.Generation)
 	if err != nil {
@@ -78,7 +79,7 @@ func create(sme *v1.ServiceMeshEntry, c client.Client) error {
 }
 
 // update
-func update(sme *v1.ServiceMeshEntry, c client.Client) error {
+func update(sme *v1.ConfiguraredService, c client.Client) error {
 	err := c.Update(context.Background(), sme)
 	klog.Infof("The generation of sme after updating: %d", sme.ObjectMeta.Generation)
 	if err != nil {
@@ -90,7 +91,7 @@ func update(sme *v1.ServiceMeshEntry, c client.Client) error {
 }
 
 // get
-func get(sme *v1.ServiceMeshEntry, c client.Client) (*v1.ServiceMeshEntry, error) {
+func get(sme *v1.ConfiguraredService, c client.Client) (*v1.ConfiguraredService, error) {
 	err := c.Get(context.Background(), types.NamespacedName{
 		Namespace: sme.Namespace,
 		Name:      sme.Name,
@@ -100,7 +101,7 @@ func get(sme *v1.ServiceMeshEntry, c client.Client) (*v1.ServiceMeshEntry, error
 }
 
 // delete
-func delete(sme *v1.ServiceMeshEntry, c client.Client) error {
+func delete(sme *v1.ConfiguraredService, c client.Client) error {
 	err := c.Delete(context.Background(), sme)
 	klog.Infof("The generation of sme when getting: %d", sme.ObjectMeta.Generation)
 	return err

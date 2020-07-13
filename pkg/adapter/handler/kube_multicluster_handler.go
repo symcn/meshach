@@ -3,11 +3,11 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
@@ -86,7 +86,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 				}
 
 				// loading sme CR from k8s cluster
-				foundSme, err := get(&v1.ServiceMeshEntry{
+				foundSme, err := get(&v1.ConfiguraredService{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      utils.StandardizeServiceName(event.Service.Name),
 						Namespace: defaultNamespace,
@@ -116,7 +116,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteService(event *types2.Servic
 		go func() {
 			defer wg.Done()
 			retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				err := delete(&v1.ServiceMeshEntry{
+				err := delete(&v1.ConfiguraredService{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      utils.StandardizeServiceName(event.Service.Name),
 						Namespace: defaultNamespace,
@@ -156,7 +156,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 		go func() {
 			retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				serviceName := e.ConfigEntry.Key
-				sme, err := get(&v1.ServiceMeshEntry{
+				sme, err := get(&v1.ConfiguraredService{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      utils.StandardizeServiceName(serviceName),
 						Namespace: defaultNamespace,
@@ -199,7 +199,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.Config
 				// Usually deleting event don't include the configuration data, so that we should
 				// parse the zNode path to decide what is the service name.
 				serviceName := utils.StandardizeServiceName(utils.ResolveServiceName(e.Path))
-				sme, err := get(&v1.ServiceMeshEntry{
+				sme, err := get(&v1.ConfiguraredService{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      serviceName,
 						Namespace: defaultNamespace,

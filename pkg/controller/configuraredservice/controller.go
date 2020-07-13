@@ -1,4 +1,4 @@
-package servicemeshentry
+package configuraredservice
 
 import (
 	"context"
@@ -21,19 +21,19 @@ import (
 )
 
 const (
-	controllerName = "servicemeshentry-controller"
+	controllerName = "configuraredservice-controller"
 	httpRouteName  = "dubbo-http-route"
 	proxyRouteName = "dubbo-proxy-route"
 )
 
-var log = logf.Log.WithName("controller_servicemeshentry")
+var log = logf.Log.WithName("controller_configuraredservice")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new ServiceMeshEntry Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new ConfiguraredService Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager, opt *option.ControllerOption) error {
 	return add(mgr, newReconciler(mgr, opt), opt)
@@ -41,7 +41,7 @@ func Add(mgr manager.Manager, opt *option.ControllerOption) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager, opt *option.ControllerOption) reconcile.Reconciler {
-	return &ReconcileServiceMeshEntry{
+	return &ReconcileConfiguraredService{
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 		opt:    opt,
@@ -59,8 +59,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler, opt *option.ControllerOpti
 		return err
 	}
 
-	// Watch for changes to primary resource ServiceMeshEntry
-	err = c.Watch(&source.Kind{Type: &meshv1.ServiceMeshEntry{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource ConfiguraredService
+	err = c.Watch(&source.Kind{Type: &meshv1.ConfiguraredService{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, opt *option.ControllerOpti
 		Type: &networkingv1beta1.WorkloadEntry{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ServiceMeshEntry{},
+			OwnerType:    &meshv1.ConfiguraredService{},
 		})
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, opt *option.ControllerOpti
 		Type: &networkingv1beta1.VirtualService{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ServiceMeshEntry{},
+			OwnerType:    &meshv1.ConfiguraredService{},
 		})
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, opt *option.ControllerOpti
 		Type: &networkingv1beta1.DestinationRule{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ServiceMeshEntry{},
+			OwnerType:    &meshv1.ConfiguraredService{},
 		})
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, opt *option.ControllerOpti
 		Type: &networkingv1beta1.ServiceEntry{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ServiceMeshEntry{},
+			OwnerType:    &meshv1.ConfiguraredService{},
 		})
 	if err != nil {
 		return err
@@ -108,11 +108,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler, opt *option.ControllerOpti
 	return nil
 }
 
-// blank assignment to verify that ReconcileServiceMeshEntry implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileServiceMeshEntry{}
+// blank assignment to verify that ReconcileConfiguraredService implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileConfiguraredService{}
 
-// ReconcileServiceMeshEntry reconciles a ServiceMeshEntry object
-type ReconcileServiceMeshEntry struct {
+// ReconcileConfiguraredService reconciles a ConfiguraredService object
+type ReconcileConfiguraredService struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client     client.Client
@@ -121,13 +121,13 @@ type ReconcileServiceMeshEntry struct {
 	meshConfig *meshv1.MeshConfig
 }
 
-// Reconcile reads that state of the cluster for a ServiceMeshEntry object and makes changes based on the state read
-// and what is in the ServiceMeshEntry.Spec
+// Reconcile reads that state of the cluster for a ConfiguraredService object and makes changes based on the state read
+// and what is in the ConfiguraredService.Spec
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileServiceMeshEntry) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	klog.Infof("Reconciling ServiceMeshEntry: %s/%s", request.Namespace, request.Name)
+func (r *ReconcileConfiguraredService) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	klog.Infof("Reconciling ConfiguraredService: %s/%s", request.Namespace, request.Name)
 	ctx := context.TODO()
 
 	// Fetch the MeshConfig
@@ -138,15 +138,15 @@ func (r *ReconcileServiceMeshEntry) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	// Fetch the ServiceMeshEntry instance
-	instance := &meshv1.ServiceMeshEntry{}
+	// Fetch the ConfiguraredService instance
+	instance := &meshv1.ConfiguraredService{}
 	err = r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request foundect not found, could have been deleted after reconcile request.
 			// Owned foundects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.Infof("Can't found ServiceMeshEntry[%s/%s], requeue...", request.Namespace, request.Name)
+			klog.Infof("Can't found ConfiguraredService[%s/%s], requeue...", request.Namespace, request.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the foundect - requeue the request.
@@ -199,10 +199,10 @@ func (r *ReconcileServiceMeshEntry) Reconcile(request reconcile.Request) (reconc
 	}
 
 	// Update Status
-	klog.Infof("Update ServiceMeshEntry[%s/%s] status...", request.Namespace, request.Name)
+	klog.Infof("Update ConfiguraredService[%s/%s] status...", request.Namespace, request.Name)
 	err = r.updateStatus(ctx, request, instance)
 	if err != nil {
-		klog.Errorf("%s/%s update ServiceMeshEntry failed, err: %+v", request.Namespace, request.Name, err)
+		klog.Errorf("%s/%s update ConfiguraredService failed, err: %+v", request.Namespace, request.Name, err)
 		return reconcile.Result{}, err
 	}
 
@@ -213,11 +213,11 @@ func (r *ReconcileServiceMeshEntry) Reconcile(request reconcile.Request) (reconc
 		klog.Errorf("%s/%s create AppMeshConfig failed, err: %+v", request.Namespace, request.Name, err)
 	}
 
-	klog.Infof("End Reconciliation, ServiceMeshEntry: %s/%s.", request.Namespace, request.Name)
+	klog.Infof("End Reconciliation, ConfiguraredService: %s/%s.", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileServiceMeshEntry) getMeshConfig(ctx context.Context) error {
+func (r *ReconcileConfiguraredService) getMeshConfig(ctx context.Context) error {
 	meshConfig := &meshv1.MeshConfig{}
 	err := r.client.Get(
 		ctx,
@@ -235,10 +235,10 @@ func (r *ReconcileServiceMeshEntry) getMeshConfig(ctx context.Context) error {
 	return nil
 }
 
-func (r *ReconcileServiceMeshEntry) reconcileAmc(ctx context.Context, sme *meshv1.ServiceMeshEntry) error {
+func (r *ReconcileConfiguraredService) reconcileAmc(ctx context.Context, sme *meshv1.ConfiguraredService) error {
 	name, ok := sme.Labels["app"]
 	if !ok {
-		klog.Infof("Can not found app label in ServiceMeshEntry[%s], skip create AppMeshConfig.", sme.Name)
+		klog.Infof("Can not found app label in ConfiguraredService[%s], skip create AppMeshConfig.", sme.Name)
 		return nil
 	}
 
@@ -267,7 +267,7 @@ func (r *ReconcileServiceMeshEntry) reconcileAmc(ctx context.Context, sme *meshv
 	return nil
 }
 
-func (r *ReconcileServiceMeshEntry) buildAmc(sme *meshv1.ServiceMeshEntry, name string) *meshv1.AppMeshConfig {
+func (r *ReconcileConfiguraredService) buildAmc(sme *meshv1.ConfiguraredService, name string) *meshv1.AppMeshConfig {
 	return &meshv1.AppMeshConfig{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
@@ -287,7 +287,7 @@ func (r *ReconcileServiceMeshEntry) buildAmc(sme *meshv1.ServiceMeshEntry, name 
 	}
 }
 
-func (r *ReconcileServiceMeshEntry) updateAmc(amc *meshv1.AppMeshConfig, sme *meshv1.ServiceMeshEntry) *meshv1.AppMeshConfig {
+func (r *ReconcileConfiguraredService) updateAmc(amc *meshv1.AppMeshConfig, sme *meshv1.ConfiguraredService) *meshv1.AppMeshConfig {
 	found := false
 	for _, svc := range amc.Spec.Services {
 		if svc.Name == sme.Name {
@@ -312,10 +312,10 @@ func (r *ReconcileServiceMeshEntry) updateAmc(amc *meshv1.AppMeshConfig, sme *me
 	return amc
 }
 
-func (r *ReconcileServiceMeshEntry) deleteAmc(ctx context.Context, sme *meshv1.ServiceMeshEntry) error {
+func (r *ReconcileConfiguraredService) deleteAmc(ctx context.Context, sme *meshv1.ConfiguraredService) error {
 	name, ok := sme.Labels["app"]
 	if !ok {
-		klog.Infof("Can not found app label in ServiceMeshEntry[%s], skip delete AppMeshConfig.", sme.Name)
+		klog.Infof("Can not found app label in ConfiguraredService[%s], skip delete AppMeshConfig.", sme.Name)
 		return nil
 	}
 

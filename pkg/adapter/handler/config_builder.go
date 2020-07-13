@@ -44,7 +44,7 @@ var DefaultConfigurator = &types.ConfiguratorConfig{
 }
 
 // buildPolicy
-func buildPolicy(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ServiceMeshEntry {
+func buildPolicy(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
 	sme.Spec.Policy = &v1.Policy{
 		LoadBalancer:   mc.Spec.GlobalPolicy.LoadBalancer,
 		MaxConnections: mc.Spec.GlobalPolicy.MaxConnections,
@@ -69,13 +69,13 @@ func buildPolicy(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc *v1.M
 }
 
 // buildSubsets
-func buildSubsets(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ServiceMeshEntry {
+func buildSubsets(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
 	sme.Spec.Subsets = mc.Spec.GlobalSubsets
 	return sme
 }
 
 // buildSourceLabels
-func buildSourceLabels(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ServiceMeshEntry {
+func buildSourceLabels(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
 	var sls []*v1.SourceLabels
 	for _, subset := range mc.Spec.GlobalSubsets {
 		sl := &v1.SourceLabels{
@@ -132,7 +132,7 @@ func buildSourceLabels(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc
 }
 
 // buildInstanceSetting
-func buildInstanceSetting(sme *v1.ServiceMeshEntry, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ServiceMeshEntry {
+func buildInstanceSetting(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
 	for index, ins := range sme.Spec.Instances {
 		if matched, c := matchInstance(ins, e.Configs); matched {
 			sme.Spec.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
@@ -189,7 +189,7 @@ func matchInstance(ins *v1.Instance, configs []types.ConfigItem) (bool, *types.C
 }
 
 // setConfig
-func setConfig(c *types.ConfiguratorConfig, sme *v1.ServiceMeshEntry, mc *v1.MeshConfig) {
+func setConfig(c *types.ConfiguratorConfig, sme *v1.ConfiguraredService, mc *v1.MeshConfig) {
 	// find out the service we need to process
 	if sme.Name == utils.StandardizeServiceName(c.Key) {
 		// policy's setting

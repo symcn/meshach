@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package servicemeshentry
+package configuraredservice
 
 import (
 	"context"
@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileServiceMeshEntry) reconcileVirtualService(ctx context.Context, cr *meshv1.ServiceMeshEntry) error {
+func (r *ReconcileConfiguraredService) reconcileVirtualService(ctx context.Context, cr *meshv1.ConfiguraredService) error {
 	foundMap, err := r.getVirtualServicesMap(ctx, cr)
 	if err != nil {
 		klog.Errorf("%s/%s get VirtualService error: %+v", cr.Namespace, cr.Name, err)
@@ -40,7 +40,7 @@ func (r *ReconcileServiceMeshEntry) reconcileVirtualService(ctx context.Context,
 	// Skip if the service's subset is none
 	if len(cr.Spec.Subsets) != 0 {
 		vs := r.buildVirtualService(cr)
-		// Set ServiceMeshEntry instance as the owner and controller
+		// Set ConfiguraredService instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, vs, r.scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
 			return err
@@ -95,7 +95,7 @@ func (r *ReconcileServiceMeshEntry) reconcileVirtualService(ctx context.Context,
 	return nil
 }
 
-func (r *ReconcileServiceMeshEntry) buildVirtualService(svc *meshv1.ServiceMeshEntry) *networkingv1beta1.VirtualService {
+func (r *ReconcileConfiguraredService) buildVirtualService(svc *meshv1.ConfiguraredService) *networkingv1beta1.VirtualService {
 	httpRoute := []*v1beta1.HTTPRoute{}
 	for _, sourceLabels := range svc.Spec.Policy.SourceLabels {
 		http := r.buildHTTPRoute(svc, sourceLabels)
@@ -116,7 +116,7 @@ func (r *ReconcileServiceMeshEntry) buildVirtualService(svc *meshv1.ServiceMeshE
 	}
 }
 
-func (r *ReconcileServiceMeshEntry) buildHTTPRoute(svc *meshv1.ServiceMeshEntry, sourceLabels *meshv1.SourceLabels) *v1beta1.HTTPRoute {
+func (r *ReconcileConfiguraredService) buildHTTPRoute(svc *meshv1.ConfiguraredService, sourceLabels *meshv1.SourceLabels) *v1beta1.HTTPRoute {
 	m := make(map[string]*v1beta1.StringMatch)
 	for key, matchType := range r.meshConfig.Spec.MatchHeaderLabelKeys {
 		m[key] = getMatchType(matchType, sourceLabels.Headers[key])
@@ -155,7 +155,7 @@ func (r *ReconcileServiceMeshEntry) buildHTTPRoute(svc *meshv1.ServiceMeshEntry,
 	}
 }
 
-func (r *ReconcileServiceMeshEntry) buildProxyRoute() *v1beta1.HTTPRoute {
+func (r *ReconcileConfiguraredService) buildProxyRoute() *v1beta1.HTTPRoute {
 	route := &v1beta1.HTTPRouteDestination{
 		Destination: &v1beta1.Destination{
 			Host: r.opt.ProxyHost,
@@ -199,7 +199,7 @@ func getMatchType(matchType meshv1.StringMatchType, value string) *v1beta1.Strin
 	return s
 }
 
-func (r *ReconcileServiceMeshEntry) getVirtualServicesMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.VirtualService, error) {
+func (r *ReconcileConfiguraredService) getVirtualServicesMap(ctx context.Context, cr *meshv1.ConfiguraredService) (map[string]*networkingv1beta1.VirtualService, error) {
 	list := &networkingv1beta1.VirtualServiceList{}
 	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}

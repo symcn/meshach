@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package servicemeshentry
+package configuraredservice
 
 import (
 	"context"
@@ -42,7 +42,7 @@ var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 	"PASSTHROUGH": v1beta1.LoadBalancerSettings_PASSTHROUGH,
 }
 
-func (r *ReconcileServiceMeshEntry) reconcileDestinationRule(ctx context.Context, cr *meshv1.ServiceMeshEntry) error {
+func (r *ReconcileConfiguraredService) reconcileDestinationRule(ctx context.Context, cr *meshv1.ConfiguraredService) error {
 	foundMap, err := r.getDestinationRuleMap(ctx, cr)
 	if err != nil {
 		klog.Errorf("%s/%s get DestinationRules error: %+v", cr.Namespace, cr.Name, err)
@@ -52,7 +52,7 @@ func (r *ReconcileServiceMeshEntry) reconcileDestinationRule(ctx context.Context
 	// Skip if the service's subset is none
 	if len(cr.Spec.Subsets) != 0 {
 		dr := r.buildDestinationRule(cr)
-		// Set ServiceMeshEntry instance as the owner and controller
+		// Set ConfiguraredService instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, dr, r.scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
 			return err
@@ -107,7 +107,7 @@ func (r *ReconcileServiceMeshEntry) reconcileDestinationRule(ctx context.Context
 	return nil
 }
 
-func (r *ReconcileServiceMeshEntry) buildDestinationRule(svc *meshv1.ServiceMeshEntry) *networkingv1beta1.DestinationRule {
+func (r *ReconcileConfiguraredService) buildDestinationRule(svc *meshv1.ConfiguraredService) *networkingv1beta1.DestinationRule {
 	var subsets []*v1beta1.Subset
 	for _, sub := range svc.Spec.Subsets {
 		subset := &v1beta1.Subset{Name: sub.Name, Labels: sub.Labels}
@@ -165,7 +165,7 @@ func getlb(s string) v1beta1.LoadBalancerSettings_SimpleLB {
 	return lb
 }
 
-func (r *ReconcileServiceMeshEntry) getDestinationRuleMap(ctx context.Context, cr *meshv1.ServiceMeshEntry) (map[string]*networkingv1beta1.DestinationRule, error) {
+func (r *ReconcileConfiguraredService) getDestinationRuleMap(ctx context.Context, cr *meshv1.ConfiguraredService) (map[string]*networkingv1beta1.DestinationRule, error) {
 	list := &networkingv1beta1.DestinationRuleList{}
 	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}

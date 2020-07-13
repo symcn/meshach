@@ -1,4 +1,4 @@
-package servicemeshentry
+package configuraredservice
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileServiceMeshEntry_updateStatus(t *testing.T) {
+func TestReconcileConfiguraredService_updateStatus(t *testing.T) {
 	fakeScheme := GetFakeScheme()
 	type fields struct {
 		client     client.Client
@@ -25,7 +25,7 @@ func TestReconcileServiceMeshEntry_updateStatus(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		req reconcile.Request
-		cr  *meshv1.ServiceMeshEntry
+		cr  *meshv1.ConfiguraredService
 	}
 	tests := []struct {
 		name    string
@@ -114,14 +114,14 @@ func TestReconcileServiceMeshEntry_updateStatus(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileServiceMeshEntry{
+			r := &ReconcileConfiguraredService{
 				client:     tt.fields.client,
 				scheme:     tt.fields.scheme,
 				opt:        tt.fields.opt,
 				meshConfig: tt.fields.meshConfig,
 			}
 			if err := r.updateStatus(tt.args.ctx, tt.args.req, tt.args.cr); (err != nil) != tt.wantErr {
-				t.Errorf("ReconcileServiceMeshEntry.updateStatus() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReconcileConfiguraredService.updateStatus() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			klog.Infof("[serviceentry] desired: %#v, distributed: %#v, undistributed: %#v",
 				tt.args.cr.Status.Status.ServiceEntry.Desired,
