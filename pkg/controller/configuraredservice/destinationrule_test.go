@@ -54,35 +54,35 @@ func TestReconcileConfiguraredService_reconcileDestinationRule(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-destination-update-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeDestinationRule),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeDestinationRule),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-destination-delete-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeDestinationRule, fakeDeleteDestinationRule),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeDestinationRule, fakeDeleteDestinationRule),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},

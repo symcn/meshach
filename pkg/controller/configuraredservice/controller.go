@@ -235,98 +235,98 @@ func (r *ReconcileConfiguraredService) getMeshConfig(ctx context.Context) error 
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) reconcileAmc(ctx context.Context, sme *meshv1.ConfiguraredService) error {
-	name, ok := sme.Labels["app"]
+func (r *ReconcileConfiguraredService) reconcileAmc(ctx context.Context, cs *meshv1.ConfiguraredService) error {
+	name, ok := cs.Labels["app"]
 	if !ok {
-		klog.Infof("Can not found app label in ConfiguraredService[%s], skip create AppMeshConfig.", sme.Name)
+		klog.Infof("Can not found app label in ConfiguraredService[%s], skip create AppMeshConfig.", cs.Name)
 		return nil
 	}
 
 	found := &meshv1.AppMeshConfig{}
-	err := r.client.Get(ctx, types.NamespacedName{Namespace: sme.Namespace, Name: name}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Namespace: cs.Namespace, Name: name}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			klog.Infof("Can't found AppMeshConfig[%s/%s], create...", sme.Namespace, name)
-			amc := r.buildAmc(sme, name)
+			klog.Infof("Can't found AppMeshConfig[%s/%s], create...", cs.Namespace, name)
+			amc := r.buildAmc(cs, name)
 			err = r.client.Create(ctx, amc)
 			if err != nil {
-				klog.Errorf("Create AppMeshConfig[%s/%s] error: %+v", sme.Namespace, name, err)
+				klog.Errorf("Create AppMeshConfig[%s/%s] error: %+v", cs.Namespace, name, err)
 				return err
 			}
 			return nil
 		}
-		klog.Errorf("Get AppMeshConfig[%s/%s] error: %+v", sme.Namespace, name, err)
+		klog.Errorf("Get AppMeshConfig[%s/%s] error: %+v", cs.Namespace, name, err)
 		return err
 	}
 
-	err = r.client.Update(ctx, r.updateAmc(found, sme))
+	err = r.client.Update(ctx, r.updateAmc(found, cs))
 	if err != nil {
-		klog.Errorf("Update AppMeshConfig[%s/%s] error: %+v", sme.Namespace, name, err)
+		klog.Errorf("Update AppMeshConfig[%s/%s] error: %+v", cs.Namespace, name, err)
 		return err
 	}
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) buildAmc(sme *meshv1.ConfiguraredService, name string) *meshv1.AppMeshConfig {
+func (r *ReconcileConfiguraredService) buildAmc(cs *meshv1.ConfiguraredService, name string) *meshv1.AppMeshConfig {
 	return &meshv1.AppMeshConfig{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
-			Namespace: sme.Namespace,
+			Namespace: cs.Namespace,
 			// Labels:    map[string]string{"": ""},
 		},
 		Spec: meshv1.AppMeshConfigSpec{
 			Services: []*meshv1.Service{&meshv1.Service{
-				Name:         sme.Name,
-				OriginalName: sme.Spec.OriginalName,
-				Ports:        sme.Spec.Ports,
-				Instances:    sme.Spec.Instances,
-				Policy:       sme.Spec.Policy,
-				Subsets:      sme.Spec.Subsets,
+				Name:         cs.Name,
+				OriginalName: cs.Spec.OriginalName,
+				Ports:        cs.Spec.Ports,
+				Instances:    cs.Spec.Instances,
+				Policy:       cs.Spec.Policy,
+				Subsets:      cs.Spec.Subsets,
 			}},
 		},
 	}
 }
 
-func (r *ReconcileConfiguraredService) updateAmc(amc *meshv1.AppMeshConfig, sme *meshv1.ConfiguraredService) *meshv1.AppMeshConfig {
+func (r *ReconcileConfiguraredService) updateAmc(amc *meshv1.AppMeshConfig, cs *meshv1.ConfiguraredService) *meshv1.AppMeshConfig {
 	found := false
 	for _, svc := range amc.Spec.Services {
-		if svc.Name == sme.Name {
+		if svc.Name == cs.Name {
 			found = true
-			svc.Subsets = sme.Spec.Subsets
-			svc.Ports = sme.Spec.Ports
-			svc.Instances = sme.Spec.Instances
-			svc.Policy = sme.Spec.Policy
-			svc.OriginalName = sme.Spec.OriginalName
+			svc.Subsets = cs.Spec.Subsets
+			svc.Ports = cs.Spec.Ports
+			svc.Instances = cs.Spec.Instances
+			svc.Policy = cs.Spec.Policy
+			svc.OriginalName = cs.Spec.OriginalName
 		}
 	}
 	if !found {
 		amc.Spec.Services = append(amc.Spec.Services, &meshv1.Service{
-			Name:         sme.Name,
-			OriginalName: sme.Spec.OriginalName,
-			Ports:        sme.Spec.Ports,
-			Instances:    sme.Spec.Instances,
-			Policy:       sme.Spec.Policy,
-			Subsets:      sme.Spec.Subsets,
+			Name:         cs.Name,
+			OriginalName: cs.Spec.OriginalName,
+			Ports:        cs.Spec.Ports,
+			Instances:    cs.Spec.Instances,
+			Policy:       cs.Spec.Policy,
+			Subsets:      cs.Spec.Subsets,
 		})
 	}
 	return amc
 }
 
-func (r *ReconcileConfiguraredService) deleteAmc(ctx context.Context, sme *meshv1.ConfiguraredService) error {
-	name, ok := sme.Labels["app"]
+func (r *ReconcileConfiguraredService) deleteAmc(ctx context.Context, cs *meshv1.ConfiguraredService) error {
+	name, ok := cs.Labels["app"]
 	if !ok {
-		klog.Infof("Can not found app label in ConfiguraredService[%s], skip delete AppMeshConfig.", sme.Name)
+		klog.Infof("Can not found app label in ConfiguraredService[%s], skip delete AppMeshConfig.", cs.Name)
 		return nil
 	}
 
 	found := &meshv1.AppMeshConfig{}
-	err := r.client.Get(ctx, types.NamespacedName{Namespace: sme.Namespace, Name: name}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Namespace: cs.Namespace, Name: name}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			klog.Infof("Can't found AppMeshConfig[%s/%s] when deleting it", sme.Namespace, name)
+			klog.Infof("Can't found AppMeshConfig[%s/%s] when deleting it", cs.Namespace, name)
 			return nil
 		}
-		klog.Errorf("Get AppMeshConfig[%s/%s] error: %+v", sme.Namespace, name, err)
+		klog.Errorf("Get AppMeshConfig[%s/%s] error: %+v", cs.Namespace, name, err)
 		return err
 	}
 
@@ -338,7 +338,7 @@ func (r *ReconcileConfiguraredService) deleteAmc(ctx context.Context, sme *meshv
 			}
 			return nil
 		}
-		if svc.Name == sme.Name {
+		if svc.Name == cs.Name {
 			continue
 		}
 		found.Spec.Services = append(found.Spec.Services, svc)

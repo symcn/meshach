@@ -171,7 +171,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 					return nil
 				}
 
-				// utilize this configurator for such amc CR
+				// utilize this configurator for such cs CR
 				if e.ConfigEntry == nil || !e.ConfigEntry.Enabled {
 					// TODO we really need to handle and think about the case that configuration has been disable.
 					kubeMceh.configBuilder.SetConfig(cs, kubeMceh.configBuilder.GetDefaultConfig())

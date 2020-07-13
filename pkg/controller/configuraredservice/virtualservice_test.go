@@ -52,35 +52,35 @@ func TestReconcileConfiguraredService_reconcileVirtualService(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-virtualservice-update-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeVirtualService),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeVirtualService),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-virtualservice-delete-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeVirtualService, fakeDeleteVirtualService),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeVirtualService, fakeDeleteVirtualService),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},

@@ -99,19 +99,19 @@ func (r *ReconcileMeshConfig) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	smeList := &meshv1.ConfiguraredServiceList{}
-	err = r.client.List(context.TODO(), smeList, &client.ListOptions{Namespace: corev1.NamespaceAll})
+	csList := &meshv1.ConfiguraredServiceList{}
+	err = r.client.List(context.TODO(), csList, &client.ListOptions{Namespace: corev1.NamespaceAll})
 	if err != nil {
 		klog.Infof("Get ConfiguraredService error: %s", err)
 	}
-	for i := range smeList.Items {
-		sme := smeList.Items[i]
-		if sme.Spec.MeshConfigGeneration != instance.Generation {
-			sme.Spec.MeshConfigGeneration = instance.Generation
-			err := r.client.Update(context.TODO(), &sme)
+	for i := range csList.Items {
+		cs := csList.Items[i]
+		if cs.Spec.MeshConfigGeneration != instance.Generation {
+			cs.Spec.MeshConfigGeneration = instance.Generation
+			err := r.client.Update(context.TODO(), &cs)
 			if err != nil {
 				klog.Errorf("Update ConfiguraredService[%s/%s] in MeshConfig reconcile error: %+v",
-					sme.Namespace, sme.Name, err)
+					cs.Namespace, cs.Name, err)
 			}
 		}
 	}

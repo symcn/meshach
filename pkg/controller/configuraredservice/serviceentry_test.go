@@ -54,35 +54,35 @@ func TestReconcileConfiguraredService_reconcileServiceEntry(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-serviceentry-update-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeServiceEntry),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeServiceEntry),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-reconcile-serviceentry-delete-ok",
 			fields: fields{
-				client:     GetFakeClient(TestMeshConfig, smeTestOK, fakeServiceEntry, fakeDeleteServiceEntry),
+				client:     GetFakeClient(TestMeshConfig, csTestOK, fakeServiceEntry, fakeDeleteServiceEntry),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
 			},
 			args: args{
 				ctx: context.Background(),
-				cr:  smeTestOK,
+				cr:  csTestOK,
 			},
 			wantErr: false,
 		},

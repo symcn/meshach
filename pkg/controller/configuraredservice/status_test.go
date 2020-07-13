@@ -37,7 +37,7 @@ func TestReconcileConfiguraredService_updateStatus(t *testing.T) {
 			name: "test-status-update-ok",
 			fields: fields{
 				client: GetFakeClient(
-					smeTestOK,
+					csTestOK,
 					fakeServiceEntry,
 					fakeVirtualService,
 					fakeDestinationRule,
@@ -50,10 +50,10 @@ func TestReconcileConfiguraredService_updateStatus(t *testing.T) {
 			args: args{
 				ctx: context.TODO(),
 				req: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "sme-test-case",
+					Name:      "cs-test-case",
 					Namespace: "sym-test",
 				}},
-				cr: smeTestOK,
+				cr: csTestOK,
 			},
 			wantErr: false,
 		},
@@ -68,17 +68,17 @@ func TestReconcileConfiguraredService_updateStatus(t *testing.T) {
 			args: args{
 				ctx: context.TODO(),
 				req: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "sme-test-case",
+					Name:      "cs-test-case",
 					Namespace: "sym-test",
 				}},
-				cr: smeTestOK,
+				cr: csTestOK,
 			},
 			wantErr: true,
 		},
 		{
 			name: "test-status-update-distributing",
 			fields: fields{
-				client:     GetFakeClient(smeTestOK, fakeServiceEntry, fakeVirtualService),
+				client:     GetFakeClient(csTestOK, fakeServiceEntry, fakeVirtualService),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -86,17 +86,17 @@ func TestReconcileConfiguraredService_updateStatus(t *testing.T) {
 			args: args{
 				ctx: context.TODO(),
 				req: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "sme-test-case",
+					Name:      "cs-test-case",
 					Namespace: "sym-test",
 				}},
-				cr: smeTestOK,
+				cr: csTestOK,
 			},
 			wantErr: false,
 		},
 		{
 			name: "test-status-update-undistributed",
 			fields: fields{
-				client:     GetFakeClient(smeTestOK),
+				client:     GetFakeClient(csTestOK),
 				scheme:     fakeScheme,
 				opt:        TestOpt,
 				meshConfig: TestMeshConfig,
@@ -104,10 +104,10 @@ func TestReconcileConfiguraredService_updateStatus(t *testing.T) {
 			args: args{
 				ctx: context.TODO(),
 				req: reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      "sme-test-case",
+					Name:      "cs-test-case",
 					Namespace: "sym-test",
 				}},
-				cr: smeTestOK,
+				cr: csTestOK,
 			},
 			wantErr: false,
 		},
