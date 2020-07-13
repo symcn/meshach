@@ -7,7 +7,7 @@ What are our tasks?
 
 1. Retrieving the data of service & instances from a registry center such as Nacos, zookeeper. 
 2. Generating the istio's CRD through various data such as registry data & configurations.
-3. Make MOSN can support registry request of a dubbo provider.
+3. Make MOSN be able to support serve a registry request which comes from a dubbo provider.
 
 ## Installing and running
 
@@ -70,7 +70,26 @@ $ kubectl apply -f deploy/controller.yaml
 - Some docs comming soon
 
 ## Features
+Adapter:
+- Synchronizing services from a specified registry center.
+- Synchronizing the customized configuration of service from a specified config center
+  
+#### Source
+The implementing for synchronizing services:
+- Zookeeper servers of a dubbo cluster (Supported)
+- Nacos (Planned)
+
+The implementing for synchronizing configs:
+- The configuration stored as a independent zNode for a dubbo service
+- Nacos (Planned)
+
+#### Target
+
+The event handler what is used for creating or updating the services with its configuration
+- Creating a CR named ConfiguredService correspond to a service into a single k8s cluster (Supported)
+- Creating the CR into multiple k8s clusters (Supported)
 
 ### Supported
 
 ### Planned
+
