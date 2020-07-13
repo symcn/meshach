@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
+	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
-	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 )
 
@@ -29,21 +29,16 @@ type KubeMultiClusterEventHandler struct {
 func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
 	mc := &v1.MeshConfig{}
 	err := k8sMgr.MasterClient.GetClient().Get(context.Background(), types.NamespacedName{
-		Name:      meshConfigNamespace,
+		Name:      meshConfigName,
 		Namespace: defaultNamespace,
 	}, mc)
 	if err != nil {
 		return nil, fmt.Errorf("loading mesh config has an error: %v", err)
 	}
 
-	dcb := &DubboConfiguratorBuilder{
-		globalConfig:  mc,
-		defaultConfig: DubboDefaultConfig,
-	}
-
 	var kubeHandlers []component.EventHandler
 	for _, c := range k8sMgr.GetAll() {
-		h, err := NewKubeSingleClusterEventHandler(c.Mgr)
+		h, err := NewKubeSingleClusterEventHandler(c.Mgr, mc)
 		if err != nil {
 			klog.Errorf("initializing kube handler with a manager failed: %v", err)
 			return nil, err
@@ -53,9 +48,8 @@ func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (compone
 	}
 
 	return &KubeMultiClusterEventHandler{
-		k8sMgr:        k8sMgr,
-		configBuilder: dcb,
-		handlers:      kubeHandlers,
+		k8sMgr:   k8sMgr,
+		handlers: kubeHandlers,
 	}, nil
 }
 

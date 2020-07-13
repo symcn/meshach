@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	defaultNamespace    = "sym-admin"
-	clusterName         = ""
-	meshConfigNamespace = "sym-meshconfig"
+	defaultNamespace = "sym-admin"
+	clusterName      = ""
+	meshConfigName   = "sym-meshconfig"
 )
 
 // KubeEventHandler it used for synchronizing the component which has been send by the adapter client

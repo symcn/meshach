@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"context"
-	"fmt"
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -25,16 +22,7 @@ type KubeSingleClusterEventHandler struct {
 }
 
 // NewKubeSingleClusterEventHandler ...
-func NewKubeSingleClusterEventHandler(mgr manager.Manager) (component.EventHandler, error) {
-	mc := &v1.MeshConfig{}
-	err := mgr.GetClient().Get(context.Background(), client.ObjectKey{
-		Name:      meshConfigNamespace,
-		Namespace: defaultNamespace,
-	}, mc)
-	if err != nil {
-		return nil, fmt.Errorf("loading mesh config has an error: %v", err)
-	}
-
+func NewKubeSingleClusterEventHandler(mgr manager.Manager, mc *v1.MeshConfig) (component.EventHandler, error) {
 	dcb := &DubboConfiguratorBuilder{
 		globalConfig:  mc,
 		defaultConfig: DubboDefaultConfig,

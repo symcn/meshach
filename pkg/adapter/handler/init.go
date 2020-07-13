@@ -1,14 +1,18 @@
 package handler
 
 import (
+	"context"
+	"fmt"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
+	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
@@ -68,7 +72,16 @@ func Init(opt options.EventHandlers) ([]component.EventHandler, error) {
 
 		if !opt.IsMultiClusters {
 			// it just need to synchronize services to a single cluster
-			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr)
+			mc := &v1.MeshConfig{}
+			err := mgr.GetClient().Get(context.Background(), client.ObjectKey{
+				Name:      meshConfigName,
+				Namespace: defaultNamespace,
+			}, mc)
+			if err != nil {
+				return nil, fmt.Errorf("loading mesh config has an error: %v", err)
+			}
+
+			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr, mc)
 			if err != nil {
 				klog.Errorf("Initializing an event handler for synchronizing to multiple clusters has an error: %v", err)
 				return nil, err
@@ -78,7 +91,6 @@ func Init(opt options.EventHandlers) ([]component.EventHandler, error) {
 		} else {
 			// it need to synchronize services to the clusters we found with a configmap which is used for
 			// defining these clusters
-
 			masterClient := k8smanager.MasterClient{
 				KubeCli: kubeCli,
 				Manager: mgr,
