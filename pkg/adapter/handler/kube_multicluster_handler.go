@@ -73,31 +73,31 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 
 			retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				// Convert a service event that noticed by zookeeper to a Service CRD
-				sme := convertEventToSme(event.Service)
+				cs := convertEvent(event.Service)
 
 				// meanwhile we should search a configurator for such service
 				config := configuratorFinder(event.Service.Name)
 				if config == nil {
 					dc := *DefaultConfigurator
 					dc.Key = event.Service.Name
-					setConfig(&dc, sme, kubeMceh.meshConfig)
+					setConfig(&dc, cs, kubeMceh.meshConfig)
 				} else {
-					setConfig(config, sme, kubeMceh.meshConfig)
+					setConfig(config, cs, kubeMceh.meshConfig)
 				}
 
-				// loading sme CR from k8s cluster
-				foundSme, err := get(&v1.ConfiguraredService{
+				// loading cs CR from k8s cluster
+				foundCs, err := get(&v1.ConfiguraredService{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      utils.StandardizeServiceName(event.Service.Name),
 						Namespace: defaultNamespace,
 					},
 				}, cluster.Client)
 				if err != nil {
-					klog.Warningf("Can not find an existed sme CR: %v, then create such sme instead.", err)
-					return create(sme, cluster.Client)
+					klog.Warningf("Can not find an existed cs CR: %v, then create such cs instead.", err)
+					return create(cs, cluster.Client)
 				}
-				foundSme.Spec = sme.Spec
-				return update(foundSme, cluster.Client)
+				foundCs.Spec = cs.Spec
+				return update(foundCs, cluster.Client)
 			})
 		}()
 	}
@@ -156,14 +156,14 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 		go func() {
 			retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				serviceName := e.ConfigEntry.Key
-				sme, err := get(&v1.ConfiguraredService{
+				cs, err := get(&v1.ConfiguraredService{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      utils.StandardizeServiceName(serviceName),
 						Namespace: defaultNamespace,
 					},
 				}, cluster.Client)
 				if err != nil {
-					klog.Infof("Finding sme with name %s has an error: %v", serviceName, err)
+					klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
 					// TODO Is there a requirement to requeue this event?
 					return nil
 				}
@@ -173,12 +173,12 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 					// TODO we really need to handle and think about the case that configuration has been disable.
 					dc := *DefaultConfigurator
 					dc.Key = serviceName
-					setConfig(&dc, sme, kubeMceh.meshConfig)
+					setConfig(&dc, cs, kubeMceh.meshConfig)
 				} else {
-					setConfig(e.ConfigEntry, sme, kubeMceh.meshConfig)
+					setConfig(e.ConfigEntry, cs, kubeMceh.meshConfig)
 				}
 
-				return update(sme, cluster.Client)
+				return update(cs, cluster.Client)
 			})
 		}()
 	}
@@ -199,14 +199,14 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.Config
 				// Usually deleting event don't include the configuration data, so that we should
 				// parse the zNode path to decide what is the service name.
 				serviceName := utils.StandardizeServiceName(utils.ResolveServiceName(e.Path))
-				sme, err := get(&v1.ConfiguraredService{
+				cs, err := get(&v1.ConfiguraredService{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      serviceName,
 						Namespace: defaultNamespace,
 					},
 				}, cluster.Client)
 				if err != nil {
-					klog.Infof("Finding sme with name %s has an error: %v", serviceName, err)
+					klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
 					// TODO Is there a requirement to requeue this event?
 					return nil
 				}
@@ -214,9 +214,9 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.Config
 				// Deleting a configuration of a service is similar to setting default configurator to this service
 				dc := *DefaultConfigurator
 				dc.Key = serviceName
-				setConfig(&dc, sme, kubeMceh.meshConfig)
+				setConfig(&dc, cs, kubeMceh.meshConfig)
 
-				return update(sme, cluster.Client)
+				return update(cs, cluster.Client)
 			})
 		}()
 	}

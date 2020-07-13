@@ -33,9 +33,9 @@ func convertPort(port *types2.Port) *v1.Port {
 }
 
 // convertService Convert service between these two formats
-func convertEventToSme(s *types2.Service) *v1.ConfiguraredService {
+func convertEvent(s *types2.Service) *v1.ConfiguraredService {
 	// TODO Assuming every service can only provide an unique fixed port to adapt the dubbo case.
-	sme := &v1.ConfiguraredService{
+	cs := &v1.ConfiguraredService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.StandardizeServiceName(s.Name),
 			Namespace: defaultNamespace,
@@ -62,28 +62,28 @@ func convertEventToSme(s *types2.Service) *v1.ConfiguraredService {
 		ins.Labels[constant.InstanceLabelZoneName] = constant.ZoneValue
 		instances = append(instances, ins)
 	}
-	sme.Spec.Instances = instances
+	cs.Spec.Instances = instances
 
-	return sme
+	return cs
 }
 
 // create
-func create(sme *v1.ConfiguraredService, c client.Client) error {
-	err := c.Create(context.Background(), sme)
-	klog.Infof("The generation of sme when creating: %d", sme.ObjectMeta.Generation)
+func create(cs *v1.ConfiguraredService, c client.Client) error {
+	err := c.Create(context.Background(), cs)
+	klog.Infof("The generation of cs when creating: %d", cs.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Creating an sme has an error:%v\n", err)
+		klog.Infof("Creating an cs has an error:%v\n", err)
 		return err
 	}
 	return nil
 }
 
 // update
-func update(sme *v1.ConfiguraredService, c client.Client) error {
-	err := c.Update(context.Background(), sme)
-	klog.Infof("The generation of sme after updating: %d", sme.ObjectMeta.Generation)
+func update(cs *v1.ConfiguraredService, c client.Client) error {
+	err := c.Update(context.Background(), cs)
+	klog.Infof("The generation of cs after updating: %d", cs.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Updating a sme has an error: %v\n", err)
+		klog.Infof("Updating a cs has an error: %v\n", err)
 		return err
 	}
 
@@ -91,18 +91,18 @@ func update(sme *v1.ConfiguraredService, c client.Client) error {
 }
 
 // get
-func get(sme *v1.ConfiguraredService, c client.Client) (*v1.ConfiguraredService, error) {
+func get(cs *v1.ConfiguraredService, c client.Client) (*v1.ConfiguraredService, error) {
 	err := c.Get(context.Background(), types.NamespacedName{
-		Namespace: sme.Namespace,
-		Name:      sme.Name,
-	}, sme)
-	klog.Infof("The generation of sme when getting: %d", sme.ObjectMeta.Generation)
-	return sme, err
+		Namespace: cs.Namespace,
+		Name:      cs.Name,
+	}, cs)
+	klog.Infof("The generation of cs when getting: %d", cs.ObjectMeta.Generation)
+	return cs, err
 }
 
 // delete
-func delete(sme *v1.ConfiguraredService, c client.Client) error {
-	err := c.Delete(context.Background(), sme)
-	klog.Infof("The generation of sme when getting: %d", sme.ObjectMeta.Generation)
+func delete(cs *v1.ConfiguraredService, c client.Client) error {
+	err := c.Delete(context.Background(), cs)
+	klog.Infof("The generation of cs when getting: %d", cs.ObjectMeta.Generation)
 	return err
 }

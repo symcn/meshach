@@ -61,31 +61,31 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Convert a service event that noticed by zookeeper to a Service CRD
-		sme := convertEventToSme(event.Service)
+		cs := convertEvent(event.Service)
 
 		// meanwhile we should search a configurator for such service
 		config := configuratorFinder(event.Service.Name)
 		if config == nil {
 			dc := *DefaultConfigurator
 			dc.Key = event.Service.Name
-			setConfig(&dc, sme, kubeSceh.meshConfig)
+			setConfig(&dc, cs, kubeSceh.meshConfig)
 		} else {
-			setConfig(config, sme, kubeSceh.meshConfig)
+			setConfig(config, cs, kubeSceh.meshConfig)
 		}
 
-		// loading sme CR from k8s cluster
-		foundSme, err := get(&v1.ConfiguraredService{
+		// loading cs CR from k8s cluster
+		foundCs, err := get(&v1.ConfiguraredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      utils.StandardizeServiceName(event.Service.Name),
 				Namespace: defaultNamespace,
 			},
 		}, kubeSceh.ctrlManager.GetClient())
 		if err != nil {
-			klog.Warningf("Can not find an existed sme CR: %v, then create such sme instead.", err)
-			return create(sme, kubeSceh.ctrlManager.GetClient())
+			klog.Warningf("Can not find an existed cs CR: %v, then create such cs instead.", err)
+			return create(cs, kubeSceh.ctrlManager.GetClient())
 		}
-		foundSme.Spec = sme.Spec
-		return update(foundSme, kubeSceh.ctrlManager.GetClient())
+		foundCs.Spec = cs.Spec
+		return update(foundCs, kubeSceh.ctrlManager.GetClient())
 	})
 
 }
@@ -128,14 +128,14 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
-		sme, err := get(&v1.ConfiguraredService{
+		cs, err := get(&v1.ConfiguraredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      utils.StandardizeServiceName(serviceName),
 				Namespace: defaultNamespace,
 			},
 		}, kubeSceh.ctrlManager.GetClient())
 		if err != nil {
-			klog.Infof("Finding sme with name %s has an error: %v", serviceName, err)
+			klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
@@ -145,12 +145,12 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 			// TODO we really need to handle and think about the case that configuration has been disable.
 			dc := *DefaultConfigurator
 			dc.Key = serviceName
-			setConfig(&dc, sme, kubeSceh.meshConfig)
+			setConfig(&dc, cs, kubeSceh.meshConfig)
 		} else {
-			setConfig(e.ConfigEntry, sme, kubeSceh.meshConfig)
+			setConfig(e.ConfigEntry, cs, kubeSceh.meshConfig)
 		}
 
-		return update(sme, kubeSceh.ctrlManager.GetClient())
+		return update(cs, kubeSceh.ctrlManager.GetClient())
 	})
 
 }
@@ -165,14 +165,14 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.StandardizeServiceName(utils.ResolveServiceName(e.Path))
-		sme, err := get(&v1.ConfiguraredService{
+		cs, err := get(&v1.ConfiguraredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serviceName,
 				Namespace: defaultNamespace,
 			},
 		}, kubeSceh.ctrlManager.GetClient())
 		if err != nil {
-			klog.Infof("Finding sme with name %s has an error: %v", serviceName, err)
+			klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
@@ -180,9 +180,9 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// Deleting a configuration of a service is similar to setting default configurator to this service
 		dc := *DefaultConfigurator
 		dc.Key = serviceName
-		setConfig(&dc, sme, kubeSceh.meshConfig)
+		setConfig(&dc, cs, kubeSceh.meshConfig)
 
-		return update(sme, kubeSceh.ctrlManager.GetClient())
+		return update(cs, kubeSceh.ctrlManager.GetClient())
 	})
 
 }

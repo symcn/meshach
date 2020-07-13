@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/ghodss/yaml"
@@ -44,8 +43,8 @@ var DefaultConfigurator = &types.ConfiguratorConfig{
 }
 
 // buildPolicy
-func buildPolicy(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
-	sme.Spec.Policy = &v1.Policy{
+func buildPolicy(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
+	cs.Spec.Policy = &v1.Policy{
 		LoadBalancer:   mc.Spec.GlobalPolicy.LoadBalancer,
 		MaxConnections: mc.Spec.GlobalPolicy.MaxConnections,
 		Timeout:        mc.Spec.GlobalPolicy.Timeout,
@@ -58,24 +57,24 @@ func buildPolicy(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v
 	// Setting the service's configuration such as policy
 	if defaultConfig != nil && defaultConfig.Enabled {
 		if t, ok := defaultConfig.Parameters["timeout"]; ok {
-			sme.Spec.Policy.Timeout = t
+			cs.Spec.Policy.Timeout = t
 		}
 		if r, ok := defaultConfig.Parameters["retries"]; ok {
-			sme.Spec.Policy.MaxRetries = utils.ToInt32(r)
+			cs.Spec.Policy.MaxRetries = utils.ToInt32(r)
 		}
 	}
 
-	return sme
+	return cs
 }
 
 // buildSubsets
-func buildSubsets(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
-	sme.Spec.Subsets = mc.Spec.GlobalSubsets
-	return sme
+func buildSubsets(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
+	cs.Spec.Subsets = mc.Spec.GlobalSubsets
+	return cs
 }
 
 // buildSourceLabels
-func buildSourceLabels(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
+func buildSourceLabels(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
 	var sls []*v1.SourceLabels
 	for _, subset := range mc.Spec.GlobalSubsets {
 		sl := &v1.SourceLabels{
@@ -106,11 +105,11 @@ func buildSourceLabels(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig,
 		if flagConfig != nil {
 			fc, ok := flagConfig.Parameters["flag_config"]
 			if ok {
-				fmt.Printf("%s\n", fc)
+				klog.Infof("Flag config: %s", fc)
 				fcp := &types.FlagConfigParameter{}
 				err := yaml.Unmarshal([]byte(fc), fcp)
 				if err != nil {
-					fmt.Printf("Parsing the flag_config parameter has an error: %v\n", err)
+					klog.Errorf("Parsing the flag_config parameter has an error: %v", err)
 				} else if flagConfig.Enabled && fcp.Manual {
 					// clear the default routes firstly
 					routes = routes[:0]
@@ -127,20 +126,20 @@ func buildSourceLabels(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig,
 		sl.Route = routes
 		sls = append(sls, sl)
 	}
-	sme.Spec.Policy.SourceLabels = sls
-	return sme
+	cs.Spec.Policy.SourceLabels = sls
+	return cs
 }
 
 // buildInstanceSetting
-func buildInstanceSetting(sme *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
-	for index, ins := range sme.Spec.Instances {
+func buildInstanceSetting(cs *v1.ConfiguraredService, e *types.ConfiguratorConfig, mc *v1.MeshConfig) *v1.ConfiguraredService {
+	for index, ins := range cs.Spec.Instances {
 		if matched, c := matchInstance(ins, e.Configs); matched {
-			sme.Spec.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
+			cs.Spec.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
 		} else {
-			sme.Spec.Instances[index].Weight = 100
+			cs.Spec.Instances[index].Weight = 100
 		}
 	}
-	return sme
+	return cs
 }
 
 // findDefaultConfig
@@ -189,19 +188,19 @@ func matchInstance(ins *v1.Instance, configs []types.ConfigItem) (bool, *types.C
 }
 
 // setConfig
-func setConfig(c *types.ConfiguratorConfig, sme *v1.ConfiguraredService, mc *v1.MeshConfig) {
+func setConfig(c *types.ConfiguratorConfig, cs *v1.ConfiguraredService, mc *v1.MeshConfig) {
 	// find out the service we need to process
-	if sme.Name == utils.StandardizeServiceName(c.Key) {
+	if cs.Name == utils.StandardizeServiceName(c.Key) {
 		// policy's setting
-		buildPolicy(sme, c, mc)
+		buildPolicy(cs, c, mc)
 		// subset's setting
-		buildSubsets(sme, c, mc)
+		buildSubsets(cs, c, mc)
 		// setting source labels
-		buildSourceLabels(sme, c, mc)
+		buildSourceLabels(cs, c, mc)
 		// Setting these instances's configuration such as weight
-		buildInstanceSetting(sme, c, mc)
+		buildInstanceSetting(cs, c, mc)
 	} else {
-		klog.Warningf("Set configuration failed: the sme's name [%s] is difference from the configurator's name [%s]",
-			sme.Name, c.Key)
+		klog.Warningf("Set configuration failed: the cs's name [%s] is difference from the configurator's name [%s]",
+			cs.Name, c.Key)
 	}
 }
