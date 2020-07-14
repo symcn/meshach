@@ -1,12 +1,13 @@
 package utils
 
 import (
-	"fmt"
 	"net"
 	"path"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"k8s.io/klog"
 )
 
 // DeleteInSlice delete an element from a Slice with an index.
@@ -19,7 +20,7 @@ func DeleteInSlice(s interface{}, index int) interface{} {
 		return result.Interface()
 	}
 
-	fmt.Printf("Only a slice can be passed into this method for deleting an element of it.")
+	klog.Errorf("Only a slice can be passed into this method for deleting an element of it.")
 	return s
 }
 
@@ -28,7 +29,7 @@ func DeleteInSlice(s interface{}, index int) interface{} {
 func RemovePort(addressWithPort string) string {
 	host, _, err := net.SplitHostPort(addressWithPort)
 	if err != nil {
-		fmt.Printf("Split host and port for a service name has an error:%v\n", err)
+		klog.Errorf("Split host and port for a service name has an error:%v\n", err)
 		// returning the original address instead if the address has a incorrect format
 		return addressWithPort
 	}
