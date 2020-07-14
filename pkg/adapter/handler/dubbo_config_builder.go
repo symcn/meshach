@@ -11,7 +11,7 @@ import (
 	"k8s.io/klog"
 )
 
-// DefaultConfigurator it is used when the service has not a customized configurator
+// DubboDefaultConfig it is used when the service has not a customized configurator
 var DubboDefaultConfig = &types.ConfiguratorConfig{
 	ConfigVersion: "2.7",
 	Scope:         "service",
@@ -60,10 +60,12 @@ type Flag struct {
 	Weight int32
 }
 
+// GetGlobalConfig ...
 func (dcb *DubboConfiguratorBuilder) GetGlobalConfig() *v1.MeshConfig {
 	return dcb.globalConfig
 }
 
+// GetDefaultConfig ...
 func (dcb *DubboConfiguratorBuilder) GetDefaultConfig() *types.ConfiguratorConfig {
 	return dcb.defaultConfig
 }
@@ -94,13 +96,13 @@ func (dcb *DubboConfiguratorBuilder) BuildPolicy(cs *v1.ConfiguraredService, cc 
 	return cs
 }
 
-// buildSubsets
+// BuildSubsets ...
 func (dcb *DubboConfiguratorBuilder) BuildSubsets(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
 	cs.Spec.Subsets = dcb.GetGlobalConfig().Spec.GlobalSubsets
 	return cs
 }
 
-// buildSourceLabels
+// BuildSourceLabels ...
 func (dcb *DubboConfiguratorBuilder) BuildSourceLabels(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
 	var sls []*v1.SourceLabels
 	for _, subset := range dcb.GetGlobalConfig().Spec.GlobalSubsets {
@@ -157,7 +159,7 @@ func (dcb *DubboConfiguratorBuilder) BuildSourceLabels(cs *v1.ConfiguraredServic
 	return cs
 }
 
-// buildInstanceSetting
+// BuildInstanceSetting ...
 func (dcb *DubboConfiguratorBuilder) BuildInstanceSetting(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
 	for index, ins := range cs.Spec.Instances {
 		if matched, c := matchInstance(ins, cc.Configs); matched {
