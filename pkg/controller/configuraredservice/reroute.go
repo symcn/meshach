@@ -36,6 +36,12 @@ func (r *ReconcileConfiguraredService) reconcileSubset(ctx context.Context, cr *
 }
 
 func (r *ReconcileConfiguraredService) rerouteSubset(ctx context.Context, subset *meshv1.Subset, cr *meshv1.ConfiguraredService) error {
+	if cr.Spec.CanaryRerouteOption == nil ||
+		cr.Spec.RerouteOption == nil {
+		klog.Warningf("%s/%s not set reroute option.", cr.Namespace, cr.Name)
+		return nil
+	}
+
 	var err error
 	if subset.IsCanary {
 		err = r.reroute(ctx, subset, cr, cr.Spec.CanaryRerouteOption.ReroutePolicy)
