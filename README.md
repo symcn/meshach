@@ -9,6 +9,8 @@ What are our tasks?
 2. Generating the istio's CRD through various data such as registry data & configurations.
 3. Make MOSN be able to support serve a registry request which comes from a dubbo provider.
 
+![mesh-operator](./docs/architecture-diagram.png)
+
 ## Installing and running
 
 ### Build
