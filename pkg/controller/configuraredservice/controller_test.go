@@ -311,7 +311,7 @@ var (
 		},
 	}
 
-	testOKSubSet = &meshv1.Subset{
+	testOKSubset = &meshv1.Subset{
 		Name: "blue-test",
 		Labels: map[string]string{
 			"sym-group": "blue",
@@ -343,7 +343,7 @@ var (
 				MaxRetries:     3,
 				SourceLabels:   nil,
 			},
-			Subsets: []*meshv1.Subset{testOKSubSet},
+			Subsets: []*meshv1.Subset{testOKSubset},
 		},
 	}
 	fakeWorkloadEntry = &networkingv1beta1.WorkloadEntry{

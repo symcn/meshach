@@ -54,6 +54,9 @@ type Subset struct {
 	// NOTE: Policies specified for subsets will not take effect until a route rule explicitly
 	// sends traffic to this subset.
 	Policy *Policy `json:"policy,omitempty"`
+
+	// Whether the subset is defined as a canary group
+	IsCanary bool `json:"isCanary,omitempty"`
 }
 
 // Policy defines load balancing, retry, and other policies for a service.
@@ -141,7 +144,51 @@ type ConfiguraredServiceSpec struct {
 
 	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
 	MeshConfigGeneration int64 `json:"meshConfigGeneration"`
+
+	// The settings used to reroute the sourceLabels traffic when all of the previously
+	// subsets instances are available.
+	RerouteOption *RerouteOption `json:"rerouteOption"`
+
+	// The settings used to reroute canary deployment traffic when all of the previously
+	// subsets instances are available.
+	CanaryRerouteOption *RerouteOption `json:"canaryRerouteOption"`
 }
+
+// RerouteOption define the re-routing policy when all of the previously sebsets instances
+// are available.
+type RerouteOption struct {
+	// The rerouting strategy currently includes only Unchangeable, Polling, Random, and Specific.
+	//
+	// 1. Unchangeable: Does not reroute when all instances of the originally
+	// specified subset are offline.
+	//
+	// 2. RoundRobin: Access the remaining available subsets when all instances
+	// of a sourcelabels originally specified are offline using Round-Robin.
+	//
+	// 3. Random: When all instances of the originally specified subset for a
+	// sourcelabels are offline, random access to the remaining available subsets.
+	//
+	// 4. Specific: Routes using the specified mapping when all instances of the
+	// originally specified subset are offline.
+	ReroutePolicy ReroutePolicy
+
+	// This map only takes effect when 'ReroutePolicy' is specified to 'Specific',
+	// each sourceLabels can specify multiple accessible subsets and weight.
+	SpecificRoute map[string][]*Destination
+}
+
+// ReroutePolicy ...
+type ReroutePolicy string
+
+// The enumerations of ReroutePolicy
+const (
+	Unchangeable ReroutePolicy = "Unchangeable"
+	RoundRobin   ReroutePolicy = "RoundRobin"
+	Random       ReroutePolicy = "Random"
+	LeastConn    ReroutePolicy = "LeastConn"
+	Passthrough  ReroutePolicy = "Passthrough"
+	Specific     ReroutePolicy = "Specific"
+)
 
 // SubStatus describes the destribution status of the individual istio's CR.
 type SubStatus struct {

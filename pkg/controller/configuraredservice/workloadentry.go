@@ -96,6 +96,13 @@ func (r *ReconcileConfiguraredService) reconcileWorkloadEntry(ctx context.Contex
 			return err
 		}
 	}
+
+	// Reroute
+	err = r.reconcileSubset(ctx, cr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

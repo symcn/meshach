@@ -132,12 +132,12 @@ func (r *ReconcileConfiguraredService) buildHTTPRoute(svc *meshv1.ConfiguraredSe
 
 	var routes []*v1beta1.HTTPRouteDestination
 	for _, destination := range sourceLabels.Route {
-		route := &v1beta1.HTTPRouteDestination{
-			Destination: &v1beta1.Destination{
-				Host:   svc.Name,
-				Subset: destination.Subset,
-			},
-			Weight: destination.Weight,
+		route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: svc.Name}}
+		if destination.Subset != "" {
+			route.Destination.Subset = destination.Subset
+		}
+		if destination.Weight != 0 {
+			route.Weight = destination.Weight
 		}
 		routes = append(routes, route)
 	}
