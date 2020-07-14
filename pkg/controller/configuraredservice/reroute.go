@@ -44,20 +44,25 @@ func (r *ReconcileConfiguraredService) rerouteSubset(ctx context.Context, subset
 
 	var err error
 	if subset.IsCanary {
-		err = r.reroute(ctx, subset, cr, cr.Spec.CanaryRerouteOption.ReroutePolicy)
+		klog.Infof("%s/%s start to rerouting canary subset[%s], policy: %s",
+			cr.Namespace, cr.Name, subset.Name, cr.Spec.CanaryRerouteOption.ReroutePolicy)
+		err = r.reroute(ctx, subset, cr, cr.Spec.CanaryRerouteOption)
+	} else {
+		klog.Infof("%s/%s start to rerouting subset[%s], policy: %s",
+			cr.Namespace, cr.Name, subset.Name, cr.Spec.RerouteOption.ReroutePolicy)
+		err = r.reroute(ctx, subset, cr, cr.Spec.RerouteOption)
 	}
 
-	err = r.reroute(ctx, subset, cr, cr.Spec.RerouteOption.ReroutePolicy)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) reroute(ctx context.Context, subset *meshv1.Subset, cr *meshv1.ConfiguraredService, reroutePolicy meshv1.ReroutePolicy) error {
-	switch reroutePolicy {
+func (r *ReconcileConfiguraredService) reroute(ctx context.Context, subset *meshv1.Subset, cr *meshv1.ConfiguraredService, rerouteOption *meshv1.RerouteOption) error {
+	switch rerouteOption.ReroutePolicy {
 	case meshv1.Specific:
-		cr = rerouteWithSpecificMap(cr)
+		cr = rerouteWithSpecificMap(cr, rerouteOption)
 	case meshv1.RoundRobin:
 		cr = rerouteWithRoundRobin(cr, subset)
 	case meshv1.Random:
@@ -69,15 +74,15 @@ func (r *ReconcileConfiguraredService) reroute(ctx context.Context, subset *mesh
 	case meshv1.Unchangeable:
 		return nil
 	default:
-		klog.Warningf("Unsupported ReroutePolicy: %s", reroutePolicy)
+		klog.Warningf("Unsupported ReroutePolicy: %s", rerouteOption.ReroutePolicy)
 		return nil
 	}
 
+	klog.Infof("%s/%s start to update...", cr.Namespace, cr.Name)
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		updateErr := r.client.Update(ctx, cr)
 		if updateErr == nil {
-			klog.V(4).Infof("%s/%s reroute successfully", cr.Namespace, cr.Name)
-			return nil
+			klog.Infof("%s/%s reroute successfully", cr.Namespace, cr.Name)
 		}
 
 		getErr := r.client.Get(ctx, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, cr)
@@ -95,8 +100,8 @@ func (r *ReconcileConfiguraredService) reroute(ctx context.Context, subset *mesh
 	return nil
 }
 
-func rerouteWithSpecificMap(cr *meshv1.ConfiguraredService) *meshv1.ConfiguraredService {
-	for sourceLabel, route := range cr.Spec.CanaryRerouteOption.SpecificRoute {
+func rerouteWithSpecificMap(cr *meshv1.ConfiguraredService, option *meshv1.RerouteOption) *meshv1.ConfiguraredService {
+	for sourceLabel, route := range option.SpecificRoute {
 		for _, s := range cr.Spec.Policy.SourceLabels {
 			if s.Name == sourceLabel {
 				s.Route = route
