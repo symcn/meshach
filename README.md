@@ -1,3 +1,4 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/symcn/mesh-operator)](https://goreportcard.com/report/github.com/symcn/mesh-operator)
 [![Actions Status](https://github.com/symcn/mesh-operator/workflows/go-build/badge.svg)](https://github.com/symcn/mesh-operator/actions?query=workflow%3Ago-build)
 [![Actions Status](https://github.com/symcn/mesh-operator/workflows/pre-commit/badge.svg)](https://github.com/symcn/mesh-operator/actions?query=workflow%3Apre-commit)
 # mesh-operator

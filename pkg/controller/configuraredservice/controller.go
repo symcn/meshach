@@ -275,7 +275,7 @@ func (r *ReconcileConfiguraredService) buildAmc(cs *meshv1.ConfiguraredService, 
 			// Labels:    map[string]string{"": ""},
 		},
 		Spec: meshv1.AppMeshConfigSpec{
-			Services: []*meshv1.Service{&meshv1.Service{
+			Services: []*meshv1.Service{{
 				Name:         cs.Name,
 				OriginalName: cs.Spec.OriginalName,
 				Ports:        cs.Spec.Ports,

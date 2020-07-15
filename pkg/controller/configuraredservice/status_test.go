@@ -157,7 +157,7 @@ func Test_calcPhase(t *testing.T) {
 		want meshv1.ConfigPhase
 	}{
 		{
-			name: "test-calc-phase-status-unkonwn-ok",
+			name: "test-calc-phase-status-unknown-ok",
 			args: args{
 				status: &meshv1.Status{
 					ServiceEntry: &meshv1.SubStatus{

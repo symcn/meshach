@@ -230,10 +230,8 @@ func (r *Router) AddRoutes(apiGroup string, routes []*Route) {
 		}
 	}
 
-	if rs, ok := r.Routes[apiGroup]; !ok {
+	if _, ok := r.Routes[apiGroup]; !ok {
 		r.Routes[apiGroup] = routes
-	} else {
-		rs = append(rs, routes...)
 	}
 
 	if apiGroup == "health" {
