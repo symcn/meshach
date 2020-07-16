@@ -105,7 +105,7 @@ func (r *ReconcileConfiguraredService) buildServiceEntry(svc *meshv1.Configurare
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: svc.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: svc.Spec.OriginalName},
+			Labels:    map[string]string{r.opt.SelectLabel: encode(svc.Spec.OriginalName)},
 		},
 		Spec: v1beta1.ServiceEntry{
 			Hosts:      []string{svc.Name},
@@ -136,7 +136,7 @@ func compareServiceEntry(new, old *networkingv1beta1.ServiceEntry) bool {
 
 func (r *ReconcileConfiguraredService) getServiceEntriesMap(ctx context.Context, cr *meshv1.ConfiguraredService) (map[string]*networkingv1beta1.ServiceEntry, error) {
 	list := &networkingv1beta1.ServiceEntryList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: cr.Spec.OriginalName}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: encode(cr.Spec.OriginalName)}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 
