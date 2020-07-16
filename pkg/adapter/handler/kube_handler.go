@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"sync"
 
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
@@ -17,6 +18,7 @@ var (
 	defaultNamespace = "sym-admin"
 	clusterName      = ""
 	meshConfigName   = "sym-meshconfig"
+	l                sync.Mutex
 )
 
 // KubeEventHandler it used for synchronizing the component which has been send by the adapter client
@@ -70,6 +72,10 @@ func convertEvent(s *types2.Service) *v1.ConfiguraredService {
 
 // create
 func create(cs *v1.ConfiguraredService, c client.Client) error {
+	l.Lock()
+	defer l.Unlock()
+
+	// !import this method will panic concurrent map writes
 	err := c.Create(context.Background(), cs)
 	klog.Infof("The generation of cs when creating: %d", cs.ObjectMeta.Generation)
 	if err != nil {
@@ -81,6 +87,10 @@ func create(cs *v1.ConfiguraredService, c client.Client) error {
 
 // update
 func update(cs *v1.ConfiguraredService, c client.Client) error {
+	l.Lock()
+	defer l.Unlock()
+
+	// !import this method will panic concurrent map writes
 	err := c.Update(context.Background(), cs)
 	klog.Infof("The generation of cs after updating: %d", cs.ObjectMeta.Generation)
 	if err != nil {
