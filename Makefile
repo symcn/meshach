@@ -38,6 +38,7 @@ deploy:
 	kubectl apply -f deploy/role.yaml
 	kubectl apply -f deploy/role_binding.yaml
 	kubectl apply -f deploy/operator.yaml
+	kubectl apply -f deploy/adapter.yaml
 
 clear:
 	kubectl delete -f deploy/service_account.yaml
