@@ -164,5 +164,8 @@ func (r *ReconcileConfiguraredService) getWorkloadEntriesMap(ctx context.Context
 
 // To match label charactor limit
 func truncated(s string) string {
-	return s[len(s)-62:]
+	if len(s) > 62 {
+		return s[len(s)-62:]
+	}
+	return s
 }
