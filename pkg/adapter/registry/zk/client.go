@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
 
 	zkClient "github.com/samuel/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"github.com/symcn/mesh-operator/pkg/adapter/registry"
 	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
@@ -208,10 +208,10 @@ func (c *RegistryClient) makeInstance(hostname string, rawURL string) (*types.In
 	instance := &types.Instance{
 		Host: ep.Host,
 		Port: &types.Port{
-			//Protocol: ep.Scheme,
-			//Port:     ep.Port(),
+			// Protocol: ep.Scheme,
+			Port:     ep.Port(),
 			Protocol: constant.DubboProtocol,
-			Port:     constant.MosnPort,
+			// Port:     constant.MosnPort,
 		},
 		Labels: make(map[string]string),
 	}
