@@ -18,7 +18,6 @@ package configuraredservice
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
@@ -119,7 +118,7 @@ func (r *ReconcileConfiguraredService) buildWorkloadEntry(svc *meshv1.Configurar
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(name),
 			Namespace: svc.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: encode(svc.Spec.OriginalName)},
+			Labels:    map[string]string{r.opt.SelectLabel: truncated(svc.Spec.OriginalName)},
 		},
 		Spec: v1beta1.WorkloadEntry{
 			Address: ins.Host,
@@ -147,7 +146,7 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 
 func (r *ReconcileConfiguraredService) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.ConfiguraredService) (map[string]*networkingv1beta1.WorkloadEntry, error) {
 	list := &networkingv1beta1.WorkloadEntryList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: encode(cr.Spec.OriginalName)}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: truncated(cr.Spec.OriginalName)}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 
@@ -163,16 +162,7 @@ func (r *ReconcileConfiguraredService) getWorkloadEntriesMap(ctx context.Context
 	return m, nil
 }
 
-func encode(s string) string {
-	b := []byte(s)
-	return base64.StdEncoding.EncodeToString(b)
-}
-
-func decode(s string) string {
-	dec, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		klog.Errorf("decode service name[%s] error: %+v", s, err)
-		return ""
-	}
-	return string(dec)
+// To match label charactor limit
+func truncated(s string) string {
+	return s[len(s)-62:]
 }

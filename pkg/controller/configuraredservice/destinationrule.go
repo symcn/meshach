@@ -126,7 +126,7 @@ func (r *ReconcileConfiguraredService) buildDestinationRule(svc *meshv1.Configur
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
 			Namespace: svc.Namespace,
-			Labels:    map[string]string{r.opt.SelectLabel: encode(svc.Spec.OriginalName)},
+			Labels:    map[string]string{r.opt.SelectLabel: truncated(svc.Spec.OriginalName)},
 		},
 		Spec: v1beta1.DestinationRule{
 			Host: svc.Name,
@@ -167,7 +167,7 @@ func getlb(s string) v1beta1.LoadBalancerSettings_SimpleLB {
 
 func (r *ReconcileConfiguraredService) getDestinationRuleMap(ctx context.Context, cr *meshv1.ConfiguraredService) (map[string]*networkingv1beta1.DestinationRule, error) {
 	list := &networkingv1beta1.DestinationRuleList{}
-	labels := &client.MatchingLabels{r.opt.SelectLabel: encode(cr.Spec.OriginalName)}
+	labels := &client.MatchingLabels{r.opt.SelectLabel: truncated(cr.Spec.OriginalName)}
 	opts := &client.ListOptions{Namespace: cr.Namespace}
 	labels.ApplyToList(opts)
 
