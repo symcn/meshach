@@ -19,6 +19,7 @@ package configuraredservice
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	utils "github.com/symcn/mesh-operator/pkg/utils"
@@ -165,7 +166,7 @@ func (r *ReconcileConfiguraredService) getWorkloadEntriesMap(ctx context.Context
 // To match label charactor limit
 func truncated(s string) string {
 	if len(s) > 62 {
-		return s[len(s)-62:]
+		return strings.Trim(s[len(s)-62:], ".")
 	}
-	return s
+	return strings.Trim(s, ".")
 }

@@ -33,6 +33,10 @@ build:
 	$(GO) -v -o build/_output/bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
 	-X  $(ROOT)/pkg/version.BuildDate=$(BUILD_DATE)" cmd/mesh-operator/main.go
 
+build-linux:
+	GOOS=linux GOARCH=amd64 go build -v -o build/_output/bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
+	-X  $(ROOT)/pkg/version.BuildDate=$(BUILD_DATE)" cmd/mesh-operator/main.go
+
 deploy:
 	kubectl apply -f deploy/service_account.yaml
 	kubectl apply -f deploy/role.yaml
