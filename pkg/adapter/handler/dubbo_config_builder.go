@@ -98,8 +98,34 @@ func (dcb *DubboConfiguratorBuilder) BuildPolicy(cs *v1.ConfiguraredService, cc 
 
 // BuildSubsets ...
 func (dcb *DubboConfiguratorBuilder) BuildSubsets(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
-	cs.Spec.Subsets = dcb.GetGlobalConfig().Spec.GlobalSubsets
+	// use globalsubset config choice subset
+	gsubsets := dcb.GetGlobalConfig().Spec.GlobalSubsets
+	ssmark := make(map[string]struct{})
+	for _, instance := range cs.Spec.Instances {
+		for _, gsub := range gsubsets {
+			if mapContains(gsub.Labels, instance.Labels) {
+				ssmark[gsub.Name] = struct{}{}
+				break
+			}
+		}
+	}
+
+	// build cs spec subset
+	for _, gsub := range gsubsets {
+		if _, ok := ssmark[gsub.Name]; ok {
+			cs.Spec.Subsets = append(cs.Spec.Subsets, gsub)
+		}
+	}
 	return cs
+}
+
+func mapContains(std, obj map[string]string) bool {
+	for sk, sv := range std {
+		if ov, ok := obj[sk]; !ok || ov != sv {
+			return false
+		}
+	}
+	return true
 }
 
 // BuildSourceLabels ...
