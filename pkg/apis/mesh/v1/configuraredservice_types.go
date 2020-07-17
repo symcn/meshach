@@ -170,11 +170,11 @@ type RerouteOption struct {
 	//
 	// 4. Specific: Routes using the specified mapping when all instances of the
 	// originally specified subset are offline.
-	ReroutePolicy ReroutePolicy
+	ReroutePolicy ReroutePolicy `json:"reroutePolicy"`
 
 	// This map only takes effect when 'ReroutePolicy' is specified to 'Specific',
 	// each sourceLabels can specify multiple accessible subsets and weight.
-	SpecificRoute map[string][]*Destination
+	SpecificRoute map[string][]*Destination `json:"specificRoute"`
 }
 
 // ReroutePolicy ...
