@@ -153,7 +153,7 @@ var (
 			MeshConfigGeneration: 0,
 			RerouteOption: &meshv1.RerouteOption{
 				ReroutePolicy: meshv1.Specific,
-				SpecificRoute: map[string][]*meshv1.Destination{
+				SpecificRoute: map[string]meshv1.Destinations{
 					"green": {{Subset: "blue", Weight: 100}},
 					"blue":  {{Subset: "green", Weight: 100}},
 				},
