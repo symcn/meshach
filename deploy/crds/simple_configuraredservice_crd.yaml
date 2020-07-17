@@ -1,0 +1,21 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: configuraredservices.mesh.symcn.com
+spec:
+  group: mesh.symcn.com
+  names:
+    kind: ConfiguraredService
+    listKind: ConfiguraredServiceList
+    plural: configuraredservices
+    singular: configuraredservice
+    shortNames:
+      - cs
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true

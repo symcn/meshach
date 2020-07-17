@@ -117,6 +117,9 @@ spec:
                     can be used for scenarios like A/B testing, or routing to a specific
                     version of a service.
                   properties:
+                    isCanary:
+                      description: Whether the subset is defined as a canary group
+                      type: boolean
                     labels:
                       additionalProperties:
                         type: string

@@ -174,8 +174,11 @@ type RerouteOption struct {
 
 	// This map only takes effect when 'ReroutePolicy' is specified to 'Specific',
 	// each sourceLabels can specify multiple accessible subsets and weight.
-	SpecificRoute map[string][]*Destination `json:"specificRoute"`
+	SpecificRoute map[string]Destinations `json:"specificRoute"`
 }
+
+// Destinations ...
+type Destinations []*Destination
 
 // ReroutePolicy ...
 type ReroutePolicy string
