@@ -101,8 +101,12 @@ func (r *ReconcileConfiguraredService) buildVirtualService(svc *meshv1.Configura
 		http := r.buildHTTPRoute(svc, sourceLabels)
 		httpRoute = append(httpRoute, http)
 	}
-	proxy := r.buildProxyRoute()
-	httpRoute = append(httpRoute, proxy)
+
+	if svc.Spec.RerouteOption.ReroutePolicy != meshv1.Unchangeable {
+		defaultRoute := r.buildDefaultRoute(svc)
+		httpRoute = append(httpRoute, defaultRoute)
+	}
+
 	return &networkingv1beta1.VirtualService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
@@ -155,11 +159,8 @@ func (r *ReconcileConfiguraredService) buildHTTPRoute(svc *meshv1.ConfiguraredSe
 	}
 }
 
-func (r *ReconcileConfiguraredService) buildProxyRoute() *v1beta1.HTTPRoute {
-	route := &v1beta1.HTTPRouteDestination{
-		Destination: &v1beta1.Destination{
-			Host: r.opt.ProxyHost,
-		}}
+func (r *ReconcileConfiguraredService) buildDefaultRoute(svc *meshv1.ConfiguraredService) *v1beta1.HTTPRoute {
+	route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: svc.Name}}
 	return &v1beta1.HTTPRoute{
 		Name:  proxyRouteName,
 		Route: []*v1beta1.HTTPRouteDestination{route},
