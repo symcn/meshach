@@ -8,8 +8,6 @@ spec:
   http:
     - match:
         - headers:
-            sym-zone:
-              exact: gz01
           sourceLabels:
             sym-group: blue
       route:
@@ -22,8 +20,6 @@ spec:
         retryOn: gateway-error,connect-failure,refused-stream
     - match:
         - headers:
-            sym-zone:
-              exact: gz02
           sourceLabels:
             sym-group: green
       route:
@@ -55,8 +51,6 @@ spec:
   http:
     - match:
         - headers:
-            sym-zone:
-              exact: gz01
       route:
         - destination:
             host: mosn.io.dubbo.DemoService.workload

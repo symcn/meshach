@@ -121,18 +121,18 @@ func (r *ReconcileConfiguraredService) buildVirtualService(svc *meshv1.Configura
 }
 
 func (r *ReconcileConfiguraredService) buildHTTPRoute(svc *meshv1.ConfiguraredService, sourceLabels *meshv1.SourceLabels) *v1beta1.HTTPRoute {
-	m := make(map[string]*v1beta1.StringMatch)
-	for key, matchType := range r.meshConfig.Spec.MatchHeaderLabelKeys {
-		m[key] = getMatchType(matchType, sourceLabels.Headers[key])
-	}
-	klog.V(4).Infof("match header map: %+v", m)
+	// m := make(map[string]*v1beta1.StringMatch)
+	// for key, matchType := range r.meshConfig.Spec.MatchHeaderLabelKeys {
+	// m[key] = getMatchType(matchType, sourceLabels.Headers[key])
+	// }
+	// klog.V(4).Infof("match header map: %+v", m)
 	s := make(map[string]string)
 	for _, key := range r.meshConfig.Spec.MatchSourceLabelKeys {
 		s[key] = sourceLabels.Labels[key]
 	}
-	klog.V(4).Infof("match sourceLabels map: %+v", m)
+	// klog.V(4).Infof("match sourceLabels map: %+v", m)
 
-	match := &v1beta1.HTTPMatchRequest{Headers: m, SourceLabels: s}
+	match := &v1beta1.HTTPMatchRequest{SourceLabels: s}
 
 	var routes []*v1beta1.HTTPRouteDestination
 	for _, destination := range sourceLabels.Route {

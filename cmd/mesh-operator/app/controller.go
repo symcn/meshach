@@ -182,12 +182,6 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 		"The max Goroutine Threshold",
 	)
 	cmd.PersistentFlags().StringVar(
-		&opt.Zone,
-		"zone",
-		opt.Zone,
-		"The exact zone code of current cluster, used for virtualservice generation.",
-	)
-	cmd.PersistentFlags().StringVar(
 		&opt.ProxyHost,
 		"proxy-host",
 		opt.ProxyHost,

@@ -192,7 +192,6 @@ var (
 		ProxyAttempts:           3,
 		ProxyPerTryTimeout:      2,
 		ProxyRetryOn:            "gateway-error,connect-failure,refused-stream",
-		Zone:                    "gz01",
 		MeshConfigName:          "mc-test-case",
 		MeshConfigNamespace:     "sym-test",
 		SelectLabel:             "service",
@@ -213,13 +212,10 @@ var (
 			Namespace: "sym-test",
 		},
 		Spec: meshv1.MeshConfigSpec{
-			MatchHeaderLabelKeys: map[string]meshv1.StringMatchType{
-				"sym-zone": "exact",
-			},
+			MatchHeaderLabelKeys:   map[string]meshv1.StringMatchType{},
 			MatchSourceLabelKeys:   []string{"sym-group"},
-			WorkloadEntryLabelKeys: []string{"sym-zone", "sym-group"},
+			WorkloadEntryLabelKeys: []string{"sym-group"},
 			MeshLabelsRemap: map[string]string{
-				"sym-zone":  "zone",
 				"sym-group": "flag",
 			},
 			GlobalSubsets: []*meshv1.Subset{blueSubset, greenSubset},

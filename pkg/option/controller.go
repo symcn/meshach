@@ -14,9 +14,6 @@ type ControllerOption struct {
 	GoroutineThreshold      int
 	MaxConcurrentReconciles int
 
-	// The exact zone code of current cluster, gz01/rz01/rz02
-	Zone string
-
 	// Dubbo proxy settings
 	ProxyHost          string
 	ProxyAttempts      int32
@@ -49,7 +46,6 @@ func DefaultControllerOption() *ControllerOption {
 		ProxyAttempts:           3,
 		ProxyPerTryTimeout:      2,
 		ProxyRetryOn:            "gateway-error,connect-failure,refused-stream",
-		Zone:                    "gz01",
 		MeshConfigName:          "sym-meshconfig",
 		MeshConfigNamespace:     "sym-admin",
 		SelectLabel:             "service",
