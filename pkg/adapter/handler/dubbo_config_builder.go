@@ -103,7 +103,7 @@ func (dcb *DubboConfiguratorBuilder) BuildSubsets(cs *v1.ConfiguraredService, cc
 	ssmark := make(map[string]struct{})
 	for _, instance := range cs.Spec.Instances {
 		for _, gsub := range gsubsets {
-			if mapContains(gsub.Labels, instance.Labels) {
+			if dcb.mapContains(gsub.Labels, instance.Labels) {
 				ssmark[gsub.Name] = struct{}{}
 				break
 			}
@@ -119,9 +119,15 @@ func (dcb *DubboConfiguratorBuilder) BuildSubsets(cs *v1.ConfiguraredService, cc
 	return cs
 }
 
-func mapContains(std, obj map[string]string) bool {
+func (dcb *DubboConfiguratorBuilder) mapContains(std, obj map[string]string) bool {
+	renameMap := dcb.GetGlobalConfig().Spec.MeshLabelsRemap
 	for sk, sv := range std {
-		if ov, ok := obj[sk]; !ok || ov != sv {
+		rk, ok := renameMap[sk]
+		if !ok {
+			rk = sk
+		}
+
+		if ov, ok := obj[rk]; !ok || ov != sv {
 			return false
 		}
 	}
