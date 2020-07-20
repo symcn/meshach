@@ -102,7 +102,7 @@ func (r *ReconcileConfiguraredService) buildVirtualService(svc *meshv1.Configura
 		httpRoute = append(httpRoute, http)
 	}
 
-	if svc.Spec.RerouteOption.ReroutePolicy != meshv1.Unchangeable {
+	if svc.Spec.RerouteOption == nil || svc.Spec.RerouteOption.ReroutePolicy != meshv1.Unchangeable {
 		defaultRoute := r.buildDefaultRoute(svc)
 		httpRoute = append(httpRoute, defaultRoute)
 	}
