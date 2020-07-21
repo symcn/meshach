@@ -3,24 +3,24 @@ package handler
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
-	"time"
 )
 
 // Init the handler initialization
-func Init(opt options.EventHandlers) ([]component.EventHandler, error) {
+func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 	var eventHandlers []component.EventHandler
 	// If this flag has been set as true, it means you want to synchronize all services to a kubernetes cluster.
 	if opt.EnableK8s {

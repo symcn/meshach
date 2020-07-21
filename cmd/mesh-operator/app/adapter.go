@@ -19,7 +19,6 @@ package app
 import (
 	"github.com/spf13/cobra"
 	"github.com/symcn/mesh-operator/pkg/adapter"
-	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
@@ -27,7 +26,7 @@ import (
 
 // NewAdapterCmd ...
 func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
-	opt := options.DefaultOption()
+	opt := option.DefaultAdapterOption()
 	cmd := &cobra.Command{
 		Use:     "adapter",
 		Aliases: []string{"adapter"},

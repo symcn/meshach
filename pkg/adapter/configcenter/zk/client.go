@@ -8,10 +8,10 @@ import (
 	zkClient "github.com/samuel/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
-	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
 	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 )
 
@@ -28,7 +28,7 @@ type ConfigClient struct {
 }
 
 // New ...
-func New(opt options.Configuration) (component.ConfigurationCenter, error) {
+func New(opt option.Configuration) (component.ConfigurationCenter, error) {
 	var conn *zkClient.Conn
 	// Arguments has been supplied, we will initializing a client for synchronizing with config center
 	if len(opt.Address) > 0 {

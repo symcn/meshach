@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
@@ -30,7 +30,7 @@ func Test_Start(t *testing.T) {
 	//	os.Exit(1)
 	//}
 
-	// Set default manager options
+	// Set default manager option
 	opts := ctrlmanager.Options{
 		Namespace: namespace,
 		//MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
@@ -51,7 +51,7 @@ func Test_Start(t *testing.T) {
 	//	os.Exit(1)
 	//}
 
-	opt := options.DefaultOption()
+	opt := option.DefaultAdapterOption()
 
 	//kubeCli, err := kubernetes.NewForConfig(cfg)
 	//opt.MasterCli = k8smanager.MasterClient{

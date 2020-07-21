@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/options"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 )
 
-type constructor func(regOpt options.Configuration) (component.ConfigurationCenter, error)
+type constructor func(regOpt option.Configuration) (component.ConfigurationCenter, error)
 
 var (
 	configInstance = make(map[string]constructor)
@@ -23,7 +23,7 @@ func Registry(typ string, f constructor) {
 }
 
 // GetRegistry ...
-func GetRegistry(opt options.Configuration) (component.ConfigurationCenter, error) {
+func GetRegistry(opt option.Configuration) (component.ConfigurationCenter, error) {
 	if f, ok := configInstance[opt.Type]; ok {
 		return f(opt)
 	}

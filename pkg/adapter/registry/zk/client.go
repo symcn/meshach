@@ -12,9 +12,9 @@ import (
 
 	zkClient "github.com/samuel/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/options"
 	"github.com/symcn/mesh-operator/pkg/adapter/registry"
 	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
+	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 )
 
@@ -33,7 +33,7 @@ type RegistryClient struct {
 }
 
 // New Create a new client for zookeeper
-func New(opt options.Registry) (component.Registry, error) {
+func New(opt option.Registry) (component.Registry, error) {
 	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
 		klog.Errorf("Get zookeeper client has an error: %v", err)
