@@ -21,17 +21,12 @@ import (
 )
 
 const (
-	controllerName = "configuraredservice-controller"
-	httpRouteName  = "dubbo-http-route"
-	proxyRouteName = "dubbo-proxy-route"
+	controllerName   = "configuraredservice-controller"
+	httpRouteName    = "dubbo-http-route"
+	defaultRouteName = "dubbo-default-route"
 )
 
 var log = logf.Log.WithName("controller_configuraredservice")
-
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
 
 // Add creates a new ConfiguraredService Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -231,7 +226,7 @@ func (r *ReconcileConfiguraredService) getMeshConfig(ctx context.Context) error 
 		return err
 	}
 	r.meshConfig = meshConfig
-	klog.V(4).Infof("Get cluster MeshConfig: %+v", meshConfig)
+	klog.V(6).Infof("Get cluster MeshConfig: %+v", meshConfig)
 	return nil
 }
 

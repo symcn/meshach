@@ -38,8 +38,6 @@ import (
 
 const (
 	controllerName = "appMeshConfig-controller"
-	httpRouteName  = "dubbo-http-route"
-	proxyRouteName = "dubbo-proxy-route"
 )
 
 var log = logf.Log.WithName(controllerName)

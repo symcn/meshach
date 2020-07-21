@@ -162,7 +162,7 @@ func (r *ReconcileConfiguraredService) buildHTTPRoute(svc *meshv1.ConfiguraredSe
 func (r *ReconcileConfiguraredService) buildDefaultRoute(svc *meshv1.ConfiguraredService) *v1beta1.HTTPRoute {
 	route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: svc.Name}}
 	return &v1beta1.HTTPRoute{
-		Name:  proxyRouteName,
+		Name:  defaultRouteName,
 		Route: []*v1beta1.HTTPRouteDestination{route},
 		Retries: &v1beta1.HTTPRetry{
 			Attempts:      r.opt.ProxyAttempts,

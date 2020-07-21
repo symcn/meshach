@@ -73,16 +73,14 @@ func (r *ReconcileConfiguraredService) reconcileWorkloadEntry(ctx context.Contex
 
 				updateErr := r.client.Update(ctx, found)
 				if updateErr == nil {
-					klog.V(4).Infof("%s/%s update WorkloadEntry successfully",
-						we.Namespace, we.Name)
+					klog.V(6).Infof("%s/%s update WorkloadEntry successfully", we.Namespace, we.Name)
 					return nil
 				}
 				return updateErr
 			})
 
 			if err != nil {
-				klog.Warningf("Update WorkloadEntry [%s] spec failed, err: %+v",
-					we.Name, err)
+				klog.Warningf("Update WorkloadEntry [%s] spec failed, err: %+v", we.Name, err)
 				return err
 			}
 		}
