@@ -50,6 +50,7 @@ spec:
                     type: string
                   specificRoute:
                     additionalProperties:
+                      description: Destinations ...
                       items:
                         description: Destination indicates the network addressable
                           service to which the request/connection will be sent after
@@ -282,6 +283,7 @@ spec:
                     type: string
                   specificRoute:
                     additionalProperties:
+                      description: Destinations ...
                       items:
                         description: Destination indicates the network addressable
                           service to which the request/connection will be sent after
