@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/mesh-operator/pkg/utils"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"

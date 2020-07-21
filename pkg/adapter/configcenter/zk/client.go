@@ -9,9 +9,9 @@ import (
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
 	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/mesh-operator/pkg/utils"
 	"k8s.io/klog"
 )
 

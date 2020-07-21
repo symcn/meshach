@@ -7,8 +7,8 @@ import (
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/symcn/mesh-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
@@ -73,7 +73,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 		// loading cs CR from k8s cluster
 		foundCs, err := get(&v1.ConfiguraredService{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.StandardizeServiceName(event.Service.Name),
+				Name:      utils.FormatToDNS1123(event.Service.Name),
 				Namespace: defaultNamespace,
 			},
 		}, kubeSceh.ctrlManager.GetClient())
@@ -94,7 +94,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteService(event *types.Servic
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		err := delete(&v1.ConfiguraredService{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.StandardizeServiceName(event.Service.Name),
+				Name:      utils.FormatToDNS1123(event.Service.Name),
 				Namespace: defaultNamespace,
 			},
 		}, kubeSceh.ctrlManager.GetClient())
@@ -127,7 +127,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 		serviceName := e.ConfigEntry.Key
 		cs, err := get(&v1.ConfiguraredService{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.StandardizeServiceName(serviceName),
+				Name:      utils.FormatToDNS1123(serviceName),
 				Namespace: defaultNamespace,
 			},
 		}, kubeSceh.ctrlManager.GetClient())
@@ -159,7 +159,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// an example for the path: /dubbo/config/dubbo/com.foo.mesh.test.Demo.configurators
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
-		serviceName := utils.StandardizeServiceName(utils.ResolveServiceName(e.Path))
+		serviceName := utils.FormatToDNS1123(utils.ResolveServiceName(e.Path))
 		cs, err := get(&v1.ConfiguraredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serviceName,

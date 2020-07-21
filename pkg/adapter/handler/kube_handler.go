@@ -6,8 +6,8 @@ import (
 
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/symcn/mesh-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
@@ -40,7 +40,7 @@ func convertEvent(s *types2.Service) *v1.ConfiguraredService {
 	// TODO Assuming every service can only provide an unique fixed port to adapt the dubbo case.
 	cs := &v1.ConfiguraredService{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.StandardizeServiceName(s.Name),
+			Name:      utils.FormatToDNS1123(s.Name),
 			Namespace: defaultNamespace,
 		},
 		Spec: v1.ConfiguraredServiceSpec{

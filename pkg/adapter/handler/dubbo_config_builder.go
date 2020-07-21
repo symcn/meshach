@@ -6,8 +6,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/adapter/utils"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	"github.com/symcn/mesh-operator/pkg/utils"
 	"k8s.io/klog"
 )
 

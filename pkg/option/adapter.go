@@ -45,8 +45,7 @@ func DefaultAdapterOption() *AdapterOption {
 			IsMultiClusters:  false,
 			ClusterOwner:     "sym-admin",
 			ClusterNamespace: "sym-admin",
-
-			EnableDebugLog: false,
+			EnableDebugLog:   false,
 		},
 		Registry: Registry{
 			Type:    "zk",
