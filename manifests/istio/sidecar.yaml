@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Sidecar
+metadata:
+  name: meshtest-sidecar
+  namespace: dmall-inner
+spec:
+  workloadSelector:
+    labels:
+      app: no-project-dsf-mesh-test-provider
+  ingress:
+  - port:
+      number: 20882
+      protocol: HTTP
+      name: ingressdubbo
+    defaultEndpoint: "127.0.0.1:20882"
+    captureMode: NONE
+    bind: "127.0.0.1"
+  egress:
+  - port:
+      number: 20882
+      protocol: HTTP
+      name: egressdubbo
+    hosts:
+    - "sym-admin/*"
