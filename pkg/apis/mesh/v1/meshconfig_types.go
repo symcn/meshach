@@ -22,6 +22,7 @@ type MeshConfigSpec struct {
 	MatchSourceLabelKeys   []string                   `json:"matchSourceLabelKeys"`
 	WorkloadEntryLabelKeys []string                   `json:"workloadEntryLabelKeys"`
 	MeshLabelsRemap        map[string]string          `json:"meshLabelsRemap"`
+	ExtractedLabels        []string                   `json:"extractedLabels"`
 	GlobalSubsets          []*Subset                  `json:"globalSubsets"`
 	GlobalPolicy           *Policy                    `json:"globalPolicy"`
 }

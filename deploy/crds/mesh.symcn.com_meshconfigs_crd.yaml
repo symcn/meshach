@@ -31,6 +31,10 @@ spec:
           spec:
             description: MeshConfigSpec defines the desired state of MeshConfig
             properties:
+              extractedLabels:
+                items:
+                  type: string
+                type: array
               globalPolicy:
                 description: Policy defines load balancing, retry, and other policies
                   for a service.
@@ -241,6 +245,7 @@ spec:
                   type: string
                 type: array
             required:
+            - extractedLabels
             - globalPolicy
             - globalSubsets
             - matchHeaderLabelKeys

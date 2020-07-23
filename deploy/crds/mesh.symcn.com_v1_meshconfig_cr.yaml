@@ -11,6 +11,8 @@ spec:
     - sym-group
   meshLabelsRemap:
     sym-group: flag
+  extractedLabels:
+    - app
   globalSubsets:
     - name: blue
       labels:
