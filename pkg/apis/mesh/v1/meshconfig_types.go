@@ -23,6 +23,8 @@ type MeshConfigSpec struct {
 	WorkloadEntryLabelKeys []string                   `json:"workloadEntryLabelKeys"`
 	MeshLabelsRemap        map[string]string          `json:"meshLabelsRemap"`
 	ExtractedLabels        []string                   `json:"extractedLabels"`
+	SidecarSelectLabel     string                     `json:"sidecarSelectLabel"`
+	SidecarDefaultHosts    []string                   `json:"sidecarDefaultHosts"`
 	GlobalSubsets          []*Subset                  `json:"globalSubsets"`
 	GlobalPolicy           *Policy                    `json:"globalPolicy"`
 }
