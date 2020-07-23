@@ -522,6 +522,11 @@ func (in *MeshConfigSpec) DeepCopyInto(out *MeshConfigSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.ExtractedLabels != nil {
+		in, out := &in.ExtractedLabels, &out.ExtractedLabels
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.GlobalSubsets != nil {
 		in, out := &in.GlobalSubsets, &out.GlobalSubsets
 		*out = make([]*Subset, len(*in))
