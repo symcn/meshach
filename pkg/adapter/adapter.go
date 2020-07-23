@@ -81,7 +81,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 
 	for {
 		select {
-		case event := <-a.registryClient.Events():
+		case event := <-a.registryClient.ServiceEvents():
 			klog.Infof("Registry component which has been received by adapter: %s", event.Service.Name)
 			switch event.EventType {
 			case types.ServiceAdded:
@@ -117,6 +117,8 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				}
 				klog.Infof("end handling event - DELETE INSTANCE with uuid: %s", uuid)
 			}
+		case ae := <-a.registryClient.AccessorEvents():
+			klog.Infof("Accessor which has been received by adapter: %v", ae)
 		case ce := <-a.configClient.Events():
 			klog.Infof("Configuration component which has been received by adapter: %v", ce)
 			switch ce.EventType {

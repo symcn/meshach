@@ -31,6 +31,7 @@ import (
 var (
 	DubboRootPath    = "/dubbo"
 	ProvidersPath    = "providers"
+	ConsumersPath    = "consumers"
 	IgnoredHostNames = []string{"metadata", "config"}
 	ConfiguratorPath = DubboRootPath + "/config/dubbo"
 )

@@ -27,6 +27,15 @@ var (
 
 // convertPort Convert the port which has been defined in zookeeper library to the one that belongs to CRD.
 func convertPort(port *types2.Port) *v1.Port {
+	if port == nil {
+		klog.Warningf("Could not convert a Port due to a nil value")
+		return &v1.Port{
+			Name:     constant.DubboPortName,
+			Protocol: "dubbo",
+			Number:   0,
+		}
+	}
+
 	return &v1.Port{
 		// Name:     port.Port,
 		Name:     constant.DubboPortName,
