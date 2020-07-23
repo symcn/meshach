@@ -43,7 +43,7 @@ rules:
   resources:
   - '*'
   - servicemeshentries
-  - configuraredservices
+  - configuredservices
   verbs:
   - '*'
 - apiGroups:

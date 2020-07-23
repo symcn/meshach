@@ -14,17 +14,17 @@ type ConfigBuilder interface {
 	GetDefaultConfig() *types.ConfiguratorConfig
 
 	// BuildPolicy ...
-	BuildPolicy(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService
+	BuildPolicy(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService
 
 	// BuildSubsets ...
-	BuildSubsets(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService
+	BuildSubsets(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService
 
 	// BuildSourceLabels ...
-	BuildSourceLabels(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService
+	BuildSourceLabels(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService
 
 	// BuildInstanceSetting ...
-	BuildInstanceSetting(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService
+	BuildInstanceSetting(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService
 
 	// SetConfig ...
-	SetConfig(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig)
+	SetConfig(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig)
 }

@@ -75,7 +75,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		Type: &networkingv1beta1.WorkloadEntry{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ConfiguraredService{},
+			OwnerType:    &meshv1.ConfiguredService{},
 		})
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		Type: &networkingv1beta1.VirtualService{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ConfiguraredService{},
+			OwnerType:    &meshv1.ConfiguredService{},
 		})
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		Type: &networkingv1beta1.DestinationRule{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ConfiguraredService{},
+			OwnerType:    &meshv1.ConfiguredService{},
 		})
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		Type: &networkingv1beta1.ServiceEntry{}},
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &meshv1.ConfiguraredService{},
+			OwnerType:    &meshv1.ConfiguredService{},
 		})
 	if err != nil {
 		return err

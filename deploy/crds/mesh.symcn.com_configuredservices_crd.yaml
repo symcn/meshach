@@ -1,20 +1,20 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: configuraredservices.mesh.symcn.com
+  name: configuredservices.mesh.symcn.com
 spec:
   group: mesh.symcn.com
   names:
-    kind: ConfiguraredService
-    listKind: ConfiguraredServiceList
-    plural: configuraredservices
-    singular: configuraredservice
+    kind: ConfiguredService
+    listKind: ConfiguredServiceList
+    plural: configuredservices
+    singular: configuredservice
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: ConfiguraredService is the Schema for the configuraredservices
+        description: ConfiguredService is the Schema for the configuredservices
           API
         properties:
           apiVersion:
@@ -30,7 +30,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ConfiguraredServiceSpec defines the desired state of ConfiguraredService
+            description: ConfiguredServiceSpec defines the desired state of ConfiguredService
             properties:
               canaryRerouteOption:
                 description: The settings used to reroute canary deployment traffic
@@ -438,7 +438,7 @@ spec:
             - rerouteOption
             type: object
           status:
-            description: ConfiguraredServiceStatus defines the observed state of ConfiguraredService
+            description: ConfiguredServiceStatus defines the observed state of ConfiguredService
             properties:
               lastUpdateTime:
                 format: date-time

@@ -72,7 +72,7 @@ func (dcb *DubboConfiguratorBuilder) GetDefaultConfig() *types.ConfiguratorConfi
 
 // BuildPolicy configurator of this service belongs to the zNode with path looks like following:
 // e.g. /dubbo/config/dubbo/fooService.configurator
-func (dcb *DubboConfiguratorBuilder) BuildPolicy(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
+func (dcb *DubboConfiguratorBuilder) BuildPolicy(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService {
 	cs.Spec.Policy = &v1.Policy{
 		LoadBalancer:   dcb.GetGlobalConfig().Spec.GlobalPolicy.LoadBalancer,
 		MaxConnections: dcb.GetGlobalConfig().Spec.GlobalPolicy.MaxConnections,
@@ -97,7 +97,7 @@ func (dcb *DubboConfiguratorBuilder) BuildPolicy(cs *v1.ConfiguraredService, cc 
 }
 
 // BuildSubsets ...
-func (dcb *DubboConfiguratorBuilder) BuildSubsets(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
+func (dcb *DubboConfiguratorBuilder) BuildSubsets(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService {
 	// use globalsubset config choice subset
 	gsubsets := dcb.GetGlobalConfig().Spec.GlobalSubsets
 	ssmark := make(map[string]struct{})
@@ -135,7 +135,7 @@ func (dcb *DubboConfiguratorBuilder) mapContains(std, obj map[string]string) boo
 }
 
 // BuildSourceLabels ...
-func (dcb *DubboConfiguratorBuilder) BuildSourceLabels(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
+func (dcb *DubboConfiguratorBuilder) BuildSourceLabels(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService {
 	var sls []*v1.SourceLabels
 	for _, subset := range dcb.GetGlobalConfig().Spec.GlobalSubsets {
 		sl := &v1.SourceLabels{
@@ -192,7 +192,7 @@ func (dcb *DubboConfiguratorBuilder) BuildSourceLabels(cs *v1.ConfiguraredServic
 }
 
 // BuildInstanceSetting ...
-func (dcb *DubboConfiguratorBuilder) BuildInstanceSetting(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) *v1.ConfiguraredService {
+func (dcb *DubboConfiguratorBuilder) BuildInstanceSetting(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) *v1.ConfiguredService {
 	for index, ins := range cs.Spec.Instances {
 		if matched, c := matchInstance(ins, cc.Configs); matched {
 			cs.Spec.Instances[index].Weight = utils.ToUint32(c.Parameters["weight"])
@@ -249,7 +249,7 @@ func matchInstance(ins *v1.Instance, configs []types.ConfigItem) (bool, *types.C
 }
 
 // SetConfig ...
-func (dcb *DubboConfiguratorBuilder) SetConfig(cs *v1.ConfiguraredService, cc *types.ConfiguratorConfig) {
+func (dcb *DubboConfiguratorBuilder) SetConfig(cs *v1.ConfiguredService, cc *types.ConfiguratorConfig) {
 	// policy's setting
 	dcb.BuildPolicy(cs, cc)
 	// subset's setting

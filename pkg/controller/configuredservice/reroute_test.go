@@ -1,4 +1,4 @@
-package configuraredservice
+package configuredservice
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestReconcileConfiguraredService_reconcileSubset(t *testing.T) {
+func TestReconcileConfiguredService_reconcileSubset(t *testing.T) {
 	fakeScheme := GetFakeScheme()
 	type fields struct {
 		client     client.Client
@@ -21,7 +21,7 @@ func TestReconcileConfiguraredService_reconcileSubset(t *testing.T) {
 	}
 	type args struct {
 		ctx context.Context
-		cr  *meshv1.ConfiguraredService
+		cr  *meshv1.ConfiguredService
 	}
 	tests := []struct {
 		name    string
@@ -80,14 +80,14 @@ func TestReconcileConfiguraredService_reconcileSubset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReconcileConfiguraredService{
+			r := &ReconcileConfiguredService{
 				client:     tt.fields.client,
 				scheme:     tt.fields.scheme,
 				opt:        tt.fields.opt,
 				meshConfig: tt.fields.meshConfig,
 			}
 			if err := r.reconcileSubset(tt.args.ctx, tt.args.cr); (err != nil) != tt.wantErr {
-				t.Errorf("ReconcileConfiguraredService.reconcileSubset() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReconcileConfiguredService.reconcileSubset() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -128,7 +128,7 @@ var (
 			Route:  []*meshv1.Destination{{Subset: "gray", Weight: 100}},
 		},
 	}
-	csTestReconcileSubsetOK = &meshv1.ConfiguraredService{
+	csTestReconcileSubsetOK = &meshv1.ConfiguredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.recocile.subset.ok",
 			Namespace: "sym-test",
@@ -136,7 +136,7 @@ var (
 				"app": "test-app",
 			},
 		},
-		Spec: meshv1.ConfiguraredServiceSpec{
+		Spec: meshv1.ConfiguredServiceSpec{
 			OriginalName: "test.Reconcile.Subset.OK",
 			Ports:        nil,
 			Instances:    nil,
@@ -163,7 +163,7 @@ var (
 			},
 		},
 	}
-	csTestReconcileSubsetNoOption = &meshv1.ConfiguraredService{
+	csTestReconcileSubsetNoOption = &meshv1.ConfiguredService{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test.recocile.subset.nooption.ok",
 			Namespace: "sym-test",
@@ -171,7 +171,7 @@ var (
 				"app": "test-app",
 			},
 		},
-		Spec: meshv1.ConfiguraredServiceSpec{
+		Spec: meshv1.ConfiguredServiceSpec{
 			OriginalName: "test.Reconcile.Subset.noOption.OK",
 			Ports:        nil,
 			Instances:    nil,

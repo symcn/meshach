@@ -121,8 +121,8 @@ type Port struct {
 	Number uint32 `json:"number"`
 }
 
-// ConfiguraredServiceSpec defines the desired state of ConfiguraredService
-type ConfiguraredServiceSpec struct {
+// ConfiguredServiceSpec defines the desired state of ConfiguredService
+type ConfiguredServiceSpec struct {
 	// +kubebuilder:validation:MaxLength=255
 	// +kubebuilder:validation:MinLength=1
 	OriginalName string `json:"originalName"`
@@ -224,8 +224,8 @@ const (
 	ConfigStatusUnknown       ConfigPhase = "Unknown"
 )
 
-// ConfiguraredServiceStatus defines the observed state of ConfiguraredService
-type ConfiguraredServiceStatus struct {
+// ConfiguredServiceStatus defines the observed state of ConfiguredService
+type ConfiguredServiceStatus struct {
 	LastUpdateTime *metav1.Time `json:"lastUpdateTime,omitempty"`
 	Phase          ConfigPhase  `json:"phase"`
 	Status         *Status      `json:"status"`
@@ -233,26 +233,26 @@ type ConfiguraredServiceStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ConfiguraredService is the Schema for the configuraredservices API
+// ConfiguredService is the Schema for the configuredservices API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=configuraredservices,scope=Namespaced
-type ConfiguraredService struct {
+// +kubebuilder:resource:path=configuredservices,scope=Namespaced
+type ConfiguredService struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ConfiguraredServiceSpec   `json:"spec,omitempty"`
-	Status ConfiguraredServiceStatus `json:"status,omitempty"`
+	Spec   ConfiguredServiceSpec   `json:"spec,omitempty"`
+	Status ConfiguredServiceStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ConfiguraredServiceList contains a list of ConfiguraredService
-type ConfiguraredServiceList struct {
+// ConfiguredServiceList contains a list of ConfiguredService
+type ConfiguredServiceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ConfiguraredService `json:"items"`
+	Items           []ConfiguredService `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ConfiguraredService{}, &ConfiguraredServiceList{})
+	SchemeBuilder.Register(&ConfiguredService{}, &ConfiguredServiceList{})
 }

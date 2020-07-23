@@ -1,4 +1,4 @@
-package configuraredservice
+package configuredservice
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileConfiguraredService) updateStatus(ctx context.Context, req reconcile.Request, cr *meshv1.ConfiguraredService) error {
+func (r *ReconcileConfiguredService) updateStatus(ctx context.Context, req reconcile.Request, cr *meshv1.ConfiguredService) error {
 	status := r.buildStatus(cr)
 	if !equality.Semantic.DeepEqual(status, cr.Status) {
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -40,14 +40,14 @@ func (r *ReconcileConfiguraredService) updateStatus(ctx context.Context, req rec
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) buildStatus(cr *meshv1.ConfiguraredService) *meshv1.ConfiguraredServiceStatus {
+func (r *ReconcileConfiguredService) buildStatus(cr *meshv1.ConfiguredService) *meshv1.ConfiguredServiceStatus {
 	ctx := context.TODO()
 	serviceEntry := r.getServiceEntryStatus(ctx, cr)
 	workloadEntry := r.getWorkloadEntryStatus(ctx, cr)
 	virtualService := r.getVirtualServiceStatus(ctx, cr)
 	destinationRule := r.getDestinationRuleStatus(ctx, cr)
 
-	status := &meshv1.ConfiguraredServiceStatus{
+	status := &meshv1.ConfiguredServiceStatus{
 		Status: &meshv1.Status{
 			ServiceEntry:    serviceEntry,
 			WorkloadEntry:   workloadEntry,
@@ -59,7 +59,7 @@ func (r *ReconcileConfiguraredService) buildStatus(cr *meshv1.ConfiguraredServic
 	return status
 }
 
-func (r *ReconcileConfiguraredService) getServiceEntryStatus(ctx context.Context, cr *meshv1.ConfiguraredService) *meshv1.SubStatus {
+func (r *ReconcileConfiguredService) getServiceEntryStatus(ctx context.Context, cr *meshv1.ConfiguredService) *meshv1.SubStatus {
 	svcCount := 1
 	list := &networkingv1beta1.ServiceEntryList{}
 	count := r.count(ctx, cr, list)
@@ -73,7 +73,7 @@ func (r *ReconcileConfiguraredService) getServiceEntryStatus(ctx context.Context
 	return status
 }
 
-func (r *ReconcileConfiguraredService) getWorkloadEntryStatus(ctx context.Context, cr *meshv1.ConfiguraredService) *meshv1.SubStatus {
+func (r *ReconcileConfiguredService) getWorkloadEntryStatus(ctx context.Context, cr *meshv1.ConfiguredService) *meshv1.SubStatus {
 	insCount := len(cr.Spec.Instances)
 	list := &networkingv1beta1.WorkloadEntryList{}
 	count := r.count(ctx, cr, list)
@@ -87,7 +87,7 @@ func (r *ReconcileConfiguraredService) getWorkloadEntryStatus(ctx context.Contex
 	return status
 }
 
-func (r *ReconcileConfiguraredService) getVirtualServiceStatus(ctx context.Context, cr *meshv1.ConfiguraredService) *meshv1.SubStatus {
+func (r *ReconcileConfiguredService) getVirtualServiceStatus(ctx context.Context, cr *meshv1.ConfiguredService) *meshv1.SubStatus {
 	// Skip if the service's subset is none
 	svcCount := 1
 	if len(cr.Spec.Subsets) == 0 {
@@ -111,7 +111,7 @@ func (r *ReconcileConfiguraredService) getVirtualServiceStatus(ctx context.Conte
 	return status
 }
 
-func (r *ReconcileConfiguraredService) getDestinationRuleStatus(ctx context.Context, cr *meshv1.ConfiguraredService) *meshv1.SubStatus {
+func (r *ReconcileConfiguredService) getDestinationRuleStatus(ctx context.Context, cr *meshv1.ConfiguredService) *meshv1.SubStatus {
 	svcCount := 1
 
 	// Skip if the service's subset is none
@@ -136,7 +136,7 @@ func (r *ReconcileConfiguraredService) getDestinationRuleStatus(ctx context.Cont
 	return status
 }
 
-func (r *ReconcileConfiguraredService) count(ctx context.Context, cr *meshv1.ConfiguraredService, list runtime.Object) *int {
+func (r *ReconcileConfiguredService) count(ctx context.Context, cr *meshv1.ConfiguredService, list runtime.Object) *int {
 	var c int
 	labels := &client.MatchingLabels{"service": cr.Spec.OriginalName}
 	opts := &client.ListOptions{Namespace: cr.Namespace}

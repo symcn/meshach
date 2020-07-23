@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package configuraredservice
+package configuredservice
 
 import (
 	"context"
@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileConfiguraredService) reconcileServiceEntry(ctx context.Context, cr *meshv1.ConfiguraredService) error {
+func (r *ReconcileConfiguredService) reconcileServiceEntry(ctx context.Context, cr *meshv1.ConfiguredService) error {
 	foundMap, err := r.getServiceEntriesMap(ctx, cr)
 	if err != nil {
 		klog.Errorf("%s/%s get ServiceEntries error: %+v", cr.Namespace, cr.Name, err)
@@ -39,7 +39,7 @@ func (r *ReconcileConfiguraredService) reconcileServiceEntry(ctx context.Context
 	}
 
 	se := r.buildServiceEntry(cr)
-	// Set ConfiguraredService instance as the owner and controller
+	// Set ConfiguredService instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, se, r.scheme); err != nil {
 		klog.Errorf("SetControllerReference error: %v", err)
 		return err
@@ -91,7 +91,7 @@ func (r *ReconcileConfiguraredService) reconcileServiceEntry(ctx context.Context
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) buildServiceEntry(svc *meshv1.ConfiguraredService) *networkingv1beta1.ServiceEntry {
+func (r *ReconcileConfiguredService) buildServiceEntry(svc *meshv1.ConfiguredService) *networkingv1beta1.ServiceEntry {
 	var ports []*v1beta1.Port
 	for _, port := range svc.Spec.Ports {
 		ports = append(ports, &v1beta1.Port{
@@ -134,7 +134,7 @@ func compareServiceEntry(new, old *networkingv1beta1.ServiceEntry) bool {
 	return false
 }
 
-func (r *ReconcileConfiguraredService) getServiceEntriesMap(ctx context.Context, cr *meshv1.ConfiguraredService) (map[string]*networkingv1beta1.ServiceEntry, error) {
+func (r *ReconcileConfiguredService) getServiceEntriesMap(ctx context.Context, cr *meshv1.ConfiguredService) (map[string]*networkingv1beta1.ServiceEntry, error) {
 	list := &networkingv1beta1.ServiceEntryList{}
 	labels := &client.MatchingLabels{r.opt.SelectLabel: truncated(cr.Spec.OriginalName)}
 	opts := &client.ListOptions{Namespace: cr.Namespace}

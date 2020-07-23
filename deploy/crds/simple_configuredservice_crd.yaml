@@ -1,16 +1,16 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: configuraredservices.mesh.symcn.com
+  name: configuredservices.mesh.symcn.com
 spec:
   group: mesh.symcn.com
   names:
-    kind: ConfiguraredService
-    listKind: ConfiguraredServiceList
-    plural: configuraredservices
-    singular: configuraredservice
+    kind: ConfiguredService
+    listKind: ConfiguredServiceList
+    plural: configuredservices
+    singular: configuredservice
     shortNames:
-      - cs
+      - cfgs
   scope: Namespaced
   subresources:
     status: {}

@@ -71,7 +71,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 		}
 
 		// loading cs CR from k8s cluster
-		foundCs, err := get(&v1.ConfiguraredService{
+		foundCs, err := get(&v1.ConfiguredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      utils.FormatToDNS1123(event.Service.Name),
 				Namespace: defaultNamespace,
@@ -92,7 +92,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteService(event *types.Servic
 	klog.Infof("event handler for a single cluster: Deleting a service\n%v\n", event.Service)
 	metrics.DeletedServiceCounter.Inc()
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err := delete(&v1.ConfiguraredService{
+		err := delete(&v1.ConfiguredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      utils.FormatToDNS1123(event.Service.Name),
 				Namespace: defaultNamespace,
@@ -125,7 +125,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
-		cs, err := get(&v1.ConfiguraredService{
+		cs, err := get(&v1.ConfiguredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      utils.FormatToDNS1123(serviceName),
 				Namespace: defaultNamespace,
@@ -160,7 +160,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.FormatToDNS1123(utils.ResolveServiceName(e.Path))
-		cs, err := get(&v1.ConfiguraredService{
+		cs, err := get(&v1.ConfiguredService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serviceName,
 				Namespace: defaultNamespace,

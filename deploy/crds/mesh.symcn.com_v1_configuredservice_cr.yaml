@@ -1,7 +1,7 @@
 apiVersion: mesh.symcn.com/v1
-kind: ConfiguraredService
+kind: ConfiguredService
 metadata:
-  name: example-configuraredservice
+  name: example-configuredservice
 spec:
   # Add fields here
   size: 3

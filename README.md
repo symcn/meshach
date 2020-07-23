@@ -42,13 +42,13 @@ Install CRD:
 
 ```shell
 $ cd deploy/crds
-$ kubectl apply -f mesh.symcn.com_appmeshconfigs_crd.yaml -f mesh.symcn.com_istioconfigs_crd.yaml -f mesh.symcn.com_meshconfigs_crd.yaml -f mesh.symcn.com_configuraredservices_crd.yaml
+$ kubectl apply -f mesh.symcn.com_appmeshconfigs_crd.yaml -f mesh.symcn.com_istioconfigs_crd.yaml -f mesh.symcn.com_meshconfigs_crd.yaml -f mesh.symcn.com_configuredservices_crd.yaml
 ```
 
 Install CRD no validations:
 ```shell
 $ cd deploy/crds
-$ kubectl apply -f simple_appmeshconfigs_crd.yaml -f simple_istioconfigs_crd.yaml -f simple_meshconfigs_crd.yaml -f simple_configuraredservice_crd.yaml
+$ kubectl apply -f simple_appmeshconfigs_crd.yaml -f simple_istioconfigs_crd.yaml -f simple_meshconfigs_crd.yaml -f simple_configuredservice_crd.yaml
 ```
 
 Create ClusterRole, ClusterRoleBinding and ServiceAccount:

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package configuraredservice
+package configuredservice
 
 import (
 	"context"
@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileConfiguraredService) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.ConfiguraredService) error {
-	// Get all workloadEntry of this ConfiguraredService
+func (r *ReconcileConfiguredService) reconcileWorkloadEntry(ctx context.Context, cr *meshv1.ConfiguredService) error {
+	// Get all workloadEntry of this ConfiguredService
 	foundMap, err := r.getWorkloadEntriesMap(ctx, cr)
 	if err != nil {
 		klog.Errorf("%s/%s get WorkloadEntries error: %+v", cr.Namespace, cr.Name, err)
@@ -44,7 +44,7 @@ func (r *ReconcileConfiguraredService) reconcileWorkloadEntry(ctx context.Contex
 	for _, ins := range cr.Spec.Instances {
 		we := r.buildWorkloadEntry(cr, ins)
 
-		// Set ConfiguraredService instance as the owner and controller
+		// Set ConfiguredService instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, we, r.scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
 			return err
@@ -105,7 +105,7 @@ func (r *ReconcileConfiguraredService) reconcileWorkloadEntry(ctx context.Contex
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) buildWorkloadEntry(svc *meshv1.ConfiguraredService, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
+func (r *ReconcileConfiguredService) buildWorkloadEntry(svc *meshv1.ConfiguredService, ins *meshv1.Instance) *networkingv1beta1.WorkloadEntry {
 	name := fmt.Sprintf("%s.%s.%d", svc.Name, ins.Host, ins.Port.Number)
 	labels := make(map[string]string)
 	labels[r.opt.SelectLabel] = svc.Name
@@ -143,7 +143,7 @@ func compareWorkloadEntry(new, old *networkingv1beta1.WorkloadEntry) bool {
 	return false
 }
 
-func (r *ReconcileConfiguraredService) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.ConfiguraredService) (map[string]*networkingv1beta1.WorkloadEntry, error) {
+func (r *ReconcileConfiguredService) getWorkloadEntriesMap(ctx context.Context, cr *meshv1.ConfiguredService) (map[string]*networkingv1beta1.WorkloadEntry, error) {
 	list := &networkingv1beta1.WorkloadEntryList{}
 	labels := &client.MatchingLabels{r.opt.SelectLabel: truncated(cr.Spec.OriginalName)}
 	opts := &client.ListOptions{Namespace: cr.Namespace}

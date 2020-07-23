@@ -1,4 +1,4 @@
-package configuraredservice
+package configuredservice
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileConfiguraredService) reconcileSubset(ctx context.Context, cr *meshv1.ConfiguraredService) error {
+func (r *ReconcileConfiguredService) reconcileSubset(ctx context.Context, cr *meshv1.ConfiguredService) error {
 	for _, subset := range cr.Spec.Subsets {
 		labels := client.MatchingLabels(subset.Labels)
 		opts := &client.ListOptions{Namespace: cr.Namespace}
@@ -35,7 +35,7 @@ func (r *ReconcileConfiguraredService) reconcileSubset(ctx context.Context, cr *
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) rerouteSubset(ctx context.Context, subset *meshv1.Subset, cr *meshv1.ConfiguraredService) error {
+func (r *ReconcileConfiguredService) rerouteSubset(ctx context.Context, subset *meshv1.Subset, cr *meshv1.ConfiguredService) error {
 	if cr.Spec.CanaryRerouteOption == nil ||
 		cr.Spec.RerouteOption == nil {
 		klog.Warningf("%s/%s not set reroute option.", cr.Namespace, cr.Name)
@@ -59,7 +59,7 @@ func (r *ReconcileConfiguraredService) rerouteSubset(ctx context.Context, subset
 	return nil
 }
 
-func (r *ReconcileConfiguraredService) reroute(ctx context.Context, subset *meshv1.Subset, cr *meshv1.ConfiguraredService, rerouteOption *meshv1.RerouteOption) error {
+func (r *ReconcileConfiguredService) reroute(ctx context.Context, subset *meshv1.Subset, cr *meshv1.ConfiguredService, rerouteOption *meshv1.RerouteOption) error {
 	switch rerouteOption.ReroutePolicy {
 	case meshv1.Specific:
 		cr = rerouteWithSpecificMap(cr, rerouteOption)
@@ -87,7 +87,7 @@ func (r *ReconcileConfiguraredService) reroute(ctx context.Context, subset *mesh
 
 		getErr := r.client.Get(ctx, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, cr)
 		if getErr != nil {
-			klog.Errorf("Get ConfiguraredService error: %+v", getErr)
+			klog.Errorf("Get ConfiguredService error: %+v", getErr)
 		}
 		return updateErr
 	})
@@ -100,7 +100,7 @@ func (r *ReconcileConfiguraredService) reroute(ctx context.Context, subset *mesh
 	return nil
 }
 
-func rerouteWithSpecificMap(cr *meshv1.ConfiguraredService, option *meshv1.RerouteOption) *meshv1.ConfiguraredService {
+func rerouteWithSpecificMap(cr *meshv1.ConfiguredService, option *meshv1.RerouteOption) *meshv1.ConfiguredService {
 	for sourceLabel, route := range option.SpecificRoute {
 		for _, s := range cr.Spec.Policy.SourceLabels {
 			if s.Name == sourceLabel {
@@ -111,7 +111,7 @@ func rerouteWithSpecificMap(cr *meshv1.ConfiguraredService, option *meshv1.Rerou
 	return cr
 }
 
-func rerouteWithRoundRobin(cr *meshv1.ConfiguraredService, subset *meshv1.Subset) *meshv1.ConfiguraredService {
+func rerouteWithRoundRobin(cr *meshv1.ConfiguredService, subset *meshv1.Subset) *meshv1.ConfiguredService {
 	cr = setDefaultRoute(cr, subset)
 	cr.Spec.Policy.LoadBalancer = map[string]string{
 		loadBalanceSimple: v1beta1.LoadBalancerSettings_ROUND_ROBIN.String(),
@@ -119,7 +119,7 @@ func rerouteWithRoundRobin(cr *meshv1.ConfiguraredService, subset *meshv1.Subset
 	return cr
 }
 
-func rerouteWithRandom(cr *meshv1.ConfiguraredService, subset *meshv1.Subset) *meshv1.ConfiguraredService {
+func rerouteWithRandom(cr *meshv1.ConfiguredService, subset *meshv1.Subset) *meshv1.ConfiguredService {
 	cr = setDefaultRoute(cr, subset)
 	cr.Spec.Policy.LoadBalancer = map[string]string{
 		loadBalanceSimple: v1beta1.LoadBalancerSettings_RANDOM.String(),
@@ -127,7 +127,7 @@ func rerouteWithRandom(cr *meshv1.ConfiguraredService, subset *meshv1.Subset) *m
 	return cr
 }
 
-func rerouteWithLeastConn(cr *meshv1.ConfiguraredService, subset *meshv1.Subset) *meshv1.ConfiguraredService {
+func rerouteWithLeastConn(cr *meshv1.ConfiguredService, subset *meshv1.Subset) *meshv1.ConfiguredService {
 	cr = setDefaultRoute(cr, subset)
 	cr.Spec.Policy.LoadBalancer = map[string]string{
 		loadBalanceSimple: v1beta1.LoadBalancerSettings_LEAST_CONN.String(),
@@ -135,7 +135,7 @@ func rerouteWithLeastConn(cr *meshv1.ConfiguraredService, subset *meshv1.Subset)
 	return cr
 }
 
-func rerouteWithPassthrough(cr *meshv1.ConfiguraredService, subset *meshv1.Subset) *meshv1.ConfiguraredService {
+func rerouteWithPassthrough(cr *meshv1.ConfiguredService, subset *meshv1.Subset) *meshv1.ConfiguredService {
 	cr = setDefaultRoute(cr, subset)
 	cr.Spec.Policy.LoadBalancer = map[string]string{
 		loadBalanceSimple: v1beta1.LoadBalancerSettings_PASSTHROUGH.String(),
@@ -143,7 +143,7 @@ func rerouteWithPassthrough(cr *meshv1.ConfiguraredService, subset *meshv1.Subse
 	return cr
 }
 
-func setDefaultRoute(cr *meshv1.ConfiguraredService, subset *meshv1.Subset) *meshv1.ConfiguraredService {
+func setDefaultRoute(cr *meshv1.ConfiguredService, subset *meshv1.Subset) *meshv1.ConfiguredService {
 	for _, s := range cr.Spec.Policy.SourceLabels {
 		if s.Name == subset.Name {
 			s.Route = []*meshv1.Destination{{Subset: "", Weight: 0}}

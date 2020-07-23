@@ -36,14 +36,14 @@ func convertPort(port *types2.Port) *v1.Port {
 }
 
 // convertService Convert service between these two formats
-func convertEvent(s *types2.Service) *v1.ConfiguraredService {
+func convertEvent(s *types2.Service) *v1.ConfiguredService {
 	// TODO Assuming every service can only provide an unique fixed port to adapt the dubbo case.
-	cs := &v1.ConfiguraredService{
+	cs := &v1.ConfiguredService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(s.Name),
 			Namespace: defaultNamespace,
 		},
-		Spec: v1.ConfiguraredServiceSpec{
+		Spec: v1.ConfiguredServiceSpec{
 			OriginalName: s.Name,
 			Ports: []*v1.Port{{
 				Name:     constant.DubboPortName,
@@ -71,7 +71,7 @@ func convertEvent(s *types2.Service) *v1.ConfiguraredService {
 }
 
 // create
-func create(cs *v1.ConfiguraredService, c client.Client) error {
+func create(cs *v1.ConfiguredService, c client.Client) error {
 	l.Lock()
 	defer l.Unlock()
 
@@ -86,7 +86,7 @@ func create(cs *v1.ConfiguraredService, c client.Client) error {
 }
 
 // update
-func update(cs *v1.ConfiguraredService, c client.Client) error {
+func update(cs *v1.ConfiguredService, c client.Client) error {
 	l.Lock()
 	defer l.Unlock()
 
@@ -102,7 +102,7 @@ func update(cs *v1.ConfiguraredService, c client.Client) error {
 }
 
 // get
-func get(cs *v1.ConfiguraredService, c client.Client) (*v1.ConfiguraredService, error) {
+func get(cs *v1.ConfiguredService, c client.Client) (*v1.ConfiguredService, error) {
 	err := c.Get(context.Background(), types.NamespacedName{
 		Namespace: cs.Namespace,
 		Name:      cs.Name,
@@ -112,7 +112,7 @@ func get(cs *v1.ConfiguraredService, c client.Client) (*v1.ConfiguraredService, 
 }
 
 // delete
-func delete(cs *v1.ConfiguraredService, c client.Client) error {
+func delete(cs *v1.ConfiguredService, c client.Client) error {
 	err := c.Delete(context.Background(), cs)
 	klog.Infof("The generation of cs when getting: %d", cs.ObjectMeta.Generation)
 	return err
