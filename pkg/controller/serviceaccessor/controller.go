@@ -164,7 +164,7 @@ func (r *ReconcileServiceAccessor) buildHosts(namespace string, accessServices [
 }
 
 func (r *ReconcileServiceAccessor) buildEgress(cr *meshv1.ServiceAccessor) []*v1beta1.IstioEgressListener {
-	hosts := r.buildHosts(cr.Namespace, cr.Spec.AccessServices)
+	hosts := r.buildHosts(cr.Namespace, cr.Spec.AccessHosts)
 	return []*v1beta1.IstioEgressListener{{
 		// Port:  &v1beta1.Port{},
 		// Bind:  "",

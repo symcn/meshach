@@ -240,6 +240,12 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              sidecarDefaultHosts:
+                items:
+                  type: string
+                type: array
+              sidecarSelectLabel:
+                type: string
               workloadEntryLabelKeys:
                 items:
                   type: string
@@ -251,6 +257,8 @@ spec:
             - matchHeaderLabelKeys
             - matchSourceLabelKeys
             - meshLabelsRemap
+            - sidecarDefaultHosts
+            - sidecarSelectLabel
             - workloadEntryLabelKeys
             type: object
           status:

@@ -6,11 +6,7 @@ import (
 
 // ServiceAccessorSpec defines the desired state of ServiceAccessor
 type ServiceAccessorSpec struct {
-	// +kubebuilder:validation:MaxLength=255
-	// +kubebuilder:validation:MinLength=1
-	OriginalName   string      `json:"originalName"`
-	AccessServices []string    `json:"accessService"`
-	Instances      []*Instance `json:"instances"`
+	AccessHosts []string `json:"accessHosts"`
 }
 
 // ServiceAccessorStatus defines the observed state of ServiceAccessor
