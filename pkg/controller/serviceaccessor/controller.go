@@ -8,13 +8,16 @@ import (
 	"github.com/symcn/mesh-operator/pkg/option"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -103,31 +106,45 @@ func (r *ReconcileServiceAccessor) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	// Found Sidecar with app label
-	label := r.meshConfig.Spec.SidecarSelectLabel
-	sidecarName, ok := instance.Labels[label]
-	if !ok {
-		klog.Infof("%s/%s no [%s] labels found, skip to create Sidecar", request.Namespace, request.Name, label)
-		return reconcile.Result{}, nil
+	sidecar := r.buildSidecar(instance.Name, instance)
+	if err := controllerutil.SetControllerReference(instance, sidecar, r.scheme); err != nil {
+		klog.Errorf("SetControllerReference error: %v", err)
+		return reconcile.Result{}, err
 	}
 
 	found := &networkingv1beta1.Sidecar{}
-	err = r.client.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: sidecarName}, found)
+	err = r.client.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			sidecar := r.buildSidecar(sidecarName, instance)
 			err := r.client.Create(ctx, sidecar)
 			if err != nil {
 				klog.Errorf("Create Sidecar[%s,%s] error: %+v", sidecar.Namespace, sidecar.Name, err)
 				return reconcile.Result{}, err
 			}
-			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	// Update Sidecar
+	if compareSidecar(sidecar, found) {
+		klog.Infof("Update Sidecar, Namespace: %s, Name: %s", found.Namespace, found.Name)
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			sidecar.Spec.DeepCopyInto(&found.Spec)
+			found.Finalizers = sidecar.Finalizers
+			found.Labels = sidecar.ObjectMeta.Labels
+
+			updateErr := r.client.Update(ctx, found)
+			if updateErr == nil {
+				klog.V(4).Infof("%s/%s update Sidecar successfully", sidecar.Namespace, sidecar.Name)
+				return nil
+			}
+			return updateErr
+		})
+		if err != nil {
+			klog.Warningf("Update Sidecar [%s] spec failed, err: %+v", sidecar.Name, err)
+			return reconcile.Result{}, err
+		}
+	}
 
 	return reconcile.Result{}, nil
 }
@@ -150,38 +167,26 @@ func (r *ReconcileServiceAccessor) getMeshConfig(ctx context.Context) error {
 	return nil
 }
 
-func (r *ReconcileServiceAccessor) buildHosts(namespace string, accessServices []string) []string {
+func (r *ReconcileServiceAccessor) buildHosts(namespace string, accessHosts []string) []string {
 	var hosts []string
 	if len(r.meshConfig.Spec.SidecarDefaultHosts) > 0 {
 		hosts = append(hosts, r.meshConfig.Spec.SidecarDefaultHosts...)
 	}
 
-	for _, svc := range accessServices {
+	for _, svc := range accessHosts {
 		hosts = append(hosts, fmt.Sprintf("%s/%s", namespace, svc))
 	}
-
 	return hosts
 }
 
 func (r *ReconcileServiceAccessor) buildEgress(cr *meshv1.ServiceAccessor) []*v1beta1.IstioEgressListener {
 	hosts := r.buildHosts(cr.Namespace, cr.Spec.AccessHosts)
 	return []*v1beta1.IstioEgressListener{{
-		// Port:  &v1beta1.Port{},
-		// Bind:  "",
 		Hosts: hosts,
 	}}
 }
 
 func (r *ReconcileServiceAccessor) buildSidecar(name string, cr *meshv1.ServiceAccessor) *networkingv1beta1.Sidecar {
-	// ingress := []*v1beta1.IstioIngressListener{{
-	// 	Port: &v1beta1.Port{
-	// 		Number:   20882,
-	// 		Protocol: "HTTP",
-	// 		Name:     "dubbo-ingress",
-	// 	},
-	// 	Bind:            "127.0.0.1",
-	// 	DefaultEndpoint: "127.0.0.1:20882",
-	// }}
 	egress := r.buildEgress(cr)
 	return &networkingv1beta1.Sidecar{
 		ObjectMeta: v1.ObjectMeta{
@@ -200,4 +205,19 @@ func (r *ReconcileServiceAccessor) buildSidecar(name string, cr *meshv1.ServiceA
 			},
 		},
 	}
+}
+
+func compareSidecar(new, old *networkingv1beta1.Sidecar) bool {
+	if !equality.Semantic.DeepEqual(new.ObjectMeta.Finalizers, old.ObjectMeta.Finalizers) {
+		return true
+	}
+
+	if !equality.Semantic.DeepEqual(new.ObjectMeta.Labels, old.ObjectMeta.Labels) {
+		return true
+	}
+
+	if !equality.Semantic.DeepEqual(new.Spec, old.Spec) {
+		return true
+	}
+	return false
 }
