@@ -15,6 +15,9 @@ type Registry interface {
 	// If you need to make the application name explicit, you can find it with a service name from registry client.
 	// FindAppIdentifier(serviceName string) string
 
+	// GetCachedScopedMapping Retrieve the services with the scoped key from the cache.
+	GetCachedScopedMapping(scopedKey string) map[string]struct{}
+
 	GetCachedService(serviceName string) *types.Service
 
 	Stop()

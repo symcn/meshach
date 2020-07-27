@@ -24,15 +24,16 @@ func init() {
 
 // RegistryClient ...
 type RegistryClient struct {
-	conn        *zkClient.Conn
-	root        string
-	services    map[string]*types.Service
-	serviceOut  chan *types.ServiceEvent
-	accessors   map[string]*types.Service
-	accessorOut chan *types.ServiceEvent
-	scache      *zookeeper.PathCache
-	pcaches     map[string]*zookeeper.PathCache
-	ccaches     map[string]*zookeeper.PathCache
+	conn                   *zkClient.Conn
+	root                   string
+	services               map[string]*types.Service
+	serviceOut             chan *types.ServiceEvent
+	accessors              map[string]*types.Service
+	accessorOut            chan *types.ServiceEvent
+	scopedAccessorsMapping map[string]map[string]struct{}
+	scache                 *zookeeper.PathCache
+	pcaches                map[string]*zookeeper.PathCache
+	ccaches                map[string]*zookeeper.PathCache
 }
 
 // New Create a new client for zookeeper
@@ -46,14 +47,15 @@ func New(opt option.Registry) (component.Registry, error) {
 	}
 
 	return &RegistryClient{
-		conn:        conn,
-		services:    make(map[string]*types.Service),
-		serviceOut:  make(chan *types.ServiceEvent),
-		accessors:   make(map[string]*types.Service),
-		accessorOut: make(chan *types.ServiceEvent),
-		scache:      nil,
-		pcaches:     make(map[string]*zookeeper.PathCache),
-		ccaches:     make(map[string]*zookeeper.PathCache),
+		conn:                   conn,
+		services:               make(map[string]*types.Service),
+		serviceOut:             make(chan *types.ServiceEvent),
+		accessors:              make(map[string]*types.Service),
+		accessorOut:            make(chan *types.ServiceEvent),
+		scopedAccessorsMapping: make(map[string]map[string]struct{}),
+		scache:                 nil,
+		pcaches:                make(map[string]*zookeeper.PathCache),
+		ccaches:                make(map[string]*zookeeper.PathCache),
 	}, nil
 }
 
@@ -416,9 +418,18 @@ func (c *RegistryClient) replaceAccessorInstances(hostname string, rawURLs []str
 
 	for k := range instances {
 		instances[k].Service = a
+
+		// cache an accessor instance based on a scope key.
+		scopedKey := instances[k].Labels["app"]
+		_, ok := c.scopedAccessorsMapping[scopedKey]
+		if !ok {
+			c.scopedAccessorsMapping[scopedKey] = make(map[string]struct{})
+		}
+		c.scopedAccessorsMapping[scopedKey][a.Name] = struct{}{}
 	}
 
 	a.Instances = instances
+
 	go c.notifyAccessorEvent(&types.ServiceEvent{
 		EventType: types.ServiceInstancesReplace,
 		Service:   a,
@@ -440,4 +451,9 @@ func makeHostname(hostname string, instance *types.Instance) string {
 	return hostname
 	// We don't need version for the moment.
 	// + ":" + instance.Labels["version"]
+}
+
+// GetCachedScopedMapping ...
+func (c *RegistryClient) GetCachedScopedMapping(scopedKey string) map[string]struct{} {
+	return c.scopedAccessorsMapping[scopedKey]
 }

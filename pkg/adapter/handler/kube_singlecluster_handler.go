@@ -45,7 +45,8 @@ func (kubeSceh *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent
 }
 
 // ReplaceInstances ...
-func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent, configuratorFinder func(s string) *types.ConfiguratorConfig) {
+func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent,
+	configuratorFinder func(s string) *types.ConfiguratorConfig) {
 	klog.Infof("event handler for a single cluster: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 
 	metrics.SynchronizedServiceCounter.Inc()
@@ -106,6 +107,58 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteService(event *types.Servic
 // DeleteInstance ...
 func (kubeSceh *KubeSingleClusterEventHandler) DeleteInstance(e *types.ServiceEvent) {
 	klog.Warningf("Deleting an instance has not been implemented yet by single clusters handler.")
+}
+
+// ReplaceAccessorInstances ...
+func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types.ServiceEvent,
+	getScopedServices func(s string) map[string]struct{}) {
+	klog.Infof("event handler for a single cluster: replacing the accessor's instances: %s", e.Service.Name)
+	metrics.ReplacedAccessorInstancesCounter.Inc()
+
+	instances := e.Instances
+	changedScopes := make(map[string]struct{})
+	for _, ins := range instances {
+		if ins != nil {
+			sk, ok := ins.Labels["app"]
+			if ok {
+				changedScopes[sk] = struct{}{}
+			}
+		}
+	}
+
+	for changedScope, _ := range changedScopes {
+		scopedMapping := getScopedServices(changedScope)
+		var accessedServices []string
+		for s, _ := range scopedMapping {
+			accessedServices = append(accessedServices, s)
+		}
+
+		sas := &v1.ServiceAccessor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      utils.FormatToDNS1123(changedScope),
+				Namespace: defaultNamespace,
+			},
+			Spec: v1.ServiceAccessorSpec{
+				AccessHosts: accessedServices,
+			},
+		}
+
+		retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			foundSas, err := getScopedAccessServices(&v1.ServiceAccessor{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      utils.FormatToDNS1123(changedScope),
+					Namespace: defaultNamespace,
+				},
+			}, kubeSceh.ctrlManager.GetClient())
+			if err != nil {
+				klog.Warningf("Can not find an existed asm CR: %v, then create a new one instead.", err)
+				return createScopedAccessServices(foundSas, kubeSceh.ctrlManager.GetClient())
+			}
+			foundSas.Spec = sas.Spec
+			return updateScopedAccessServices(foundSas, kubeSceh.ctrlManager.GetClient())
+		})
+	}
+
 }
 
 // AddConfigEntry ...

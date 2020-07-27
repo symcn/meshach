@@ -14,6 +14,9 @@ type EventHandler interface {
 	ReplaceInstances(event *types.ServiceEvent, configuratorFinder func(s string) *types.ConfiguratorConfig)
 	// AddInstance you should handle the event describe that an instance has been unregistered
 	DeleteInstance(event *types.ServiceEvent)
+	// ReplaceAccessorInstances replacing the instances' host in an accessor CR should be done when
+	// a subscribed mapping between any accessor and any service has been changed.
+	ReplaceAccessorInstances(event *types.ServiceEvent, getScopedServices func(s string) map[string]struct{})
 
 	// AddConfigEntry you should handle the event depicted that a dynamic configuration has been added
 	AddConfigEntry(event *types.ConfigEvent, cachedServiceFinder func(s string) *types.Service)

@@ -119,6 +119,14 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 			}
 		case ae := <-a.registryClient.AccessorEvents():
 			klog.Infof("Accessor which has been received by adapter: %v", ae)
+			switch ae.EventType {
+			case types.ServiceInstancesReplace:
+				for _, h := range a.eventHandlers {
+					h.ReplaceAccessorInstances(ae, a.registryClient.GetCachedScopedMapping)
+				}
+			default:
+				klog.Warningf("The event with %v type has not been support yet.", ae.EventType)
+			}
 		case ce := <-a.configClient.Events():
 			klog.Infof("Configuration component which has been received by adapter: %v", ce)
 			switch ce.EventType {

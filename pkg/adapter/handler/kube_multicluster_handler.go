@@ -109,6 +109,23 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteInstance(event *types2.Servi
 	klog.Warningf("Deleting an instance has not been implemented yet by multiple clusters handler.")
 }
 
+// ReplaceInstances ...
+func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(event *types2.ServiceEvent,
+	getScopedServices func(s string) map[string]struct{}) {
+	klog.Infof("event handler for multiple clusters: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(kubeMceh.handlers))
+	for _, h := range kubeMceh.handlers {
+		go func() {
+			defer wg.Done()
+
+			h.ReplaceAccessorInstances(event, getScopedServices)
+		}()
+	}
+	wg.Wait()
+}
+
 // AddConfigEntry ...
 func (kubeMceh *KubeMultiClusterEventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
 	klog.Infof("event handler for multiple clusters: adding a configuration: %s", e.Path)

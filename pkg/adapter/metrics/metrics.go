@@ -28,6 +28,11 @@ var (
 		Buckets: []float64{0.01, 0.1, 0.5, 1, 5, 10},
 	})
 
+	ReplacedAccessorInstancesCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "mesh_adapter_replace_accessor_instances_total",
+		Help: "The total number of accessor instances which has been replaced",
+	})
+
 	AddedConfigurationCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "mesh_adapter_add_configuration_total",
 		Help: "The total number of configuration which has been added",

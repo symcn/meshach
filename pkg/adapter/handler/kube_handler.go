@@ -19,6 +19,7 @@ var (
 	clusterName      = ""
 	meshConfigName   = "sym-meshconfig"
 	l                sync.Mutex
+	sasl             sync.Mutex
 )
 
 // KubeEventHandler it used for synchronizing the component which has been send by the adapter client
@@ -125,4 +126,45 @@ func delete(cs *v1.ConfiguredService, c client.Client) error {
 	err := c.Delete(context.Background(), cs)
 	klog.Infof("The generation of cs when getting: %d", cs.ObjectMeta.Generation)
 	return err
+}
+
+// createScopedAccessServices
+func createScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) error {
+	sasl.Lock()
+	defer sasl.Unlock()
+
+	// !import this method will panic concurrent map writes
+	err := c.Create(context.Background(), sa)
+	klog.Infof("The generation of sa when creating: %d", sa.ObjectMeta.Generation)
+	if err != nil {
+		klog.Infof("Creating an sa has an error:%v\n", err)
+		return err
+	}
+	return nil
+}
+
+// updateScopedAccessServices
+func updateScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) error {
+	sasl.Lock()
+	defer sasl.Unlock()
+
+	// !import this method will panic concurrent map writes
+	err := c.Update(context.Background(), sa)
+	klog.Infof("The generation of sa after updating: %d", sa.ObjectMeta.Generation)
+	if err != nil {
+		klog.Infof("Updating a sa has an error: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
+// getScopedAccessServices
+func getScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) (*v1.ServiceAccessor, error) {
+	err := c.Get(context.Background(), types.NamespacedName{
+		Namespace: sa.Namespace,
+		Name:      sa.Name,
+	}, sa)
+	klog.Infof("The generation of sa when getting: %d", sa.ObjectMeta.Generation)
+	return sa, err
 }
