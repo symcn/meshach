@@ -13,6 +13,9 @@ spec:
     sym-group: flag
   extractedLabels:
     - app
+  sidecarSelectLabel: app
+  sidecarDefaultHosts:
+    - "istio-system/*"
   globalSubsets:
     - name: blue
       labels:

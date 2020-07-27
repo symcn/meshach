@@ -6,8 +6,10 @@ import (
 
 	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +19,6 @@ import (
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -97,33 +98,40 @@ func (r *ReconcileServiceAccessor) Reconcile(request reconcile.Request) (reconci
 	err = r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	sidecar := r.buildSidecar(instance.Name, instance)
-	if err := controllerutil.SetControllerReference(instance, sidecar, r.scheme); err != nil {
-		klog.Errorf("SetControllerReference error: %v", err)
-		return reconcile.Result{}, err
+	// Get namespace of app pods
+	namespaces := r.getAppNamespace(instance.Name)
+	for namespace := range namespaces {
+		klog.V(6).Infof("create sidecar in namespace: %s", namespace)
+		r.reconcileSidecar(ctx, namespace, instance)
 	}
+
+	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileServiceAccessor) reconcileSidecar(ctx context.Context, namespace string, cr *meshv1.ServiceAccessor) error {
+	sidecar := r.buildSidecar(namespace, cr.Name, cr)
+	// NOTE: can not set Reference cross difference namespaces
+	// if err := controllerutil.SetControllerReference(cr, sidecar, r.scheme); err != nil {
+	// 	klog.Errorf("SetControllerReference error: %v", err)
+	// 	return err
+	// }
 
 	found := &networkingv1beta1.Sidecar{}
-	err = r.client.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}, found)
+	err := r.client.Get(ctx, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err := r.client.Create(ctx, sidecar)
 			if err != nil {
 				klog.Errorf("Create Sidecar[%s,%s] error: %+v", sidecar.Namespace, sidecar.Name, err)
-				return reconcile.Result{}, err
+				return err
 			}
 		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return err
 	}
 
 	if compareSidecar(sidecar, found) {
@@ -142,11 +150,10 @@ func (r *ReconcileServiceAccessor) Reconcile(request reconcile.Request) (reconci
 		})
 		if err != nil {
 			klog.Warningf("Update Sidecar [%s] spec failed, err: %+v", sidecar.Name, err)
-			return reconcile.Result{}, err
+			return err
 		}
 	}
-
-	return reconcile.Result{}, nil
+	return nil
 }
 
 func (r *ReconcileServiceAccessor) getMeshConfig(ctx context.Context) error {
@@ -174,7 +181,7 @@ func (r *ReconcileServiceAccessor) buildHosts(namespace string, accessHosts []st
 	}
 
 	for _, svc := range accessHosts {
-		hosts = append(hosts, fmt.Sprintf("%s/%s", namespace, svc))
+		hosts = append(hosts, fmt.Sprintf("%s/%s", namespace, utils.FormatToDNS1123(svc)))
 	}
 	return hosts
 }
@@ -186,12 +193,12 @@ func (r *ReconcileServiceAccessor) buildEgress(cr *meshv1.ServiceAccessor) []*v1
 	}}
 }
 
-func (r *ReconcileServiceAccessor) buildSidecar(name string, cr *meshv1.ServiceAccessor) *networkingv1beta1.Sidecar {
+func (r *ReconcileServiceAccessor) buildSidecar(namespace, name string, cr *meshv1.ServiceAccessor) *networkingv1beta1.Sidecar {
 	egress := r.buildEgress(cr)
 	return &networkingv1beta1.Sidecar{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
-			Namespace: cr.Namespace,
+			Namespace: namespace,
 		},
 		Spec: v1beta1.Sidecar{
 			WorkloadSelector: &v1beta1.WorkloadSelector{
@@ -220,4 +227,27 @@ func compareSidecar(new, old *networkingv1beta1.Sidecar) bool {
 		return true
 	}
 	return false
+}
+
+func (r *ReconcileServiceAccessor) getAppNamespace(appName string) map[string]struct{} {
+	namespaces := make(map[string]struct{})
+	pods := &corev1.PodList{}
+	labels := &client.MatchingLabels{r.meshConfig.Spec.SidecarSelectLabel: appName}
+	opts := &client.ListOptions{}
+	labels.ApplyToList(opts)
+
+	err := r.client.List(context.TODO(), pods, opts)
+	if err != nil {
+		klog.Warningf("Get pods error when create Sidecar[%s]: %+v", appName, err)
+	}
+
+	if len(pods.Items) > 0 {
+		for _, pod := range pods.Items {
+			namespaces[pod.Namespace] = struct{}{}
+		}
+	} else {
+		klog.Warningf("No pods founds, skip create Sidecar[%s]", err)
+	}
+
+	return namespaces
 }

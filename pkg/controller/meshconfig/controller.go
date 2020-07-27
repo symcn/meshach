@@ -8,6 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -108,7 +110,23 @@ func (r *ReconcileMeshConfig) Reconcile(request reconcile.Request) (reconcile.Re
 		cs := csList.Items[i]
 		if cs.Spec.MeshConfigGeneration != instance.Generation {
 			cs.Spec.MeshConfigGeneration = instance.Generation
-			err := r.client.Update(context.TODO(), &cs)
+			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				updateErr := r.client.Update(context.TODO(), &cs)
+				if updateErr == nil {
+					klog.V(4).Infof("update ConfiguraredService[%s/%s] successfully", cs.Namespace, cs.Name)
+					return nil
+				}
+
+				getErr := r.client.Get(context.TODO(), types.NamespacedName{
+					Namespace: cs.Namespace,
+					Name:      cs.Name,
+				}, &cs)
+				if getErr != nil {
+					return getErr
+				}
+
+				return updateErr
+			})
 			if err != nil {
 				klog.Errorf("Update ConfiguredService[%s/%s] in MeshConfig reconcile error: %+v",
 					cs.Namespace, cs.Name, err)
