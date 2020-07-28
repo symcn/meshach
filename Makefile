@@ -55,7 +55,8 @@ test: set-goproxy fmt vet
 	go test -v -race -cover ./...
 
 test-controller:
-	go test -v -cover github.com/symcn/mesh-operator/pkg/controller/...
+	go test -v -coverprofile=coverage.out github.com/symcn/mesh-operator/pkg/controller/...
+	go tool cover -func=coverage.out -o coverage.txt
 
 # Run go fmt against code
 fmt:

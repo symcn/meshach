@@ -30,3 +30,9 @@ jobs:
 
     - name: Test
       run: make test-controller
+
+    - name: Upload Coverage report to CodeCov
+      uses: codecov/codecov-action@v1.0.0
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: ./coverage.txt
