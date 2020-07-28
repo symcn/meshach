@@ -40,6 +40,7 @@ func (leh *LogEventHandler) DeleteInstance(e *types.ServiceEvent) {
 	klog.Infof("Simple event handler: Deleting an instance\n%v\n", e.Instance)
 }
 
+// ReplaceAccessorInstances ...
 func (leh *LogEventHandler) ReplaceAccessorInstances(e *types.ServiceEvent, getScopedServices func(s string) map[string]struct{}) {
 	klog.Infof("Simple event handler: Replacing the accessors' instances\n%v\n", e.Instance)
 }

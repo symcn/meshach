@@ -3,10 +3,11 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -97,7 +98,6 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteService(event *types2.Servic
 	for _, h := range kubeMceh.handlers {
 		go func() {
 			defer wg.Done()
-
 			h.DeleteService(event)
 		}()
 	}
@@ -109,7 +109,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteInstance(event *types2.Servi
 	klog.Warningf("Deleting an instance has not been implemented yet by multiple clusters handler.")
 }
 
-// ReplaceInstances ...
+// ReplaceAccessorInstances ...
 func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(event *types2.ServiceEvent,
 	getScopedServices func(s string) map[string]struct{}) {
 	klog.Infof("event handler for multiple clusters: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)

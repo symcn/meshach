@@ -126,10 +126,10 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 		}
 	}
 
-	for changedScope, _ := range changedScopes {
+	for changedScope := range changedScopes {
 		scopedMapping := getScopedServices(changedScope)
 		var accessedServices []string
-		for s, _ := range scopedMapping {
+		for s := range scopedMapping {
 			accessedServices = append(accessedServices, s)
 		}
 
