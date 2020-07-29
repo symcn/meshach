@@ -1,0 +1,20 @@
+# permissions for end users to view configuredservices.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: configuredservice-viewer-role
+rules:
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - configuredservices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - configuredservices/status
+  verbs:
+  - get

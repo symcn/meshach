@@ -17,7 +17,7 @@ limitations under the License.
 package client
 
 import (
-	meshv1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
+	meshv1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

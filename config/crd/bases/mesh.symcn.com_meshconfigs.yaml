@@ -1,0 +1,278 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: meshconfigs.mesh.symcn.com
+spec:
+  group: mesh.symcn.com
+  names:
+    kind: MeshConfig
+    listKind: MeshConfigList
+    plural: meshconfigs
+    singular: meshconfig
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: MeshConfig is the Schema for the meshconfigs API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MeshConfigSpec defines the desired state of MeshConfig
+          properties:
+            extractedLabels:
+              items:
+                type: string
+              type: array
+            globalPolicy:
+              description: Policy defines load balancing, retry, and other policies
+                for a service.
+              properties:
+                loadBalancer:
+                  additionalProperties:
+                    type: string
+                  description: Load balancing is a way of distributing traffic between
+                    multiple hosts within a single upstream cluster in order to effectively
+                    make use of available resources. There are many different ways
+                    of accomplishing this, like ROUND_ROBIN, LEAST_CONN RANDOM and
+                    RASSTHROUGN
+                  type: object
+                maxConnections:
+                  description: Maximum number of HTTP1 connections to a destination
+                    host. Default 2^32-1.
+                  format: int32
+                  type: integer
+                maxRetries:
+                  description: Maximum number of retries that can be outstanding to
+                    all hosts in a cluster at a given time. Defaults to 2^32-1.
+                  format: int32
+                  type: integer
+                sourceLabels:
+                  description: One or more labels that constrain the applicability
+                    of a rule to workloads with the given labels.
+                  items:
+                    description: SourceLabels is one or more labels that constrain
+                      the applicability of a rule to workloads with the given labels.
+                    properties:
+                      headers:
+                        additionalProperties:
+                          type: string
+                        description: The HTTP route match headers.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: One or more labels that constrain the applicability
+                          of a rule to workloads with the given labels.
+                        type: object
+                      name:
+                        description: The name of specific subset.
+                        type: string
+                      route:
+                        description: Each routing rule is associated with one or more
+                          service versions.
+                        items:
+                          description: Destination indicates the network addressable
+                            service to which the request/connection will be sent after
+                            processing a routing rule.
+                          properties:
+                            subset:
+                              description: The name of a subset within the service.
+                                Applicable only to services within the mesh. The subset
+                                must be defined in a corresponding DestinationRule.
+                              maxLength: 15
+                              minLength: 1
+                              type: string
+                            weight:
+                              description: The proportion of traffic to be forwarded
+                                to the service version. (0-100). Sum of weights across
+                                destinations SHOULD BE == 100. If there is only one
+                                destination in a rule, the weight value is assumed
+                                to be 100.
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                          required:
+                          - subset
+                          type: object
+                        type: array
+                    type: object
+                  type: array
+                timeout:
+                  description: 'Connection timeout. format: 1h/1m/1s/1ms. MUST BE
+                    >=1ms. Default is 10s.'
+                  type: string
+              type: object
+            globalSubsets:
+              items:
+                description: Subset is a subset of endpoints of a service. Subset
+                  can be used for scenarios like A/B testing, or routing to a specific
+                  version of a service.
+                properties:
+                  isCanary:
+                    description: Whether the subset is defined as a canary group
+                    type: boolean
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: 'One or more labels are typically required to identify
+                      the subset destination. e.g. {"group": "blue"}'
+                    type: object
+                  name:
+                    description: Must be formatted to conform to the DNS1123 specification.
+                    maxLength: 15
+                    minLength: 1
+                    type: string
+                  policy:
+                    description: 'Traffic policies defined at the service-level can
+                      be overridden at a subset-level. NOTE: Policies specified for
+                      subsets will not take effect until a route rule explicitly sends
+                      traffic to this subset.'
+                    properties:
+                      loadBalancer:
+                        additionalProperties:
+                          type: string
+                        description: Load balancing is a way of distributing traffic
+                          between multiple hosts within a single upstream cluster
+                          in order to effectively make use of available resources.
+                          There are many different ways of accomplishing this, like
+                          ROUND_ROBIN, LEAST_CONN RANDOM and RASSTHROUGN
+                        type: object
+                      maxConnections:
+                        description: Maximum number of HTTP1 connections to a destination
+                          host. Default 2^32-1.
+                        format: int32
+                        type: integer
+                      maxRetries:
+                        description: Maximum number of retries that can be outstanding
+                          to all hosts in a cluster at a given time. Defaults to 2^32-1.
+                        format: int32
+                        type: integer
+                      sourceLabels:
+                        description: One or more labels that constrain the applicability
+                          of a rule to workloads with the given labels.
+                        items:
+                          description: SourceLabels is one or more labels that constrain
+                            the applicability of a rule to workloads with the given
+                            labels.
+                          properties:
+                            headers:
+                              additionalProperties:
+                                type: string
+                              description: The HTTP route match headers.
+                              type: object
+                            labels:
+                              additionalProperties:
+                                type: string
+                              description: One or more labels that constrain the applicability
+                                of a rule to workloads with the given labels.
+                              type: object
+                            name:
+                              description: The name of specific subset.
+                              type: string
+                            route:
+                              description: Each routing rule is associated with one
+                                or more service versions.
+                              items:
+                                description: Destination indicates the network addressable
+                                  service to which the request/connection will be
+                                  sent after processing a routing rule.
+                                properties:
+                                  subset:
+                                    description: The name of a subset within the service.
+                                      Applicable only to services within the mesh.
+                                      The subset must be defined in a corresponding
+                                      DestinationRule.
+                                    maxLength: 15
+                                    minLength: 1
+                                    type: string
+                                  weight:
+                                    description: The proportion of traffic to be forwarded
+                                      to the service version. (0-100). Sum of weights
+                                      across destinations SHOULD BE == 100. If there
+                                      is only one destination in a rule, the weight
+                                      value is assumed to be 100.
+                                    format: int32
+                                    maximum: 100
+                                    minimum: 0
+                                    type: integer
+                                required:
+                                - subset
+                                type: object
+                              type: array
+                          type: object
+                        type: array
+                      timeout:
+                        description: 'Connection timeout. format: 1h/1m/1s/1ms. MUST
+                          BE >=1ms. Default is 10s.'
+                        type: string
+                    type: object
+                required:
+                - labels
+                - name
+                type: object
+              type: array
+            matchHeaderLabelKeys:
+              additionalProperties:
+                description: StringMatchType ...
+                type: string
+              type: object
+            matchSourceLabelKeys:
+              items:
+                type: string
+              type: array
+            meshLabelsRemap:
+              additionalProperties:
+                type: string
+              type: object
+            sidecarDefaultHosts:
+              items:
+                type: string
+              type: array
+            sidecarSelectLabel:
+              type: string
+            workloadEntryLabelKeys:
+              items:
+                type: string
+              type: array
+          required:
+          - extractedLabels
+          - globalPolicy
+          - globalSubsets
+          - matchHeaderLabelKeys
+          - matchSourceLabelKeys
+          - meshLabelsRemap
+          - sidecarDefaultHosts
+          - sidecarSelectLabel
+          - workloadEntryLabelKeys
+          type: object
+        status:
+          description: MeshConfigStatus defines the observed state of MeshConfig
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

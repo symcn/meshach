@@ -1,0 +1,7 @@
+apiVersion: mesh.symcn.com/v1alpha1
+kind: ServiceAccessor
+metadata:
+  name: serviceaccessor-sample
+spec:
+  # Add fields here
+  foo: bar

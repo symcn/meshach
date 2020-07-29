@@ -1,0 +1,24 @@
+# permissions for end users to edit meshconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: meshconfig-editor-role
+rules:
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - meshconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - meshconfigs/status
+  verbs:
+  - get

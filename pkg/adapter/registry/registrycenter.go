@@ -17,7 +17,7 @@ var (
 // Registry ...
 func Registry(typ string, f constructor) {
 	if _, ok := registryInstance[typ]; ok {
-		klog.Fatalln("repeat registry [registry center instance]: %s", typ)
+		klog.Fatalf("repeat registry [registry center instance]: %s", typ)
 	}
 	registryInstance[typ] = f
 }

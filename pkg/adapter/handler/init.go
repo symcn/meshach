@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	"github.com/symcn/mesh-operator/pkg/option"

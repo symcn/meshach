@@ -1,0 +1,19 @@
+domain: symcn.com
+repo: github.com/symcn/mesh-operator
+resources:
+- group: mesh
+  kind: AppMeshConfig
+  version: v1alpha1
+- group: mesh
+  kind: MeshConfig
+  version: v1alpha1
+- group: mesh
+  kind: IstioConfig
+  version: v1alpha1
+- group: mesh
+  kind: ConfiguredService
+  version: v1alpha1
+- group: mesh
+  kind: ServiceAccessor
+  version: v1alpha1
+version: "2"

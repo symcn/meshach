@@ -4,10 +4,10 @@ import (
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 
 	"github.com/prometheus/client_golang/prometheus"
+	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
-	v1 "github.com/symcn/mesh-operator/pkg/apis/mesh/v1"
 	"github.com/symcn/mesh-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"

@@ -1,0 +1,24 @@
+# permissions for end users to edit serviceaccessors.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: serviceaccessor-editor-role
+rules:
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - serviceaccessors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - serviceaccessors/status
+  verbs:
+  - get

@@ -1,9 +1,8 @@
-.PHONY: build deploy
-
 VERSION ?= v0.0.3
 # Image URL to use all building/pushing image targets
 IMG_ADDR ?= symcn.tencentcloudcr.com/symcn/mesh-operator
-
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true"
 # This repo's root import path (under GOPATH).
 ROOT := github.com/mesh-operator
 
@@ -21,41 +20,37 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+all: manager
 
-docker-build:
-	docker run --rm -v "$$PWD":/go/src/${ROOT} -v ${GOPATH}/pkg/mod:/go/pkg/mod -w /go/src/${ROOT} golang:${GO_VERSION} make build
+# Run tests
+test: generate fmt vet manifests
+	go test -v -coverprofile=coverage.txt github.com/symcn/mesh-operator/controllers/...
 
-docker-push:
-	docker build -t ${IMG_ADDR}:${VERSION} -f ./build/Dockerfile .
-	docker push ${IMG_ADDR}:${VERSION}
-
-build:
-	$(GO) -v -o build/_output/bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
+# Build manager binary
+manager: generate fmt vet
+	GOOS=linux GOARCH=amd64 go build -v -o bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
 	-X  $(ROOT)/pkg/version.BuildDate=$(BUILD_DATE)" cmd/mesh-operator/main.go
 
-build-linux:
-	GOOS=linux GOARCH=amd64 go build -v -o build/_output/bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
-	-X  $(ROOT)/pkg/version.BuildDate=$(BUILD_DATE)" cmd/mesh-operator/main.go
+# Run against the configured Kubernetes cluster in ~/.kube/config
+run: generate fmt vet manifests
+	go run ./cmd/mesh-operator/main.go -n sym-admin ctl -v 4
 
-deploy:
-	kubectl apply -f deploy/service_account.yaml
-	kubectl apply -f deploy/role.yaml
-	kubectl apply -f deploy/role_binding.yaml
-	kubectl apply -f deploy/operator.yaml
-	kubectl apply -f deploy/adapter.yaml
+# Install CRDs into a cluster
+install: manifests
+	kustomize build config/crd | kubectl apply -f -
 
-clear:
-	kubectl delete -f deploy/service_account.yaml
-	kubectl delete -f deploy/role.yaml
-	kubectl delete -f deploy/role_binding.yaml
-	kubectl delete -f deploy/operator.yaml
+# Uninstall CRDs from a cluster
+uninstall: manifests
+	kustomize build config/crd | kubectl delete -f -
 
-# Run unit test code
-test: set-goproxy fmt vet
-	go test -v -race -cover ./...
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: manifests
+	cd config/manager && kustomize edit set image controller=${IMG}
+	kustomize build config/default | kubectl apply -f -
 
-test-controller:
-	go test -v -coverprofile=coverage.txt github.com/symcn/mesh-operator/pkg/controller/...
+# Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
@@ -65,6 +60,31 @@ fmt:
 vet:
 	go vet ./...
 
-# Speed up Go module downloads in CI
-set-goproxy:
-	go env -w GOPROXY=https://goproxy.cn,direct
+# Generate code
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+# Build the docker image
+docker-build: test
+	docker build -t ${IMG_ADDR}:${VERSION} .
+
+# Push the docker image
+docker-push:
+	docker push ${IMG_ADDR}:${VERSION}
+
+# find or download controller-gen
+# download controller-gen if necessary
+controller-gen:
+ifeq (, $(shell which controller-gen))
+	@{ \
+	set -e ;\
+	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$CONTROLLER_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5 ;\
+	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	}
+CONTROLLER_GEN=$(GOBIN)/controller-gen
+else
+CONTROLLER_GEN=$(shell which controller-gen)
+endif

@@ -1,7 +1,0 @@
-apiVersion: mesh.symcn.com/v1
-kind: ServiceAccessor
-metadata:
-  name: example-serviceaccessor
-spec:
-  # Add fields here
-  size: 3

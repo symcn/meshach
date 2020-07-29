@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/symcn/mesh-operator/pkg/apis"
-	"github.com/symcn/mesh-operator/pkg/controller"
+	meshv1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	"github.com/symcn/mesh-operator/controllers"
 	"github.com/symcn/mesh-operator/pkg/healthcheck"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	"github.com/symcn/mesh-operator/pkg/option"
@@ -101,7 +101,7 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 			components.Add(rt)
 
 			// Setup Scheme for all resources
-			if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+			if err := meshv1.AddToScheme(mgr.GetScheme()); err != nil {
 				klog.Fatalf("add AppMeshConfig to scheme error: %+v", err)
 			}
 			if err := networkingv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
@@ -109,7 +109,7 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 			}
 
 			// Setup all Controllers
-			if err := controller.AddToManager(mgr, opt); err != nil {
+			if err := controllers.AddToManager(mgr, opt); err != nil {
 				klog.Fatalf("unable to register controllers to the manager err: %+v", err)
 			}
 

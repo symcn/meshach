@@ -1,0 +1,33 @@
+apiVersion: mesh.symcn.com/v1alpha1
+kind: MeshConfig
+metadata:
+  name: meshconfig-sample
+spec:
+  matchHeaderLabelKeys:
+  matchSourceLabelKeys:
+    - sym-group
+  workloadEntryLabelKeys:
+    - sym-group
+  meshLabelsRemap:
+    sym-group: flag
+  extractedLabels:
+    - app
+  sidecarSelectLabel: app
+  sidecarDefaultHosts:
+    - "istio-system/*"
+  globalSubsets:
+    - name: blue
+      labels:
+        sym-group: blue
+    - name: green
+      labels:
+        sym-group: green
+    - name: gray
+      labels:
+        sym-group: gray
+  globalPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    maxConnections: 100
+    timeout: 5s
+    maxRetries: 3

@@ -1,0 +1,7 @@
+apiVersion: mesh.symcn.com/v1alpha1
+kind: ConfiguredService
+metadata:
+  name: configuredservice-sample
+spec:
+  # Add fields here
+  foo: bar

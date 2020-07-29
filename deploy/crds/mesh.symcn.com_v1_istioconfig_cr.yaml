@@ -1,7 +1,0 @@
-apiVersion: mesh.symcn.com/v1
-kind: IstioConfig
-metadata:
-  name: example-istioconfig
-spec:
-  # Add fields here
-  size: 3
