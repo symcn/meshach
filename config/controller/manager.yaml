@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sym-admin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh-operator
+  namespace: sym-admin
+spec:
+  selector:
+    matchLabels:
+      name: mesh-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: mesh-operator
+    spec:
+      containers:
+        - name: mesh-operator
+          image: symcn.tencentcloudcr.com/symcn/mesh-operator:v0.0.1
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 1
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 256Mi
