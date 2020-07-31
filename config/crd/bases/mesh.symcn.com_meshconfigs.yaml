@@ -251,15 +251,8 @@ spec:
                 type: string
               type: array
           required:
-          - extractedLabels
           - globalPolicy
           - globalSubsets
-          - matchHeaderLabelKeys
-          - matchSourceLabelKeys
-          - meshLabelsRemap
-          - sidecarDefaultHosts
-          - sidecarSelectLabel
-          - workloadEntryLabelKeys
           type: object
         status:
           description: MeshConfigStatus defines the observed state of MeshConfig

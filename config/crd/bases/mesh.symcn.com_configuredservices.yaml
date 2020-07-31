@@ -84,7 +84,6 @@ spec:
                   type: object
               required:
               - reroutePolicy
-              - specificRoute
               type: object
             instances:
               description: A list describes all registered instances of this service.
@@ -140,8 +139,6 @@ spec:
                     type: integer
                 required:
                 - host
-                - labels
-                - port
                 type: object
               type: array
             meshConfigGeneration:
@@ -316,7 +313,6 @@ spec:
                   type: object
               required:
               - reroutePolicy
-              - specificRoute
               type: object
             subsets:
               description: Subsets defined all sebsets of the current service.
@@ -429,10 +425,7 @@ spec:
                 type: object
               type: array
           required:
-          - canaryRerouteOption
-          - meshConfigGeneration
           - originalName
-          - rerouteOption
           type: object
         status:
           description: ConfiguredServiceStatus defines the observed state of ConfiguredService

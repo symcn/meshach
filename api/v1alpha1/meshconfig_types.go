@@ -32,15 +32,29 @@ var (
 
 // MeshConfigSpec defines the desired state of MeshConfig
 type MeshConfigSpec struct {
-	MatchHeaderLabelKeys   map[string]StringMatchType `json:"matchHeaderLabelKeys"`
-	MatchSourceLabelKeys   []string                   `json:"matchSourceLabelKeys"`
-	WorkloadEntryLabelKeys []string                   `json:"workloadEntryLabelKeys"`
-	MeshLabelsRemap        map[string]string          `json:"meshLabelsRemap"`
-	ExtractedLabels        []string                   `json:"extractedLabels"`
-	SidecarSelectLabel     string                     `json:"sidecarSelectLabel"`
-	SidecarDefaultHosts    []string                   `json:"sidecarDefaultHosts"`
-	GlobalSubsets          []*Subset                  `json:"globalSubsets"`
-	GlobalPolicy           *Policy                    `json:"globalPolicy"`
+	// +kubebuilder:validation:Optional
+	MatchHeaderLabelKeys map[string]StringMatchType `json:"matchHeaderLabelKeys,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	MatchSourceLabelKeys []string `json:"matchSourceLabelKeys"`
+
+	// +kubebuilder:validation:Optional
+	WorkloadEntryLabelKeys []string `json:"workloadEntryLabelKeys"`
+
+	// +kubebuilder:validation:Optional
+	MeshLabelsRemap map[string]string `json:"meshLabelsRemap"`
+
+	// +kubebuilder:validation:Optional
+	ExtractedLabels []string `json:"extractedLabels"`
+
+	// +kubebuilder:validation:Optional
+	SidecarSelectLabel string `json:"sidecarSelectLabel"`
+
+	// +kubebuilder:validation:Optional
+	SidecarDefaultHosts []string `json:"sidecarDefaultHosts"`
+
+	GlobalSubsets []*Subset `json:"globalSubsets"`
+	GlobalPolicy  *Policy   `json:"globalPolicy"`
 }
 
 // MeshConfigStatus defines the observed state of MeshConfig

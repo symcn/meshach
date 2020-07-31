@@ -35,9 +35,6 @@ type Reconciler struct {
 	Opt    *option.ControllerOption
 }
 
-// +kubebuilder:rbac:groups=mesh.symcn.com,resources=istioconfigs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=mesh.symcn.com,resources=istioconfigs/status,verbs=get;update;patch
-
 // Reconcile ...
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

@@ -1,9 +1,9 @@
 apiVersion: mesh.symcn.com/v1alpha1
 kind: MeshConfig
 metadata:
-  name: meshconfig-sample
+  name: sym-meshconfig
+  namespace: sym-admin
 spec:
-  matchHeaderLabelKeys:
   matchSourceLabelKeys:
     - sym-group
   workloadEntryLabelKeys:

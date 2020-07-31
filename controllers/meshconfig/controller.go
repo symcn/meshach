@@ -45,8 +45,7 @@ type Reconciler struct {
 	Opt    *option.ControllerOption
 }
 
-// +kubebuilder:rbac:groups=mesh.symcn.com,resources=meshconfigs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=mesh.symcn.com,resources=meshconfigs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=mesh.symcn.com,resources=*,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile ...
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {

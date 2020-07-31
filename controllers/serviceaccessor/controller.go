@@ -49,8 +49,8 @@ type Reconciler struct {
 	MeshConfig *meshv1alpha1.MeshConfig
 }
 
-// +kubebuilder:rbac:groups=mesh.symcn.com,resources=serviceaccessors,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=mesh.symcn.com,resources=serviceaccessors/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=mesh.symcn.com,resources=*,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.istio.io,resources=*,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile ...
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {

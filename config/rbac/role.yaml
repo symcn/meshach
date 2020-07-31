@@ -4,12 +4,32 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: manager-role
+  name: mesh-operator-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - '*'
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - '*'
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
   - mesh.symcn.com
   resources:
-  - appmeshconfigs
+  - '*'
   verbs:
   - create
   - delete
@@ -19,17 +39,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - mesh.symcn.com
+  - networking.istio.io
   resources:
-  - appmeshconfigs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - configuredservices
+  - '*'
   verbs:
   - create
   - delete
@@ -38,71 +50,3 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - configuredservices/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - istioconfigs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - istioconfigs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - meshconfigs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - meshconfigs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - serviceaccessors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - mesh.symcn.com
-  resources:
-  - serviceaccessors/status
-  verbs:
-  - get
-  - patch
-  - update

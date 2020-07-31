@@ -44,13 +44,20 @@ uninstall: manifests
 	kustomize build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy-controller: manifests
-	cd config/controller && kustomize edit set image mesh-operator=${IMG_ADDR}:${VERSION}
+deploy: manifests
+	cd config/operator && kustomize edit set image controller=${IMG_ADDR}:${VERSION}
+	cd config/adapter && kustomize edit set image adapter=${IMG_ADDR}:${VERSION}
 	kustomize build config/default | kubectl apply -f -
+
+undeploy: manifests
+	cd config/operator && kustomize edit set image controller=${IMG_ADDR}:${VERSION}
+	cd config/adapter && kustomize edit set image adapter=${IMG_ADDR}:${VERSION}
+	kustomize build config/default | kubectl delete -f -
+
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=mesh-operator-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
