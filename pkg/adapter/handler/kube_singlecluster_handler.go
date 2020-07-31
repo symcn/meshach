@@ -122,6 +122,8 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 			sk, ok := ins.Labels["app"]
 			if ok {
 				changedScopes[sk] = struct{}{}
+			} else {
+				klog.Warningf("Could't find label [app]'s value, instance: %s, skip updating the associated scope", ins.Host)
 			}
 		}
 	}
