@@ -55,12 +55,16 @@ func convertEvent(s *types2.Service) *v1.ConfiguredService {
 		},
 		Spec: v1.ConfiguredServiceSpec{
 			OriginalName: s.Name,
+			// TODO Change default reroutePolicy
+			RerouteOption:       &v1.RerouteOption{ReroutePolicy: v1.Random},
+			CanaryRerouteOption: &v1.RerouteOption{ReroutePolicy: v1.Random},
 			Ports: []*v1.Port{{
 				Name:     constant.DubboPortName,
 				Protocol: constant.DubboProtocol,
 				Number:   utils.ToUint32(constant.MosnPort),
 			}},
 		},
+		Status: v1.ConfiguredServiceStatus{},
 	}
 
 	var instances []*v1.Instance

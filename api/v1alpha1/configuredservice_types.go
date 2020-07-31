@@ -106,19 +106,16 @@ type Instance struct {
 	Host string `json:"host"`
 
 	// The parameters of Dubbo service
-	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels"`
 
 	// Port describes the properties of a specific port of a service.
 	// The Dubbo service port registered with MOSN is 20882,
 	// otherwize the native Dubbo service port is 20880.
-	// +kubebuilder:validation:Optional
 	Port *Port `json:"port"`
 
 	// The traffic weight of this instance.
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100
-	// +kubebuilder:validation:Optional
 	Weight uint32 `json:"weight,omitempty"`
 }
 
@@ -150,33 +147,26 @@ type ConfiguredServiceSpec struct {
 	// The Dubbo service port registered with MOSN is 20882,
 	// otherwize the native Dubbo service port is 20880.
 	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:Optional
 	Ports []*Port `json:"ports,omitempty"`
 
 	// A list describes all registered instances of this service.
-	// +kubebuilder:validation:Optional
 	Instances []*Instance `json:"instances,omitempty"`
 
 	// Traffic policies of service-level
-	// +kubebuilder:validation:Optional
 	Policy *Policy `json:"policy,omitempty"`
 
 	// Subsets defined all sebsets of the current service.
-	// +kubebuilder:validation:Optional
 	Subsets []*Subset `json:"subsets,omitempty"`
 
 	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
-	// +kubebuilder:validation:Optional
 	MeshConfigGeneration int64 `json:"meshConfigGeneration,omitempty"`
 
 	// The settings used to reroute the sourceLabels traffic when all of the previously
 	// subsets instances are available.
-	// +kubebuilder:validation:Optional
 	RerouteOption *RerouteOption `json:"rerouteOption,omitempty"`
 
 	// The settings used to reroute canary deployment traffic when all of the previously
 	// subsets instances are available.
-	// +kubebuilder:validation:Optional
 	CanaryRerouteOption *RerouteOption `json:"canaryRerouteOption,omitempty"`
 }
 
@@ -200,7 +190,6 @@ type RerouteOption struct {
 
 	// This map only takes effect when 'ReroutePolicy' is specified to 'Specific',
 	// each sourceLabels can specify multiple accessible subsets and weight.
-	// +kubebuilder:validation:Optional
 	SpecificRoute map[string]Destinations `json:"specificRoute,omitempty"`
 }
 
@@ -234,10 +223,10 @@ type SubStatus struct {
 
 // Status is a collection of all SubStatus.
 type Status struct {
-	ServiceEntry    *SubStatus `json:"serviceEntry"`
-	WorkloadEntry   *SubStatus `json:"workloadEntry"`
-	VirtualService  *SubStatus `json:"virtualService"`
-	DestinationRule *SubStatus `json:"destinationRule"`
+	ServiceEntry    *SubStatus `json:"serviceEntry,omitempty"`
+	WorkloadEntry   *SubStatus `json:"workloadEntry,omitempty"`
+	VirtualService  *SubStatus `json:"virtualService,omitempty"`
+	DestinationRule *SubStatus `json:"destinationRule,omitempty"`
 }
 
 // ConfigPhase describes the phase of the configuration file destribution.
