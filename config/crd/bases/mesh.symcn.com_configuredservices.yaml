@@ -76,7 +76,6 @@ spec:
                           type: integer
                       required:
                       - subset
-                      - weight
                       type: object
                     type: array
                   description: This map only takes effect when 'ReroutePolicy' is
@@ -140,6 +139,8 @@ spec:
                     type: integer
                 required:
                 - host
+                - labels
+                - port
                 type: object
               type: array
             meshConfigGeneration:
@@ -221,7 +222,6 @@ spec:
                               type: integer
                           required:
                           - subset
-                          - weight
                           type: object
                         type: array
                     type: object
@@ -307,7 +307,6 @@ spec:
                           type: integer
                       required:
                       - subset
-                      - weight
                       type: object
                     type: array
                   description: This map only takes effect when 'ReroutePolicy' is
@@ -413,7 +412,6 @@ spec:
                                     type: integer
                                 required:
                                 - subset
-                                - weight
                                 type: object
                               type: array
                           type: object
@@ -516,11 +514,6 @@ spec:
                   - distributed
                   - undistributed
                   type: object
-              required:
-              - destinationRule
-              - serviceEntry
-              - virtualService
-              - workloadEntry
               type: object
           required:
           - phase

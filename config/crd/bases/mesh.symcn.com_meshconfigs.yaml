@@ -109,7 +109,6 @@ spec:
                               type: integer
                           required:
                           - subset
-                          - weight
                           type: object
                         type: array
                     type: object
@@ -214,7 +213,6 @@ spec:
                                     type: integer
                                 required:
                                 - subset
-                                - weight
                                 type: object
                               type: array
                           type: object
