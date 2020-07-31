@@ -72,12 +72,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 		}
 
 		// loading cs CR from k8s cluster
-		foundCs, err := get(&v1.ConfiguredService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.FormatToDNS1123(event.Service.Name),
-				Namespace: defaultNamespace,
-			},
-		}, kubeSceh.ctrlManager.GetClient())
+		foundCs, err := get(cs.Namespace, cs.Name, kubeSceh.ctrlManager.GetClient())
 		if err != nil {
 			klog.Warningf("Can not find an existed cs CR: %v, then create such cs instead.", err)
 			return create(cs, kubeSceh.ctrlManager.GetClient())
@@ -176,12 +171,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		serviceName := e.ConfigEntry.Key
-		cs, err := get(&v1.ConfiguredService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.FormatToDNS1123(serviceName),
-				Namespace: defaultNamespace,
-			},
-		}, kubeSceh.ctrlManager.GetClient())
+		cs, err := get(defaultNamespace, utils.FormatToDNS1123(serviceName), kubeSceh.ctrlManager.GetClient())
 		if err != nil {
 			klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?
@@ -211,12 +201,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.FormatToDNS1123(utils.ResolveServiceName(e.Path))
-		cs, err := get(&v1.ConfiguredService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceName,
-				Namespace: defaultNamespace,
-			},
-		}, kubeSceh.ctrlManager.GetClient())
+		cs, err := get(defaultNamespace, serviceName, kubeSceh.ctrlManager.GetClient())
 		if err != nil {
 			klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?

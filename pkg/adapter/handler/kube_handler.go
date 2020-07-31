@@ -116,11 +116,9 @@ func update(cs *v1.ConfiguredService, c client.Client) error {
 }
 
 // get
-func get(cs *v1.ConfiguredService, c client.Client) (*v1.ConfiguredService, error) {
-	err := c.Get(context.Background(), types.NamespacedName{
-		Namespace: cs.Namespace,
-		Name:      cs.Name,
-	}, cs)
+func get(namespace, name string, c client.Client) (*v1.ConfiguredService, error) {
+	cs := &v1.ConfiguredService{}
+	err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, cs)
 	klog.Infof("The generation of cs when getting: %d", cs.ObjectMeta.Generation)
 	return cs, err
 }
