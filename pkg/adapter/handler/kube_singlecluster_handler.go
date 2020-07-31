@@ -143,18 +143,14 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 			Spec: v1.ServiceAccessorSpec{
 				AccessHosts: accessedServices,
 			},
+			Status: v1.ServiceAccessorStatus{},
 		}
 
 		retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			foundSas, err := getScopedAccessServices(&v1.ServiceAccessor{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      utils.FormatToDNS1123(changedScope),
-					Namespace: defaultNamespace,
-				},
-			}, kubeSceh.ctrlManager.GetClient())
+			foundSas, err := getScopedAccessServices(sas.Namespace, sas.Name, kubeSceh.ctrlManager.GetClient())
 			if err != nil {
 				klog.Warningf("Can not find an existed asm CR: %v, then create a new one instead.", err)
-				return createScopedAccessServices(foundSas, kubeSceh.ctrlManager.GetClient())
+				return createScopedAccessServices(sas, kubeSceh.ctrlManager.GetClient())
 			}
 			foundSas.Spec = sas.Spec
 			return updateScopedAccessServices(foundSas, kubeSceh.ctrlManager.GetClient())

@@ -164,11 +164,9 @@ func updateScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) error {
 }
 
 // getScopedAccessServices
-func getScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) (*v1.ServiceAccessor, error) {
-	err := c.Get(context.Background(), types.NamespacedName{
-		Namespace: sa.Namespace,
-		Name:      sa.Name,
-	}, sa)
+func getScopedAccessServices(namespace, name string, c client.Client) (*v1.ServiceAccessor, error) {
+	sa := &v1.ServiceAccessor{}
+	err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, sa)
 	klog.Infof("The generation of sa when getting: %d", sa.ObjectMeta.Generation)
 	return sa, err
 }
