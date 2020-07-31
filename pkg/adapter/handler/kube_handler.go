@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	// "github.com/ghodss/yaml"
 	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
@@ -64,7 +65,6 @@ func convertEvent(s *types2.Service) *v1.ConfiguredService {
 				Number:   utils.ToUint32(constant.MosnPort),
 			}},
 		},
-		Status: v1.ConfiguredServiceStatus{},
 	}
 
 	var instances []*v1.Instance
@@ -80,6 +80,14 @@ func convertEvent(s *types2.Service) *v1.ConfiguredService {
 		instances = append(instances, ins)
 	}
 	cs.Spec.Instances = instances
+	// yamlbyte, err := yaml.Marshal(cs)
+	// if err != nil {
+	// 	klog.Errorf("Marshal yaml err:%+v", err)
+	// 	return cs
+	// }
+	// fmt.Println("debug yaml======================")
+	// fmt.Println(string(yamlbyte))
+	// fmt.Println("================================")
 
 	return cs
 }

@@ -434,13 +434,16 @@ spec:
           properties:
             lastUpdateTime:
               format: date-time
+              nullable: true
               type: string
             phase:
               description: ConfigPhase describes the phase of the configuration file
                 destribution.
+              nullable: true
               type: string
             status:
               description: Status is a collection of all SubStatus.
+              nullable: true
               properties:
                 destinationRule:
                   description: SubStatus describes the destribution status of the
@@ -515,9 +518,6 @@ spec:
                   - undistributed
                   type: object
               type: object
-          required:
-          - phase
-          - status
           type: object
       type: object
   version: v1alpha1

@@ -242,9 +242,15 @@ const (
 
 // ConfiguredServiceStatus defines the observed state of ConfiguredService
 type ConfiguredServiceStatus struct {
+	// +optional
+	// +nullable
 	LastUpdateTime *metav1.Time `json:"lastUpdateTime,omitempty"`
-	Phase          ConfigPhase  `json:"phase"`
-	Status         *Status      `json:"status"`
+	// +optional
+	// +nullable
+	Phase ConfigPhase `json:"phase,omitempty"`
+	// +optional
+	// +nullable
+	Status *Status `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
