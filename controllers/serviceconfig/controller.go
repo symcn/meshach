@@ -14,41 +14,105 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package serviceconfig
 
 import (
 	"context"
 
 	"github.com/go-logr/logr"
+	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	"github.com/symcn/mesh-operator/pkg/option"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
 )
 
-// ServiceConfigReconciler reconciles a ServiceConfig object
-type ServiceConfigReconciler struct {
+const (
+	httpRouteName    = "dubbo-http-route"
+	defaultRouteName = "dubbo-default-route"
+)
+
+// Reconciler reconciles a ServiceConfig object
+type Reconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log        logr.Logger
+	Scheme     *runtime.Scheme
+	Opt        *option.ControllerOption
+	MeshConfig *meshv1alpha1.MeshConfig
 }
 
 // +kubebuilder:rbac:groups=mesh.symcn.com,resources=serviceconfigs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=mesh.symcn.com,resources=serviceconfigs/status,verbs=get;update;patch
 
 // Reconcile ...
-func (r *ServiceConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("serviceconfig", req.NamespacedName)
+func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	klog.Infof("Reconciling ConfiguredService: %s/%s", req.Namespace, req.Name)
+	ctx := context.TODO()
 
-	// your logic here
+	// Fetch the MeshConfig
+	err := r.getMeshConfig(ctx)
+	if err != nil {
+		klog.Errorf("Get cluster MeshConfig[%s/%s] error: %+v",
+			r.Opt.MeshConfigNamespace, r.Opt.MeshConfigName, err)
+		return ctrl.Result{}, err
+	}
+
+	// Fetch the ConfiguredService instance
+	instance := &meshv1alpha1.ServiceConfig{}
+	err = r.Get(ctx, req.NamespacedName, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			klog.Infof("Can't found ServiceConfig[%s/%s], requeue...", req.Namespace, req.Name)
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+
+	// Distribute Istio Config
+	if err := r.reconcileWorkloadEntry(ctx, instance); err != nil {
+		return ctrl.Result{}, err
+	}
+	// if err := r.reconcileDestinationRule(ctx, instance); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
+	// if err := r.reconcileVirtualService(ctx, instance); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
+
+	// Update Status
+	klog.Infof("Update ConfiguredService[%s/%s] status...", req.Namespace, req.Name)
+	err = r.updateStatus(ctx, req, instance)
+	if err != nil {
+		klog.Errorf("%s/%s update ConfiguredService failed, err: %+v", req.Namespace, req.Name, err)
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
 
+func (r *Reconciler) getMeshConfig(ctx context.Context) error {
+	meshConfig := &meshv1alpha1.MeshConfig{}
+	err := r.Get(
+		ctx,
+		types.NamespacedName{
+			Namespace: r.Opt.MeshConfigNamespace,
+			Name:      r.Opt.MeshConfigName,
+		},
+		meshConfig,
+	)
+	if err != nil {
+		return err
+	}
+	r.MeshConfig = meshConfig
+	klog.V(6).Infof("Get cluster MeshConfig: %+v", meshConfig)
+	return nil
+}
+
 // SetupWithManager ...
-func (r *ServiceConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meshv1alpha1.ServiceConfig{}).
 		Complete(r)

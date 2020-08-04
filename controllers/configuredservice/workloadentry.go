@@ -27,6 +27,7 @@ import (
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,6 +41,8 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, cr *meshv1alpha
 		klog.Errorf("%s/%s get WorkloadEntries error: %+v", cr.Namespace, cr.Name, err)
 		return err
 	}
+
+	weightMap := r.getInstanceWeight(ctx, cr)
 
 	for _, ins := range cr.Spec.Instances {
 		we := r.buildWorkloadEntry(cr, ins)
@@ -67,8 +70,9 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, cr *meshv1alpha
 		if compareWorkloadEntry(we, found) {
 			klog.Infof("Update WorkloadEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				if found.Spec.Weight != 0 {
-					we.Spec.Weight = found.Spec.Weight
+				weight, ok := weightMap[we.Name]
+				if ok {
+					we.Spec.Weight = weight
 				}
 				we.Spec.DeepCopyInto(&found.Spec)
 				found.Finalizers = we.Finalizers
@@ -161,6 +165,22 @@ func (r *Reconciler) getWorkloadEntriesMap(ctx context.Context, cr *meshv1alpha1
 		m[item.Name] = &item
 	}
 	return m, nil
+}
+
+func (r *Reconciler) getInstanceWeight(ctx context.Context, cr *meshv1alpha1.ConfiguredService) map[string]uint32 {
+	config := &meshv1alpha1.ServiceConfig{}
+	m := make(map[string]uint32)
+	err := r.Get(ctx, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, config)
+	if err != nil {
+		klog.Warningf("Get ServiceConfig[%s/%s] err: +v", cr.Namespace, cr.Name, err)
+		return m
+	}
+
+	for _, ins := range config.Spec.Instances {
+		name := fmt.Sprintf("%s.%s.%d", cr.Name, ins.Host, ins.Port.Number)
+		m[name] = ins.Weight
+	}
+	return m
 }
 
 // To match label charactor limit
