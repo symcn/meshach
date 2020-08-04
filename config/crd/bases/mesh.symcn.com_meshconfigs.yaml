@@ -61,58 +61,6 @@ spec:
                     all hosts in a cluster at a given time. Defaults to 2^32-1.
                   format: int32
                   type: integer
-                sourceLabels:
-                  description: One or more labels that constrain the applicability
-                    of a rule to workloads with the given labels.
-                  items:
-                    description: SourceLabels is one or more labels that constrain
-                      the applicability of a rule to workloads with the given labels.
-                    properties:
-                      headers:
-                        additionalProperties:
-                          type: string
-                        description: The HTTP route match headers.
-                        type: object
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: One or more labels that constrain the applicability
-                          of a rule to workloads with the given labels.
-                        type: object
-                      name:
-                        description: The name of specific subset.
-                        type: string
-                      route:
-                        description: Each routing rule is associated with one or more
-                          service versions.
-                        items:
-                          description: Destination indicates the network addressable
-                            service to which the request/connection will be sent after
-                            processing a routing rule.
-                          properties:
-                            subset:
-                              description: The name of a subset within the service.
-                                Applicable only to services within the mesh. The subset
-                                must be defined in a corresponding DestinationRule.
-                              maxLength: 15
-                              minLength: 1
-                              type: string
-                            weight:
-                              description: The proportion of traffic to be forwarded
-                                to the service version. (0-100). Sum of weights across
-                                destinations SHOULD BE == 100. If there is only one
-                                destination in a rule, the weight value is assumed
-                                to be 100.
-                              format: int32
-                              maximum: 100
-                              minimum: 0
-                              type: integer
-                          required:
-                          - subset
-                          type: object
-                        type: array
-                    type: object
-                  type: array
                 timeout:
                   description: 'Connection timeout. format: 1h/1m/1s/1ms. MUST BE
                     >=1ms. Default is 10s.'
@@ -163,60 +111,6 @@ spec:
                           to all hosts in a cluster at a given time. Defaults to 2^32-1.
                         format: int32
                         type: integer
-                      sourceLabels:
-                        description: One or more labels that constrain the applicability
-                          of a rule to workloads with the given labels.
-                        items:
-                          description: SourceLabels is one or more labels that constrain
-                            the applicability of a rule to workloads with the given
-                            labels.
-                          properties:
-                            headers:
-                              additionalProperties:
-                                type: string
-                              description: The HTTP route match headers.
-                              type: object
-                            labels:
-                              additionalProperties:
-                                type: string
-                              description: One or more labels that constrain the applicability
-                                of a rule to workloads with the given labels.
-                              type: object
-                            name:
-                              description: The name of specific subset.
-                              type: string
-                            route:
-                              description: Each routing rule is associated with one
-                                or more service versions.
-                              items:
-                                description: Destination indicates the network addressable
-                                  service to which the request/connection will be
-                                  sent after processing a routing rule.
-                                properties:
-                                  subset:
-                                    description: The name of a subset within the service.
-                                      Applicable only to services within the mesh.
-                                      The subset must be defined in a corresponding
-                                      DestinationRule.
-                                    maxLength: 15
-                                    minLength: 1
-                                    type: string
-                                  weight:
-                                    description: The proportion of traffic to be forwarded
-                                      to the service version. (0-100). Sum of weights
-                                      across destinations SHOULD BE == 100. If there
-                                      is only one destination in a rule, the weight
-                                      value is assumed to be 100.
-                                    format: int32
-                                    maximum: 100
-                                    minimum: 0
-                                    type: integer
-                                required:
-                                - subset
-                                type: object
-                              type: array
-                          type: object
-                        type: array
                       timeout:
                         description: 'Connection timeout. format: 1h/1m/1s/1ms. MUST
                           BE >=1ms. Default is 10s.'

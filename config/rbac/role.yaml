@@ -39,6 +39,26 @@ rules:
   - update
   - watch
 - apiGroups:
+  - mesh.symcn.com
+  resources:
+  - serviceconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - serviceconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - networking.istio.io
   resources:
   - '*'

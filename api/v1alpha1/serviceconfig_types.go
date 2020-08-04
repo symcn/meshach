@@ -22,6 +22,19 @@ import (
 
 // ServiceConfigSpec defines the desired state of ServiceConfig
 type ServiceConfigSpec struct {
+	// +kubebuilder:validation:MaxLength=255
+	// +kubebuilder:validation:MinLength=1
+	OriginalName string `json:"originalName"`
+
+	// Traffic policies of service-level
+	Policy *Policy `json:"policy,omitempty"`
+
+	// Each routing rule is associated with one or more service versions.
+	Route []*Destination `json:"route,omitempty"`
+
+	// A list describes all registered instances config of this service.
+	Instances []*InstanceConfig `json:"instances,omitempty"`
+
 	// The settings used to reroute the sourceLabels traffic when all of the previously
 	// subsets instances are available.
 	RerouteOption *RerouteOption `json:"rerouteOption,omitempty"`
@@ -32,15 +45,6 @@ type ServiceConfigSpec struct {
 
 	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
 	MeshConfigGeneration int64 `json:"meshConfigGeneration,omitempty"`
-
-	// Traffic policies of service-level
-	Policy *Policy `json:"policy,omitempty"`
-
-	// Each routing rule is associated with one or more service versions.
-	Route []*Destination `json:"route,omitempty"`
-
-	// A list describes all registered instances config of this service.
-	Instances []*InstanceConfig
 }
 
 // Destination indicates the network addressable service to which the request/connection

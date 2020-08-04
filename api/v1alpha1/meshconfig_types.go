@@ -30,6 +30,27 @@ var (
 	Regex  StringMatchType = "regex"
 )
 
+// Subset is a subset of endpoints of a service. Subset can be used for
+// scenarios like A/B testing, or routing to a specific version of a service.
+type Subset struct {
+	// Must be formatted to conform to the DNS1123 specification.
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// One or more labels are typically required to identify the subset destination.
+	// e.g. {"group": "blue"}
+	Labels map[string]string `json:"labels"`
+
+	// Traffic policies defined at the service-level can be overridden at a subset-level.
+	// NOTE: Policies specified for subsets will not take effect until a route rule explicitly
+	// sends traffic to this subset.
+	Policy *Policy `json:"policy,omitempty"`
+
+	// Whether the subset is defined as a canary group
+	IsCanary bool `json:"isCanary,omitempty"`
+}
+
 // MeshConfigSpec defines the desired state of MeshConfig
 type MeshConfigSpec struct {
 	// +kubebuilder:validation:Optional
