@@ -6,6 +6,7 @@ import (
 	"github.com/symcn/mesh-operator/controllers/istioconfig"
 	"github.com/symcn/mesh-operator/controllers/meshconfig"
 	"github.com/symcn/mesh-operator/controllers/serviceaccessor"
+	"github.com/symcn/mesh-operator/controllers/serviceconfig"
 	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,6 +57,15 @@ func AddToManager(mgr ctrl.Manager, opt *option.ControllerOption) error {
 		Opt:    opt,
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "controller", "ServiceAccessor")
+		return err
+	}
+	if err := (&serviceconfig.Reconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ServiceController"),
+		Scheme: mgr.GetScheme(),
+		Opt:    opt,
+	}).SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller", "controller", "ServiceConfig")
 		return err
 	}
 	return nil

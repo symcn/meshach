@@ -20,14 +20,15 @@ import (
 	"flag"
 	"os"
 
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	"github.com/symcn/mesh-operator/controllers"
-	"github.com/symcn/mesh-operator/pkg/option"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	"github.com/symcn/mesh-operator/controllers"
+	"github.com/symcn/mesh-operator/pkg/option"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -71,6 +72,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.ServiceConfigReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ServiceConfig"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ServiceConfig")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

@@ -16,4 +16,7 @@ resources:
 - group: mesh
   kind: ServiceAccessor
   version: v1alpha1
+- group: mesh
+  kind: ServiceConfig
+  version: v1alpha1
 version: "2"

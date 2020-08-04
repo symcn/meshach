@@ -24,7 +24,7 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test -v -coverprofile=coverage.txt github.com/symcn/mesh-operator/controllers/...
+	go test -ginkgo.v -coverprofile=coverage.txt github.com/symcn/mesh-operator/controllers/...
 
 # Build manager binary
 manager: generate fmt vet

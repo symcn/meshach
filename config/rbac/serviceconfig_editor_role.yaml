@@ -1,0 +1,24 @@
+# permissions for end users to edit serviceconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: serviceconfig-editor-role
+rules:
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - serviceconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mesh.symcn.com
+  resources:
+  - serviceconfigs/status
+  verbs:
+  - get
