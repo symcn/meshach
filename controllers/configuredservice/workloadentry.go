@@ -67,6 +67,9 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, cr *meshv1alpha
 		if compareWorkloadEntry(we, found) {
 			klog.Infof("Update WorkloadEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				if found.Spec.Weight != 0 {
+					we.Spec.Weight = found.Spec.Weight
+				}
 				we.Spec.DeepCopyInto(&found.Spec)
 				found.Finalizers = we.Finalizers
 				found.Labels = we.ObjectMeta.Labels
@@ -97,10 +100,10 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, cr *meshv1alpha
 	}
 
 	// Reroute
-	err = r.reconcileSubset(ctx, cr)
-	if err != nil {
-		return err
-	}
+	// err = r.reconcileSubset(ctx, cr)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -123,7 +126,6 @@ func (r *Reconciler) buildWorkloadEntry(svc *meshv1alpha1.ConfiguredService, ins
 			Address: ins.Host,
 			Ports:   map[string]uint32{ins.Port.Name: ins.Port.Number},
 			Labels:  labels,
-			Weight:  ins.Weight,
 		},
 	}
 }

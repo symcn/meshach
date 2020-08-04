@@ -92,15 +92,6 @@ func (r *Reconciler) reconcileServiceEntry(ctx context.Context, cr *meshv1alpha1
 }
 
 func (r *Reconciler) buildServiceEntry(svc *meshv1alpha1.ConfiguredService) *networkingv1beta1.ServiceEntry {
-	var ports []*v1beta1.Port
-	for _, port := range svc.Spec.Ports {
-		ports = append(ports, &v1beta1.Port{
-			Number:   port.Number,
-			Protocol: port.Protocol,
-			Name:     port.Name,
-		})
-	}
-
 	return &networkingv1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(svc.Name),
@@ -109,7 +100,7 @@ func (r *Reconciler) buildServiceEntry(svc *meshv1alpha1.ConfiguredService) *net
 		},
 		Spec: v1beta1.ServiceEntry{
 			Hosts:      []string{svc.Name},
-			Ports:      ports,
+			Ports:      findPorts(svc),
 			Location:   v1beta1.ServiceEntry_MESH_INTERNAL,
 			Resolution: v1beta1.ServiceEntry_STATIC,
 			WorkloadSelector: &v1beta1.WorkloadSelector{
@@ -117,6 +108,24 @@ func (r *Reconciler) buildServiceEntry(svc *meshv1alpha1.ConfiguredService) *net
 			},
 		},
 	}
+}
+
+func findPorts(svc *meshv1alpha1.ConfiguredService) []*v1beta1.Port {
+	var ports []*v1beta1.Port
+	m := make(map[uint32]*v1beta1.Port)
+	for _, ins := range svc.Spec.Instances {
+		if _, ok := m[ins.Port.Number]; !ok {
+			m[ins.Port.Number] = &v1beta1.Port{
+				Name:     ins.Port.Name,
+				Protocol: ins.Port.Protocol,
+				Number:   ins.Port.Number,
+			}
+		}
+	}
+	for _, port := range m {
+		ports = append(ports, port)
+	}
+	return ports
 }
 
 func compareServiceEntry(new, old *networkingv1beta1.ServiceEntry) bool {
