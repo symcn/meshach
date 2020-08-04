@@ -30,11 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	httpRouteName    = "dubbo-http-route"
-	defaultRouteName = "dubbo-default-route"
-)
-
 // Reconciler reconciles a ConfiguredService object
 type Reconciler struct {
 	client.Client
@@ -115,20 +110,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err := r.reconcileServiceEntry(ctx, instance); err != nil {
 		return ctrl.Result{}, err
 	}
-	// if err := r.reconcileDestinationRule(ctx, instance); err != nil {
-	// 	return ctrl.Result{}, err
-	// }
-	// if err := r.reconcileVirtualService(ctx, instance); err != nil {
-	// 	return ctrl.Result{}, err
-	// }
-
-	// Update Status
-	// klog.Infof("Update ConfiguredService[%s/%s] status...", req.Namespace, req.Name)
-	// err = r.updateStatus(ctx, req, instance)
-	// if err != nil {
-	// 	klog.Errorf("%s/%s update ConfiguredService failed, err: %+v", req.Namespace, req.Name, err)
-	// 	return ctrl.Result{}, err
-	// }
 
 	// Reconcile AppMeshConfig
 	// klog.Infof("Reconcile AppMeshConfig[%s/%s]", req.Namespace, req.Name)
