@@ -81,7 +81,7 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 				return nil, fmt.Errorf("loading mesh config has an error: %v", err)
 			}
 
-			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr, mc)
+			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr)
 			if err != nil {
 				klog.Errorf("Initializing an event handler for synchronizing to multiple clusters has an error: %v", err)
 				return nil, err

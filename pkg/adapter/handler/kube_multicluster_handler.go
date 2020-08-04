@@ -1,16 +1,11 @@
 package handler
 
 import (
-	"context"
-	"fmt"
 	"sync"
-
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
@@ -28,18 +23,9 @@ type KubeMultiClusterEventHandler struct {
 
 // NewKubeMultiClusterEventHandler ...
 func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
-	mc := &v1.MeshConfig{}
-	err := k8sMgr.MasterClient.GetClient().Get(context.Background(), types.NamespacedName{
-		Name:      meshConfigName,
-		Namespace: defaultNamespace,
-	}, mc)
-	if err != nil {
-		return nil, fmt.Errorf("loading mesh config has an error: %v", err)
-	}
-
 	var kubeHandlers []component.EventHandler
 	for _, c := range k8sMgr.GetAll() {
-		h, err := NewKubeSingleClusterEventHandler(c.Mgr, mc)
+		h, err := NewKubeSingleClusterEventHandler(c.Mgr)
 		if err != nil {
 			klog.Errorf("initializing kube handler with a manager failed: %v", err)
 			return nil, err
@@ -55,19 +41,19 @@ func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (compone
 }
 
 // AddService ...
-func (kubeMceh *KubeMultiClusterEventHandler) AddService(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
+func (kubeMceh *KubeMultiClusterEventHandler) AddService(event *types2.ServiceEvent) {
 	// klog.Infof("Kube multiple clusters event handler: Adding a service: %s", event.Service.Name)
 	klog.Warningf("Adding a service has not been implemented yet by multiple clusters handler.")
 	// kubeMceh .ReplaceInstances(event, configuratorFinder)
 }
 
 // AddInstance ...
-func (kubeMceh *KubeMultiClusterEventHandler) AddInstance(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
+func (kubeMceh *KubeMultiClusterEventHandler) AddInstance(event *types2.ServiceEvent) {
 	klog.Warningf("Adding an instance has not been implemented yet by multiple clusters handler.")
 }
 
 // ReplaceInstances ...
-func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.ServiceEvent, configuratorFinder func(s string) *types2.ConfiguratorConfig) {
+func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.ServiceEvent) {
 	klog.Infof("event handler for multiple clusters: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
 
 	metrics.SynchronizedServiceCounter.Inc()
@@ -81,7 +67,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 
-			handler.ReplaceInstances(event, configuratorFinder)
+			handler.ReplaceInstances(event)
 		}(h)
 	}
 	wg.Wait()
@@ -127,15 +113,15 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(event *ty
 }
 
 // AddConfigEntry ...
-func (kubeMceh *KubeMultiClusterEventHandler) AddConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
+func (kubeMceh *KubeMultiClusterEventHandler) AddConfigEntry(e *types2.ConfigEvent) {
 	klog.Infof("event handler for multiple clusters: adding a configuration: %s", e.Path)
 	metrics.AddedConfigurationCounter.Inc()
 	// Adding a new configuration for a service is same as changing it.
-	kubeMceh.ChangeConfigEntry(e, cachedServiceFinder)
+	kubeMceh.ChangeConfigEntry(e)
 }
 
 // ChangeConfigEntry ...
-func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
+func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.ConfigEvent) {
 	klog.Infof("event handler for multiple clusters: changing a configuration: %s", e.Path)
 	metrics.ChangedConfigurationCounter.Inc()
 	timer := prometheus.NewTimer(metrics.ChangingConfigurationHistogram)
@@ -147,14 +133,14 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 
-			handler.ChangeConfigEntry(e, cachedServiceFinder)
+			handler.ChangeConfigEntry(e)
 		}(h)
 	}
 	wg.Wait()
 }
 
 // DeleteConfigEntry ...
-func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.ConfigEvent, cachedServiceFinder func(s string) *types2.Service) {
+func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.ConfigEvent) {
 	klog.Infof("event handler for multiple clusters: deleting a configuration %s", e.Path)
 	metrics.DeletedConfigurationCounter.Inc()
 
@@ -164,7 +150,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.Config
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 
-			handler.DeleteConfigEntry(e, cachedServiceFinder)
+			handler.DeleteConfigEntry(e)
 		}(h)
 	}
 	wg.Wait()
