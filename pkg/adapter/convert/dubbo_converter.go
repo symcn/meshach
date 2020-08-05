@@ -96,7 +96,7 @@ func (dc *DubboConverter) ToServiceConfig(cc *types2.ConfiguratorConfig) *v1.Ser
 	// Instances' config
 	var instanceConfigs []*v1.InstanceConfig
 	for _, ci := range cc.Configs {
-		if ci.Enabled && ci.Addresses[0] != "" && ci.Side == "provider" {
+		if ci.Enabled && ci.Addresses[0] != "0.0.0.0" && ci.Side == "provider" {
 			h, p, _ := net.SplitHostPort(ci.Addresses[0])
 			instanceConfigs = append(instanceConfigs, &v1.InstanceConfig{
 				Host:   h,
