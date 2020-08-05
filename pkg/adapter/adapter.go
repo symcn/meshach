@@ -88,7 +88,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				uuid := utils.GetUUID()
 				klog.Infof("Start to handle event - ADD SERVICE with uuid: %s", uuid)
 				for _, h := range a.eventHandlers {
-					h.AddService(event, a.configClient.FindConfiguratorConfig)
+					h.AddService(event)
 				}
 				klog.Infof("end handling event - ADD SERVICE with uuid: %s", uuid)
 			case types.ServiceDeleted:
@@ -99,14 +99,14 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				uuid := utils.GetUUID()
 				klog.Infof("Start to handle event - ADD INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
-					h.AddInstance(event, a.configClient.FindConfiguratorConfig)
+					h.AddInstance(event)
 				}
 				klog.Infof("end handling event - ADD INSTANCE with uuid: %s", uuid)
 			case types.ServiceInstancesReplace:
 				uuid := utils.GetUUID()
 				klog.Infof("Start to handle event - REPLACES INSTANCES with uuid: %s, %d", uuid, len(event.Instances))
 				for _, h := range a.eventHandlers {
-					h.ReplaceInstances(event, a.configClient.FindConfiguratorConfig)
+					h.ReplaceInstances(event)
 				}
 				klog.Infof("end handling event - REPLACES INSTANCES with uuid: %s", uuid)
 			case types.ServiceInstanceDeleted:
@@ -132,15 +132,15 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 			switch ce.EventType {
 			case types.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
-					h.AddConfigEntry(ce, a.registryClient.GetCachedService)
+					h.AddConfigEntry(ce)
 				}
 			case types.ConfigEntryChanged:
 				for _, h := range a.eventHandlers {
-					h.ChangeConfigEntry(ce, a.registryClient.GetCachedService)
+					h.ChangeConfigEntry(ce)
 				}
 			case types.ConfigEntryDeleted:
 				for _, h := range a.eventHandlers {
-					h.DeleteConfigEntry(ce, a.registryClient.GetCachedService)
+					h.DeleteConfigEntry(ce)
 				}
 			}
 		case <-stop:

@@ -17,12 +17,14 @@ import (
 // KubeSingleClusterEventHandler ...
 type KubeSingleClusterEventHandler struct {
 	ctrlManager manager.Manager
+	converter   component.Converter
 }
 
 // NewKubeSingleClusterEventHandler ...
-func NewKubeSingleClusterEventHandler(mgr manager.Manager) (component.EventHandler, error) {
+func NewKubeSingleClusterEventHandler(mgr manager.Manager, converter component.Converter) (component.EventHandler, error) {
 	return &KubeSingleClusterEventHandler{
 		ctrlManager: mgr,
+		converter:   converter,
 	}, nil
 }
 
@@ -47,7 +49,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Convert a service event that noticed by zookeeper to a Service CRD
-		cs := convertToConfiguredService(event.Service)
+		cs := kubeSceh.converter.ToConfiguredService(event.Service)
 
 		// loading cs CR from k8s cluster
 		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, kubeSceh.ctrlManager.GetClient())
@@ -148,7 +150,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 	defer timer.ObserveDuration()
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		sc := convertToServiceConfig(e)
+		sc := kubeSceh.converter.ToServiceConfig(e.ConfigEntry)
 		foundSc, err := getServiceConfig(defaultNamespace, utils.FormatToDNS1123(sc.Name), kubeSceh.ctrlManager.GetClient())
 		if err != nil {
 			klog.Errorf("Finding ServiceConfig with name %s has an error: %v", sc.Name, err)

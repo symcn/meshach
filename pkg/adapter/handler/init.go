@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 	"time"
 
 	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
@@ -81,7 +82,8 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 				return nil, fmt.Errorf("loading mesh config has an error: %v", err)
 			}
 
-			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr)
+			converter := convert.DubboConverter{DefaultNamespace: defaultNamespace}
+			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr, &converter)
 			if err != nil {
 				klog.Errorf("Initializing an event handler for synchronizing to multiple clusters has an error: %v", err)
 				return nil, err

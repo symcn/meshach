@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
@@ -16,16 +16,16 @@ import (
 // to a kubernetes cluster which has an istio controller there.
 // It usually uses a CRD group to depict both registered services and instances.
 type KubeMultiClusterEventHandler struct {
-	k8sMgr        *k8smanager.ClusterManager
-	configBuilder configcenter.ConfigBuilder
-	handlers      []component.EventHandler
+	k8sMgr   *k8smanager.ClusterManager
+	handlers []component.EventHandler
 }
 
 // NewKubeMultiClusterEventHandler ...
 func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
+	converter := &convert.DubboConverter{DefaultNamespace: defaultNamespace}
 	var kubeHandlers []component.EventHandler
 	for _, c := range k8sMgr.GetAll() {
-		h, err := NewKubeSingleClusterEventHandler(c.Mgr)
+		h, err := NewKubeSingleClusterEventHandler(c.Mgr, converter)
 		if err != nil {
 			klog.Errorf("initializing kube handler with a manager failed: %v", err)
 			return nil, err
