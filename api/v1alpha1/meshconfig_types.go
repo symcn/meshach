@@ -54,9 +54,6 @@ type Subset struct {
 // MeshConfigSpec defines the desired state of MeshConfig
 type MeshConfigSpec struct {
 	// +kubebuilder:validation:Optional
-	MatchHeaderLabelKeys map[string]StringMatchType `json:"matchHeaderLabelKeys,omitempty"`
-
-	// +kubebuilder:validation:Optional
 	MatchSourceLabelKeys []string `json:"matchSourceLabelKeys"`
 
 	// +kubebuilder:validation:Optional
@@ -105,4 +102,14 @@ type MeshConfigList struct {
 
 func init() {
 	SchemeBuilder.Register(&MeshConfig{}, &MeshConfigList{})
+}
+
+// In ...
+func (s *Subset) In(list []*Subset) bool {
+	for _, item := range list {
+		if item.Name == s.Name {
+			return true
+		}
+	}
+	return false
 }

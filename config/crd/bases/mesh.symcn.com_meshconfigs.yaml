@@ -121,11 +121,6 @@ spec:
                 - name
                 type: object
               type: array
-            matchHeaderLabelKeys:
-              additionalProperties:
-                description: StringMatchType ...
-                type: string
-              type: object
             matchSourceLabelKeys:
               items:
                 type: string
