@@ -127,6 +127,7 @@ func (c *RegistryClient) eventLoop() {
 			ccache, err := zookeeper.NewPathCache(c.conn, cpath, "REGISTRY", false)
 			if err != nil {
 				klog.Errorf("Create a consumer cache %s has an error: %v", cpath, err)
+				continue
 			}
 			c.ccaches[hostname] = ccache
 			go func() {

@@ -55,7 +55,10 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, kubeSceh.ctrlManager.GetClient())
 		if err != nil {
 			klog.Warningf("Can not find an existed cs CR: %v, then create such cs instead.", err)
-			return createConfiguredService(cs, kubeSceh.ctrlManager.GetClient())
+			if errors.IsNotFound(err) {
+				return createConfiguredService(cs, kubeSceh.ctrlManager.GetClient())
+			}
+			return nil
 		}
 		foundCs.Spec = cs.Spec
 		return updateConfiguredService(foundCs, kubeSceh.ctrlManager.GetClient())
@@ -125,7 +128,10 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 			foundSas, err := getScopedAccessServices(sas.Namespace, sas.Name, kubeSceh.ctrlManager.GetClient())
 			if err != nil {
 				klog.Warningf("Can not find an existed asm CR: %v, then create a new one instead.", err)
-				return createScopedAccessServices(sas, kubeSceh.ctrlManager.GetClient())
+				if errors.IsNotFound(err) {
+					return createScopedAccessServices(sas, kubeSceh.ctrlManager.GetClient())
+				}
+				return nil
 			}
 			foundSas.Spec = sas.Spec
 			return updateScopedAccessServices(foundSas, kubeSceh.ctrlManager.GetClient())
@@ -151,6 +157,10 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		sc := kubeSceh.converter.ToServiceConfig(e.ConfigEntry)
+		if sc == nil {
+			klog.Infof("Config[%s]'s event has an empty config key, skip it.", e.Path)
+			return nil
+		}
 		foundSc, err := getServiceConfig(defaultNamespace, utils.FormatToDNS1123(sc.Name), kubeSceh.ctrlManager.GetClient())
 		if err != nil {
 			klog.Errorf("Finding ServiceConfig with name %s has an error: %v", sc.Name, err)

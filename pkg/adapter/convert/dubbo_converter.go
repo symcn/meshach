@@ -67,6 +67,10 @@ func (dc *DubboConverter) ToConfiguredService(s *types2.Service) *v1.ConfiguredS
 
 // ToServiceConfig ...
 func (dc *DubboConverter) ToServiceConfig(cc *types2.ConfiguratorConfig) *v1.ServiceConfig {
+	if cc == nil || len(cc.Key) <= 0 {
+		klog.Infof("config's key is empty, skip it.")
+		return nil
+	}
 	sc := v1.ServiceConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.FormatToDNS1123(cc.Key),
