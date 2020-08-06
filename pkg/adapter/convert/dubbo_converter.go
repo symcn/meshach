@@ -1,6 +1,8 @@
 package convert
 
 import (
+	"net"
+
 	"github.com/ghodss/yaml"
 	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
@@ -8,9 +10,9 @@ import (
 	"github.com/symcn/mesh-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
-	"net"
 )
 
+// DubboConverter ...
 type DubboConverter struct {
 	DefaultNamespace string
 }
@@ -63,7 +65,7 @@ func (dc *DubboConverter) ToConfiguredService(s *types2.Service) *v1.ConfiguredS
 	return cs
 }
 
-// ToServiceConfig
+// ToServiceConfig ...
 func (dc *DubboConverter) ToServiceConfig(cc *types2.ConfiguratorConfig) *v1.ServiceConfig {
 	sc := v1.ServiceConfig{
 		ObjectMeta: metav1.ObjectMeta{
