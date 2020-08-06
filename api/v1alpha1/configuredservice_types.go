@@ -91,6 +91,8 @@ type ConfiguredServiceSpec struct {
 	// Subsets defined all sebsets of the current service.
 	// Subsets []*Subset `json:"subsets,omitempty"`
 
+	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
+	MeshConfigGeneration int64 `json:"meshConfigGeneration,omitempty"`
 }
 
 // ConfiguredServiceStatus defines the observed state of ConfiguredService

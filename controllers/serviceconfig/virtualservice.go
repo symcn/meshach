@@ -45,7 +45,7 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, sc *meshv1alph
 
 	// Skip if the service's subset is none
 	if len(subsets) != 0 {
-		vs := r.buildVirtualService(sc)
+		vs := r.buildVirtualService(sc, subsets)
 		// Set ServiceConfig instance as the owner and controller
 		if err := controllerutil.SetControllerReference(sc, vs, r.Scheme); err != nil {
 			klog.Errorf("SetControllerReference error: %v", err)
@@ -101,10 +101,10 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, sc *meshv1alph
 	return nil
 }
 
-func (r *Reconciler) buildVirtualService(svc *meshv1alpha1.ServiceConfig) *networkingv1beta1.VirtualService {
+func (r *Reconciler) buildVirtualService(svc *meshv1alpha1.ServiceConfig, actualSubsets []*meshv1alpha1.Subset) *networkingv1beta1.VirtualService {
 	httpRoute := []*v1beta1.HTTPRoute{}
 	for _, subset := range r.MeshConfig.Spec.GlobalSubsets {
-		http := r.buildHTTPRoute(svc, subset)
+		http := r.buildHTTPRoute(svc, subset, actualSubsets)
 		httpRoute = append(httpRoute, http)
 	}
 
