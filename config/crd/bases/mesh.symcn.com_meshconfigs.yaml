@@ -139,9 +139,6 @@ spec:
               items:
                 type: string
               type: array
-          required:
-          - globalPolicy
-          - globalSubsets
           type: object
         status:
           description: MeshConfigStatus defines the observed state of MeshConfig

@@ -37,8 +37,8 @@ import (
 // Instance describes the properties of a specific instance of a service.
 type Instance struct {
 	// Host associated with the network endpoint without the port.
-	// +kubebuilder:validation:MaxLength=16
-	// +kubebuilder:validation:MinLength=8
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:MinLength=7
 	Host string `json:"host"`
 
 	// The parameters of Dubbo service

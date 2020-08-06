@@ -1,4 +1,4 @@
-VERSION ?= v0.0.3
+VERSION ?= v0.0.4
 # Image URL to use all building/pushing image targets
 IMG_ADDR ?= symcn.tencentcloudcr.com/symcn/mesh-operator
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -24,7 +24,8 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test -ginkgo.v -coverprofile=coverage.txt github.com/symcn/mesh-operator/controllers/...
+	# cd controllers && ginkgo -r -v --randomizeAllSpecs --randomizeSuites --failOnPending --coverprofile=coverage.txt --trace --race --progress
+	go test -v --coverprofile=coverage.txt github.com/symcn/mesh-operator/controllers/...
 
 # Build manager binary
 manager: generate fmt vet

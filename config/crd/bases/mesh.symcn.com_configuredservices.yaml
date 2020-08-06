@@ -43,8 +43,8 @@ spec:
                   host:
                     description: Host associated with the network endpoint without
                       the port.
-                    maxLength: 16
-                    minLength: 8
+                    maxLength: 15
+                    minLength: 7
                     type: string
                   labels:
                     additionalProperties:
