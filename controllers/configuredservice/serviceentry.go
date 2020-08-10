@@ -58,21 +58,7 @@ func (r *Reconciler) reconcileServiceEntry(ctx context.Context, cr *meshv1alpha1
 		// Update ServiceEntry
 		if compareServiceEntry(se, found) {
 			klog.Infof("Update ServiceEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
-			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				se.Spec.DeepCopyInto(&found.Spec)
-				found.Finalizers = se.Finalizers
-				found.Labels = se.ObjectMeta.Labels
-
-				updateErr := r.Update(ctx, found)
-				if updateErr == nil {
-					klog.V(4).Infof("%s/%s update ServiceEntry successfully", se.Namespace, se.Name)
-					return nil
-				}
-				return updateErr
-			})
-
-			if err != nil {
-				klog.Warningf("Update ServiceEntry [%s] spec failed, err: %+v", se.Name, err)
+			if err := r.updateServiceEntry(ctx, se, found); err != nil {
 				return err
 			}
 		}
@@ -88,6 +74,27 @@ func (r *Reconciler) reconcileServiceEntry(ctx context.Context, cr *meshv1alpha1
 		}
 	}
 
+	return nil
+}
+
+func (r *Reconciler) updateServiceEntry(ctx context.Context, se, found *networkingv1beta1.ServiceEntry) error {
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		se.Spec.DeepCopyInto(&found.Spec)
+		found.Finalizers = se.Finalizers
+		found.Labels = se.ObjectMeta.Labels
+
+		updateErr := r.Update(ctx, found)
+		if updateErr == nil {
+			klog.V(4).Infof("%s/%s update ServiceEntry successfully", se.Namespace, se.Name)
+			return nil
+		}
+		return updateErr
+	})
+
+	if err != nil {
+		klog.Warningf("Update ServiceEntry [%s] spec failed, err: %+v", se.Name, err)
+		return err
+	}
 	return nil
 }
 

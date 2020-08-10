@@ -18,11 +18,14 @@ package configuredservice
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	. "github.com/symcn/mesh-operator/test"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,10 +38,12 @@ import (
 
 var _ = Describe("Controller", func() {
 	var (
+		mockCtrl            *gomock.Controller
+		mockClient          *MockClient
 		errReq              ctrl.Request
 		onlyServiceEntryReq ctrl.Request
 		normalReq           ctrl.Request
-		wrangHostReq        ctrl.Request
+		wrongHostReq        ctrl.Request
 		onlyServiceEntryCs  *meshv1alpha1.ConfiguredService
 		wrongHostCs         *meshv1alpha1.ConfiguredService
 		normalCs            *meshv1alpha1.ConfiguredService
@@ -65,7 +70,7 @@ var _ = Describe("Controller", func() {
 				Name:      "only.serviceentry.com",
 			},
 		}
-		wrangHostReq = ctrl.Request{
+		wrongHostReq = ctrl.Request{
 			NamespacedName: types.NamespacedName{
 				Namespace: "mesh-test",
 				Name:      "wrong.host.configuredservice.com",
@@ -138,6 +143,35 @@ var _ = Describe("Controller", func() {
 				MeshConfigGeneration: 0,
 			},
 		}
+	})
+
+	Describe("test reconcile serviceentry use mock client Create function", func() {
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockClient = NewMockClient(mockCtrl)
+			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("create se error"))
+			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		}, 5)
+		AfterEach(func() {
+			mockCtrl.Finish()
+		}, 5)
+
+		Context("test crate serviceentry error", func() {
+			It("return create error from mock client", func() {
+				r := Reconciler{
+					Client:     mockClient,
+					Log:        nil,
+					Scheme:     getFakeScheme(),
+					Opt:        testOpt,
+					MeshConfig: getTestMeshConfig(),
+				}
+				result, err := r.Reconcile(onlyServiceEntryReq)
+				Expect(result).To(Equal(reconcile.Result{}))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("create se error"))
+			})
+		})
 	})
 
 	Describe("test configuredservice reconcile", func() {
@@ -219,7 +253,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("occured error", func() {
-				result, err := reconciler.Reconcile(wrangHostReq)
+				result, err := reconciler.Reconcile(wrongHostReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
 			}, 5)

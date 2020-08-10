@@ -33,78 +33,87 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("ServiceEntry", func() {
+var _ = Describe("WorkloadEntry", func() {
 	var (
-		mockCtrl                *gomock.Controller
-		mockClient              *MockClient
-		existedServiceEntry     *networkingv1beta1.ServiceEntry
-		updateServiceEntry      *networkingv1beta1.ServiceEntry
-		toBeDeletedServiceEntry *networkingv1beta1.ServiceEntry
-		noInstanceCr            *meshv1alpha1.ConfiguredService
+		mockCtrl                 *gomock.Controller
+		mockClient               *MockClient
+		existedWorkloadEntry     *networkingv1beta1.WorkloadEntry
+		updateWorkloadEntry      *networkingv1beta1.WorkloadEntry
+		toBeDeletedWorkloadEntry *networkingv1beta1.WorkloadEntry
+		testCr                   *meshv1alpha1.ConfiguredService
 	)
 
 	BeforeEach(func() {
-		noInstanceCr = &meshv1alpha1.ConfiguredService{
+		testCr = &meshv1alpha1.ConfiguredService{
 			ObjectMeta: v1.ObjectMeta{
-				Name:      "test.no.instance.cr",
+				Name:      "test.workloadentry.cr",
 				Namespace: "mesh-test",
 			},
 			Spec: meshv1alpha1.ConfiguredServiceSpec{
-				OriginalName:         "Test.No.Instance.Cr",
-				Instances:            nil,
+				OriginalName: "Test.Workload.Entry",
+				Instances: []*meshv1alpha1.Instance{
+					{
+						Host: "3.3.3.3",
+						Port: &meshv1alpha1.Port{
+							Name:   "test-port",
+							Number: 12345,
+						},
+					},
+				},
 				MeshConfigGeneration: 0,
 			},
 		}
-		existedServiceEntry = &networkingv1beta1.ServiceEntry{
+		existedWorkloadEntry = &networkingv1beta1.WorkloadEntry{
 			ObjectMeta: v1.ObjectMeta{
-				Name:      "test.no.instance.cr",
+				Name:      "test.workloadentry.cr.3.3.3.3.12345",
 				Namespace: "mesh-test",
 				Labels: map[string]string{
-					testOpt.SelectLabel: "Test.No.Instance.Cr",
+					testOpt.SelectLabel: "Test.Workload.Entry",
 				},
 			},
-			Spec: v1beta1.ServiceEntry{
-				Hosts: []string{"before.update.host"},
+			Spec: v1beta1.WorkloadEntry{
+				Address: "1.1.1.1",
 			},
 		}
-		updateServiceEntry = &networkingv1beta1.ServiceEntry{
+		updateWorkloadEntry = &networkingv1beta1.WorkloadEntry{
 			ObjectMeta: v1.ObjectMeta{
-				Name:      "test.no.instance.cr",
+				Name:      "test.workloadentry.cr",
 				Namespace: "mesh-test",
 				Labels: map[string]string{
-					testOpt.SelectLabel: "Test.No.Instance.Cr",
+					testOpt.SelectLabel: "Test.Workload.Entry",
 				},
 			},
-			Spec: v1beta1.ServiceEntry{
-				Hosts: []string{"test.no.instance.cr"},
+			Spec: v1beta1.WorkloadEntry{
+				Address: "2.2.2.2",
 			},
 		}
-		toBeDeletedServiceEntry = &networkingv1beta1.ServiceEntry{
+		toBeDeletedWorkloadEntry = &networkingv1beta1.WorkloadEntry{
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "test.to.be.delete",
 				Namespace: "mesh-test",
 				Labels: map[string]string{
-					testOpt.SelectLabel: "Test.No.Instance.Cr",
+					testOpt.SelectLabel: "Test.Workload.Entry",
 				},
 			},
-			Spec: v1beta1.ServiceEntry{
-				Hosts: []string{"before.update.host"},
+			Spec: v1beta1.WorkloadEntry{
+				Address: "2.2.2.2",
 			},
 		}
 	})
 
-	Describe("test reconcile serviceentry use mock client Create function", func() {
+	Describe("test reconcile workloadentry use mock client Create function", func() {
 		BeforeEach(func() {
 			mockCtrl = gomock.NewController(GinkgoT())
 			mockClient = NewMockClient(mockCtrl)
-			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("create se error"))
-			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("create workloadentry error"))
+			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 		}, 5)
 		AfterEach(func() {
 			mockCtrl.Finish()
 		}, 5)
 
-		Context("test crate serviceentry error", func() {
+		Context("test crate workloadentry error", func() {
 			It("return create error from mock client", func() {
 				r := Reconciler{
 					Client:     mockClient,
@@ -113,25 +122,25 @@ var _ = Describe("ServiceEntry", func() {
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				err := r.reconcileServiceEntry(context.Background(), noInstanceCr)
+				err := r.reconcileWorkloadEntry(context.Background(), testCr)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("create se error"))
+				Expect(err.Error()).To(Equal("create workloadentry error"))
 			})
 		})
 	})
 
-	Describe("test reconcile serviceentry use mock client List function", func() {
+	Describe("test reconcile workloadentry use mock client List function", func() {
 		BeforeEach(func() {
 			mockCtrl = gomock.NewController(GinkgoT())
 			mockClient = NewMockClient(mockCtrl)
-			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("no se exist"))
+			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("list workloadentry erorr"))
 		}, 5)
 		AfterEach(func() {
 			mockCtrl.Finish()
 		}, 5)
 
 		Context("get serviceentries map error", func() {
-			It("no serviceentry exist", func() {
+			It("no workloadentry exist", func() {
 				r := Reconciler{
 					Client:     mockClient,
 					Log:        nil,
@@ -139,15 +148,15 @@ var _ = Describe("ServiceEntry", func() {
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				err := r.reconcileServiceEntry(context.Background(), noInstanceCr)
+				err := r.reconcileWorkloadEntry(context.Background(), testCr)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("no se exist"))
+				Expect(err.Error()).To(Equal("list workloadentry erorr"))
 			}, 5)
 		})
 
 	})
 
-	Describe("test reconcile serviceentry without mock client", func() {
+	Describe("test reconcile workloadentry without mock client", func() {
 		Context("test set controller reference error", func() {
 			It("no kind is registered in scheme", func() {
 				r := Reconciler{
@@ -157,53 +166,54 @@ var _ = Describe("ServiceEntry", func() {
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				err := r.reconcileServiceEntry(context.Background(), noInstanceCr)
+				err := r.reconcileWorkloadEntry(context.Background(), testCr)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(`no kind is registered for the type v1alpha1.ConfiguredService in scheme "pkg/runtime/scheme.go:101"`))
 			}, 5)
 		})
 
-		Context("test update serviceentry success", func() {
+		Context("test update workloadentry success", func() {
 			It("no error occurred", func() {
 				r := Reconciler{
-					Client:     getFakeClient(existedServiceEntry),
+					Client:     getFakeClient(existedWorkloadEntry),
 					Log:        nil,
 					Scheme:     getFakeScheme(),
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				err := r.reconcileServiceEntry(context.Background(), noInstanceCr)
+				err := r.reconcileWorkloadEntry(context.Background(), testCr)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("get updated serviceentry")
-				found := &networkingv1beta1.ServiceEntry{}
-				err = r.Get(context.Background(), types.NamespacedName{Namespace: "mesh-test", Name: "test.no.instance.cr"}, found)
+				By("get updated workloadentry")
+				found := &networkingv1beta1.WorkloadEntry{}
+				name := "test.workloadentry.cr.3.3.3.3.12345"
+				err = r.Get(context.Background(), types.NamespacedName{Namespace: "mesh-test", Name: name}, found)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(found.Name).To(Equal("test.no.instance.cr"))
-				Expect(found.Spec.Hosts).To(ContainElement("test.no.instance.cr"))
-				Expect(found.Spec.Hosts).NotTo(ContainElement("before.update.host"))
+				Expect(found.Name).To(Equal(name))
+				Expect(found.Spec.Address).To(Equal("3.3.3.3"))
+				Expect(found.Spec.Address).NotTo(Equal("1.1.1.1"))
 			}, 5)
 
-			It("delete unused serviceentry", func() {
+			It("delete unused workloadentry", func() {
 				r := Reconciler{
-					Client:     getFakeClient(existedServiceEntry, toBeDeletedServiceEntry),
+					Client:     getFakeClient(existedWorkloadEntry, toBeDeletedWorkloadEntry),
 					Log:        nil,
 					Scheme:     getFakeScheme(),
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				err := r.reconcileServiceEntry(context.Background(), noInstanceCr)
+				err := r.reconcileWorkloadEntry(context.Background(), testCr)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("get updated serviceentry")
-				found := &networkingv1beta1.ServiceEntry{}
+				By("get updated workloadentry")
+				found := &networkingv1beta1.WorkloadEntry{}
 				err = r.Get(context.Background(), types.NamespacedName{Namespace: "mesh-test", Name: "test.to.be.delete"}, found)
 				Expect(err).To(HaveOccurred())
 				Expect(apierrors.IsNotFound(err)).To(Equal(true))
 			}, 5)
 		})
 
-		Context("test update serviceentry error", func() {
+		Context("test update workloadentry error", func() {
 			BeforeEach(func() {
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockClient = NewMockClient(mockCtrl)
@@ -221,31 +231,32 @@ var _ = Describe("ServiceEntry", func() {
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				err := r.updateServiceEntry(context.Background(), updateServiceEntry, existedServiceEntry)
+				weightMap := map[string]uint32{"": 100}
+				err := r.updateWorkloadEntry(context.Background(), weightMap, updateWorkloadEntry, existedWorkloadEntry)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("update se error"))
 			}, 5)
 		})
 
-		Context("test compare serviceentry", func() {
+		Context("test compare workloadentry", func() {
 			It("return true while finalizers is not equal", func() {
-				new := &networkingv1beta1.ServiceEntry{ObjectMeta: v1.ObjectMeta{Finalizers: []string{"test.finalizers.a"}}}
-				old := &networkingv1beta1.ServiceEntry{}
-				result := compareServiceEntry(new, old)
+				new := &networkingv1beta1.WorkloadEntry{ObjectMeta: v1.ObjectMeta{Finalizers: []string{"test.finalizers.a"}}}
+				old := &networkingv1beta1.WorkloadEntry{}
+				result := compareWorkloadEntry(new, old)
 				Expect(result).To(Equal(true))
 			}, 5)
 
 			It("return true while labels is not equal", func() {
 				m := map[string]string{"app": "test"}
-				new := &networkingv1beta1.ServiceEntry{ObjectMeta: v1.ObjectMeta{Labels: m}}
-				old := &networkingv1beta1.ServiceEntry{}
-				result := compareServiceEntry(new, old)
+				new := &networkingv1beta1.WorkloadEntry{ObjectMeta: v1.ObjectMeta{Labels: m}}
+				old := &networkingv1beta1.WorkloadEntry{}
+				result := compareWorkloadEntry(new, old)
 				Expect(result).To(Equal(true))
 			}, 5)
 
 			It("return false", func() {
-				se := &networkingv1beta1.ServiceEntry{}
-				result := compareServiceEntry(se, se)
+				se := &networkingv1beta1.WorkloadEntry{}
+				result := compareWorkloadEntry(se, se)
 				Expect(result).To(Equal(false))
 			}, 5)
 		})

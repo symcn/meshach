@@ -70,25 +70,7 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, cr *meshv1alpha
 		// Update WorkloadEntry
 		if compareWorkloadEntry(we, found) {
 			klog.Infof("Update WorkloadEntry, Namespace: %s, Name: %s", found.Namespace, found.Name)
-			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				weight, ok := weightMap[we.Name]
-				if ok {
-					we.Spec.Weight = weight
-				}
-				we.Spec.DeepCopyInto(&found.Spec)
-				found.Finalizers = we.Finalizers
-				found.Labels = we.ObjectMeta.Labels
-
-				updateErr := r.Update(ctx, found)
-				if updateErr == nil {
-					klog.V(6).Infof("%s/%s update WorkloadEntry successfully", we.Namespace, we.Name)
-					return nil
-				}
-				return updateErr
-			})
-
-			if err != nil {
-				klog.Warningf("Update WorkloadEntry [%s] spec failed, err: %+v", we.Name, err)
+			if err := r.updateWorkloadEntry(ctx, weightMap, we, found); err != nil {
 				return err
 			}
 		}
@@ -104,12 +86,31 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, cr *meshv1alpha
 		}
 	}
 
-	// Reroute
-	// err = r.reconcileSubset(ctx, cr)
-	// if err != nil {
-	// 	return err
-	// }
+	return nil
+}
 
+func (r *Reconciler) updateWorkloadEntry(ctx context.Context, weightMap map[string]uint32, we, found *networkingv1beta1.WorkloadEntry) error {
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		weight, ok := weightMap[we.Name]
+		if ok {
+			we.Spec.Weight = weight
+		}
+		we.Spec.DeepCopyInto(&found.Spec)
+		found.Finalizers = we.Finalizers
+		found.Labels = we.ObjectMeta.Labels
+
+		updateErr := r.Update(ctx, found)
+		if updateErr == nil {
+			klog.V(6).Infof("%s/%s update WorkloadEntry successfully", we.Namespace, we.Name)
+			return nil
+		}
+		return updateErr
+	})
+
+	if err != nil {
+		klog.Warningf("Update WorkloadEntry [%s] spec failed, err: %+v", we.Name, err)
+		return err
+	}
 	return nil
 }
 
