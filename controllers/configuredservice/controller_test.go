@@ -27,7 +27,9 @@ import (
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -41,9 +43,17 @@ var _ = Describe("Controller", func() {
 		wrongHostCs         *meshv1alpha1.ConfiguredService
 		normalCs            *meshv1alpha1.ConfiguredService
 		existWorkloadEntry  *networkingv1beta1.WorkloadEntry
+		reconciler          Reconciler
 	)
 
 	BeforeEach(func() {
+		reconciler = Reconciler{
+			Client:     k8sClient,
+			Log:        ctrl.Log.WithName("controllers").WithName("configuredservice"),
+			Scheme:     scheme.Scheme,
+			Opt:        testOpt,
+			MeshConfig: getTestMeshConfig(),
+		}
 		errReq = ctrl.Request{
 			NamespacedName: types.NamespacedName{
 				Namespace: "mesh-test",
@@ -137,8 +147,9 @@ var _ = Describe("Controller", func() {
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(`meshconfigs.mesh.symcn.com "mc-test-case" not found`))
-			})
+			}, 5)
 		})
+
 		Context("occurred error when reconcile configuredservice", func() {
 			BeforeEach(func() {
 				err := reconciler.Create(context.Background(), getTestMeshConfig())
@@ -149,20 +160,21 @@ var _ = Describe("Controller", func() {
 				result, err := reconciler.Reconcile(onlyServiceEntryReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).NotTo(HaveOccurred())
-			})
+			}, 5)
 
 			It("resource name may not be empty", func() {
 				result, err := reconciler.Reconcile(errReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("resource name may not be empty"))
-			})
+			}, 5)
 
 			AfterEach(func() {
 				err := reconciler.Delete(context.Background(), getTestMeshConfig())
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
+
 		Context("reconcile when only create serviceentry", func() {
 			BeforeEach(func() {
 				err := reconciler.Create(context.Background(), getTestMeshConfig())
@@ -184,7 +196,7 @@ var _ = Describe("Controller", func() {
 					found)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(found.Name).To(Equal("only.serviceentry.com"))
-			})
+			}, 5)
 
 			AfterEach(func() {
 				err := reconciler.Delete(context.Background(), getTestMeshConfig())
@@ -193,6 +205,7 @@ var _ = Describe("Controller", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
+
 		Context("reconcile when create workloadentry", func() {
 			BeforeEach(func() {
 				err := reconciler.Create(context.Background(), getTestMeshConfig())
@@ -209,7 +222,7 @@ var _ = Describe("Controller", func() {
 				result, err := reconciler.Reconcile(wrangHostReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
-			})
+			}, 5)
 
 			It("returned success", func() {
 				result, err := reconciler.Reconcile(normalReq)
@@ -233,7 +246,7 @@ var _ = Describe("Controller", func() {
 				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(foundWorkloadEntry.Name).To(Equal(name))
-			})
+			}, 5)
 
 			AfterEach(func() {
 				err := reconciler.Delete(context.Background(), getTestMeshConfig())
@@ -245,6 +258,16 @@ var _ = Describe("Controller", func() {
 				err = reconciler.Delete(context.Background(), existWorkloadEntry)
 				Expect(err).NotTo(HaveOccurred())
 			})
+		})
+
+		Context("setup with controller manager", func() {
+			It("error not occurred", func() {
+				mgr, err := manager.New(cfg, manager.Options{})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = reconciler.SetupWithManager(mgr)
+				Expect(err).NotTo(HaveOccurred())
+			}, 5)
 		})
 	})
 })

@@ -26,10 +26,13 @@ import (
 	"github.com/symcn/mesh-operator/pkg/option"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -43,7 +46,6 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
-var reconciler Reconciler
 
 func TestConfiguredService(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -80,14 +82,6 @@ var _ = BeforeSuite(func(done Done) {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
-
-	reconciler = Reconciler{
-		Client:     k8sClient,
-		Log:        ctrl.Log.WithName("controllers").WithName("configuredservice"),
-		Scheme:     scheme.Scheme,
-		Opt:        testOpt,
-		MeshConfig: getTestMeshConfig(),
-	}
 
 	close(done)
 }, 60)
@@ -143,22 +137,63 @@ func getTestMeshConfig() *meshv1alpha1.MeshConfig {
 	}
 }
 
-var blueSubset = &meshv1alpha1.Subset{
-	Name:   "blue",
-	Labels: map[string]string{"test-group": "blue"},
+var (
+	blueSubset = &meshv1alpha1.Subset{
+		Name:   "blue",
+		Labels: map[string]string{"test-group": "blue"},
+	}
+	greenSubset = &meshv1alpha1.Subset{
+		Name:   "green",
+		Labels: map[string]string{"test-group": "green"},
+	}
+	canarySubset = &meshv1alpha1.Subset{
+		Name:   "canary",
+		Labels: map[string]string{"test-group": "green"},
+	}
+	redSubset = &meshv1alpha1.Subset{
+		Name:   "red",
+		Labels: map[string]string{"test-group": "red"},
+	}
+)
+
+// getFakeClient return a fake client to mock API calls.
+func getFakeClient(objs ...runtime.Object) client.Client {
+	return fake.NewFakeClient(objs...)
 }
 
-var greenSubset = &meshv1alpha1.Subset{
-	Name:   "green",
-	Labels: map[string]string{"test-group": "green"},
+func getFakeReconciler(objs ...runtime.Object) *Reconciler {
+	return &Reconciler{
+		Client:     getFakeClient(objs...),
+		Log:        ctrl.Log.WithName("controllers").WithName("configuredservice"),
+		Scheme:     getFakeScheme(),
+		Opt:        testOpt,
+		MeshConfig: getTestMeshConfig(),
+	}
 }
 
-var canarySubset = &meshv1alpha1.Subset{
-	Name:   "canary",
-	Labels: map[string]string{"test-group": "green"},
+func getMockClientReconcile(mockClient client.Client) *Reconciler {
+	return &Reconciler{
+		Client:     mockClient,
+		Log:        ctrl.Log.WithName("controllers").WithName("configuredservice"),
+		Scheme:     getFakeScheme(),
+		Opt:        testOpt,
+		MeshConfig: getTestMeshConfig(),
+	}
 }
 
-var redSubset = &meshv1alpha1.Subset{
-	Name:   "red",
-	Labels: map[string]string{"test-group": "red"},
+// getFakeScheme register operator types with the runtime scheme.
+func getFakeScheme() *runtime.Scheme {
+	s := scheme.Scheme
+	err := meshv1alpha1.AddToScheme(s)
+	if err != nil {
+		klog.Errorf("[test] add meshv1alpha1 to scheme error: %+v", err)
+		return s
+	}
+
+	err = networkingv1beta1.AddToScheme(s)
+	if err != nil {
+		klog.Errorf("[test] add networkingv1beta1 to scheme error: %+v", err)
+		return s
+	}
+	return s
 }

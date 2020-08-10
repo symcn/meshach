@@ -13,6 +13,7 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
+	github.com/golang/mock v1.3.1
 	github.com/nacos-group/nacos-sdk-go v0.3.2
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.9.0
