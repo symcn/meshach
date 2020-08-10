@@ -24,7 +24,7 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	# cd controllers && ginkgo -r -v --randomizeAllSpecs --randomizeSuites --failOnPending --coverprofile=coverage.txt --trace --race --progress
+	# cd controllers && ginkgo -r --v --randomizeAllSpecs --randomizeSuites --failOnPending -cover -coverprofile=coverage.txt --trace --race --progress -outputdir=.
 	go test -v --coverprofile=coverage.txt github.com/symcn/mesh-operator/controllers/...
 
 # Build manager binary

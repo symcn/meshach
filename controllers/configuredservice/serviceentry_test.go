@@ -99,10 +99,10 @@ var _ = Describe("ServiceEntry", func() {
 			mockClient = NewMockClient(mockCtrl)
 			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("create se error"))
 			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-		}, 5)
+		}, timeout)
 		AfterEach(func() {
 			mockCtrl.Finish()
-		}, 5)
+		}, timeout)
 
 		Context("test crate serviceentry error", func() {
 			It("return create error from mock client", func() {
@@ -125,10 +125,10 @@ var _ = Describe("ServiceEntry", func() {
 			mockCtrl = gomock.NewController(GinkgoT())
 			mockClient = NewMockClient(mockCtrl)
 			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("no se exist"))
-		}, 5)
+		}, timeout)
 		AfterEach(func() {
 			mockCtrl.Finish()
-		}, 5)
+		}, timeout)
 
 		Context("get serviceentries map error", func() {
 			It("no serviceentry exist", func() {
@@ -142,7 +142,7 @@ var _ = Describe("ServiceEntry", func() {
 				err := r.reconcileServiceEntry(context.Background(), noInstanceCr)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("no se exist"))
-			}, 5)
+			}, timeout)
 		})
 
 	})
@@ -160,7 +160,7 @@ var _ = Describe("ServiceEntry", func() {
 				err := r.reconcileServiceEntry(context.Background(), noInstanceCr)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(`no kind is registered for the type v1alpha1.ConfiguredService in scheme "pkg/runtime/scheme.go:101"`))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("test update serviceentry success", func() {
@@ -182,7 +182,7 @@ var _ = Describe("ServiceEntry", func() {
 				Expect(found.Name).To(Equal("test.no.instance.cr"))
 				Expect(found.Spec.Hosts).To(ContainElement("test.no.instance.cr"))
 				Expect(found.Spec.Hosts).NotTo(ContainElement("before.update.host"))
-			}, 5)
+			}, timeout)
 
 			It("delete unused serviceentry", func() {
 				r := Reconciler{
@@ -200,7 +200,7 @@ var _ = Describe("ServiceEntry", func() {
 				err = r.Get(context.Background(), types.NamespacedName{Namespace: "mesh-test", Name: "test.to.be.delete"}, found)
 				Expect(err).To(HaveOccurred())
 				Expect(apierrors.IsNotFound(err)).To(Equal(true))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("test update serviceentry error", func() {
@@ -208,10 +208,10 @@ var _ = Describe("ServiceEntry", func() {
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockClient = NewMockClient(mockCtrl)
 				mockClient.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("update se error"))
-			}, 5)
+			}, timeout)
 			AfterEach(func() {
 				mockCtrl.Finish()
-			}, 5)
+			}, timeout)
 
 			It("returned update error from mock client", func() {
 				r := Reconciler{
@@ -224,7 +224,7 @@ var _ = Describe("ServiceEntry", func() {
 				err := r.updateServiceEntry(context.Background(), updateServiceEntry, existedServiceEntry)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("update se error"))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("test compare serviceentry", func() {
@@ -233,7 +233,7 @@ var _ = Describe("ServiceEntry", func() {
 				old := &networkingv1beta1.ServiceEntry{}
 				result := compareServiceEntry(new, old)
 				Expect(result).To(Equal(true))
-			}, 5)
+			}, timeout)
 
 			It("return true while labels is not equal", func() {
 				m := map[string]string{"app": "test"}
@@ -241,13 +241,13 @@ var _ = Describe("ServiceEntry", func() {
 				old := &networkingv1beta1.ServiceEntry{}
 				result := compareServiceEntry(new, old)
 				Expect(result).To(Equal(true))
-			}, 5)
+			}, timeout)
 
 			It("return false", func() {
 				se := &networkingv1beta1.ServiceEntry{}
 				result := compareServiceEntry(se, se)
 				Expect(result).To(Equal(false))
-			}, 5)
+			}, timeout)
 		})
 	})
 })

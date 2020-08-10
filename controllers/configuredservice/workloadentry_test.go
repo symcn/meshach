@@ -128,10 +128,10 @@ var _ = Describe("WorkloadEntry", func() {
 			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("create workloadentry error"))
 			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-		}, 5)
+		}, timeout)
 		AfterEach(func() {
 			mockCtrl.Finish()
-		}, 5)
+		}, timeout)
 
 		Context("test crate workloadentry error", func() {
 			It("return create error from mock client", func() {
@@ -154,10 +154,10 @@ var _ = Describe("WorkloadEntry", func() {
 			mockCtrl = gomock.NewController(GinkgoT())
 			mockClient = NewMockClient(mockCtrl)
 			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("list workloadentry erorr"))
-		}, 5)
+		}, timeout)
 		AfterEach(func() {
 			mockCtrl.Finish()
-		}, 5)
+		}, timeout)
 
 		Context("get serviceentries map error", func() {
 			It("no workloadentry exist", func() {
@@ -171,7 +171,7 @@ var _ = Describe("WorkloadEntry", func() {
 				err := r.reconcileWorkloadEntry(context.Background(), testCr)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("list workloadentry erorr"))
-			}, 5)
+			}, timeout)
 		})
 
 	})
@@ -189,7 +189,7 @@ var _ = Describe("WorkloadEntry", func() {
 				err := r.reconcileWorkloadEntry(context.Background(), testCr)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(`no kind is registered for the type v1alpha1.ConfiguredService in scheme "pkg/runtime/scheme.go:101"`))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("test update workloadentry success", func() {
@@ -212,7 +212,7 @@ var _ = Describe("WorkloadEntry", func() {
 				Expect(found.Name).To(Equal(name))
 				Expect(found.Spec.Address).To(Equal("3.3.3.3"))
 				Expect(found.Spec.Address).NotTo(Equal("1.1.1.1"))
-			}, 5)
+			}, timeout)
 
 			It("delete unused workloadentry", func() {
 				r := Reconciler{
@@ -230,7 +230,7 @@ var _ = Describe("WorkloadEntry", func() {
 				err = r.Get(context.Background(), types.NamespacedName{Namespace: "mesh-test", Name: "test.to.be.delete"}, found)
 				Expect(err).To(HaveOccurred())
 				Expect(apierrors.IsNotFound(err)).To(Equal(true))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("test update workloadentry error", func() {
@@ -238,10 +238,10 @@ var _ = Describe("WorkloadEntry", func() {
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockClient = NewMockClient(mockCtrl)
 				mockClient.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("update se error"))
-			}, 5)
+			}, timeout)
 			AfterEach(func() {
 				mockCtrl.Finish()
-			}, 5)
+			}, timeout)
 
 			It("returned update error from mock client", func() {
 				r := Reconciler{
@@ -255,7 +255,7 @@ var _ = Describe("WorkloadEntry", func() {
 				err := r.updateWorkloadEntry(context.Background(), weightMap, updateWorkloadEntry, existedWorkloadEntry)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("update se error"))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("test compare workloadentry", func() {
@@ -264,7 +264,7 @@ var _ = Describe("WorkloadEntry", func() {
 				old := &networkingv1beta1.WorkloadEntry{}
 				result := compareWorkloadEntry(new, old)
 				Expect(result).To(Equal(true))
-			}, 5)
+			}, timeout)
 
 			It("return true while labels is not equal", func() {
 				m := map[string]string{"app": "test"}
@@ -272,13 +272,13 @@ var _ = Describe("WorkloadEntry", func() {
 				old := &networkingv1beta1.WorkloadEntry{}
 				result := compareWorkloadEntry(new, old)
 				Expect(result).To(Equal(true))
-			}, 5)
+			}, timeout)
 
 			It("return false", func() {
 				se := &networkingv1beta1.WorkloadEntry{}
 				result := compareWorkloadEntry(se, se)
 				Expect(result).To(Equal(false))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("test truncated", func() {

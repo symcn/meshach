@@ -36,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var timeout = 5.0
+
 var _ = Describe("Controller", func() {
 	var (
 		mockCtrl            *gomock.Controller
@@ -152,10 +154,10 @@ var _ = Describe("Controller", func() {
 			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("create se error"))
 			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-		}, 5)
+		}, timeout)
 		AfterEach(func() {
 			mockCtrl.Finish()
-		}, 5)
+		}, timeout)
 
 		Context("test crate serviceentry error", func() {
 			It("return create error from mock client", func() {
@@ -181,7 +183,7 @@ var _ = Describe("Controller", func() {
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(`meshconfigs.mesh.symcn.com "mc-test-case" not found`))
-			}, 5)
+			}, timeout)
 		})
 
 		Context("occurred error when reconcile configuredservice", func() {
@@ -194,14 +196,14 @@ var _ = Describe("Controller", func() {
 				result, err := reconciler.Reconcile(onlyServiceEntryReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).NotTo(HaveOccurred())
-			}, 5)
+			}, timeout)
 
 			It("resource name may not be empty", func() {
 				result, err := reconciler.Reconcile(errReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("resource name may not be empty"))
-			}, 5)
+			}, timeout)
 
 			AfterEach(func() {
 				err := reconciler.Delete(context.Background(), getTestMeshConfig())
@@ -230,7 +232,7 @@ var _ = Describe("Controller", func() {
 					found)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(found.Name).To(Equal("only.serviceentry.com"))
-			}, 5)
+			}, timeout)
 
 			AfterEach(func() {
 				err := reconciler.Delete(context.Background(), getTestMeshConfig())
@@ -256,7 +258,7 @@ var _ = Describe("Controller", func() {
 				result, err := reconciler.Reconcile(wrongHostReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
-			}, 5)
+			}, timeout)
 
 			It("returned success", func() {
 				result, err := reconciler.Reconcile(normalReq)
@@ -280,7 +282,7 @@ var _ = Describe("Controller", func() {
 				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(foundWorkloadEntry.Name).To(Equal(name))
-			}, 5)
+			}, timeout)
 
 			AfterEach(func() {
 				err := reconciler.Delete(context.Background(), getTestMeshConfig())
@@ -301,7 +303,7 @@ var _ = Describe("Controller", func() {
 
 				err = reconciler.SetupWithManager(mgr)
 				Expect(err).NotTo(HaveOccurred())
-			}, 5)
+			}, timeout)
 		})
 	})
 })
