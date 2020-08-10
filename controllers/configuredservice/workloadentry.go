@@ -26,7 +26,6 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -160,9 +159,6 @@ func (r *Reconciler) getWorkloadEntriesMap(ctx context.Context, cr *meshv1alpha1
 
 	err := r.List(ctx, list, opts)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			return m, nil
-		}
 		return nil, err
 	}
 

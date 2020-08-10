@@ -41,6 +41,7 @@ var _ = Describe("WorkloadEntry", func() {
 		updateWorkloadEntry      *networkingv1beta1.WorkloadEntry
 		toBeDeletedWorkloadEntry *networkingv1beta1.WorkloadEntry
 		testCr                   *meshv1alpha1.ConfiguredService
+		testServiceConfig        *meshv1alpha1.ServiceConfig
 	)
 
 	BeforeEach(func() {
@@ -61,6 +62,24 @@ var _ = Describe("WorkloadEntry", func() {
 					},
 				},
 				MeshConfigGeneration: 0,
+			},
+		}
+		testServiceConfig = &meshv1alpha1.ServiceConfig{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "test.workloadentry.cr",
+				Namespace: "mesh-test",
+			},
+			Spec: meshv1alpha1.ServiceConfigSpec{
+				Instances: []*meshv1alpha1.InstanceConfig{
+					{
+						Host: "3.3.3.3",
+						Port: &meshv1alpha1.Port{
+							Name:   "test-port",
+							Number: 12345,
+						},
+						Weight: 20,
+					},
+				},
 			},
 		}
 		existedWorkloadEntry = &networkingv1beta1.WorkloadEntry{
@@ -85,6 +104,7 @@ var _ = Describe("WorkloadEntry", func() {
 			},
 			Spec: v1beta1.WorkloadEntry{
 				Address: "2.2.2.2",
+				Weight:  20,
 			},
 		}
 		toBeDeletedWorkloadEntry = &networkingv1beta1.WorkloadEntry{
@@ -175,7 +195,7 @@ var _ = Describe("WorkloadEntry", func() {
 		Context("test update workloadentry success", func() {
 			It("no error occurred", func() {
 				r := Reconciler{
-					Client:     getFakeClient(existedWorkloadEntry),
+					Client:     getFakeClient(existedWorkloadEntry, testServiceConfig),
 					Log:        nil,
 					Scheme:     getFakeScheme(),
 					Opt:        testOpt,
@@ -196,7 +216,7 @@ var _ = Describe("WorkloadEntry", func() {
 
 			It("delete unused workloadentry", func() {
 				r := Reconciler{
-					Client:     getFakeClient(existedWorkloadEntry, toBeDeletedWorkloadEntry),
+					Client:     getFakeClient(existedWorkloadEntry, toBeDeletedWorkloadEntry, testServiceConfig),
 					Log:        nil,
 					Scheme:     getFakeScheme(),
 					Opt:        testOpt,
@@ -231,7 +251,7 @@ var _ = Describe("WorkloadEntry", func() {
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				weightMap := map[string]uint32{"": 100}
+				weightMap := map[string]uint32{"test.workloadentry.cr": 100}
 				err := r.updateWorkloadEntry(context.Background(), weightMap, updateWorkloadEntry, existedWorkloadEntry)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("update se error"))
@@ -259,6 +279,22 @@ var _ = Describe("WorkloadEntry", func() {
 				result := compareWorkloadEntry(se, se)
 				Expect(result).To(Equal(false))
 			}, 5)
+		})
+
+		Context("test truncated", func() {
+			It("truncate when string length exceeds 62", func() {
+				s := make([]byte, 66)
+				want := make([]byte, 62)
+				for i := range s {
+					s[i] = 'a'
+				}
+				for i := range want {
+					want[i] = 'a'
+				}
+				result := truncated(string(s))
+				Expect(result).To(Equal(string(want)))
+				Expect(len(result)).To(Equal(62))
+			})
 		})
 	})
 })
