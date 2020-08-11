@@ -52,7 +52,7 @@ type Reconciler struct {
 
 // Reconcile ...
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	klog.Infof("Reconciling ConfiguredService: %s/%s", req.Namespace, req.Name)
+	klog.Infof("Reconciling ServiceConfig: %s/%s", req.Namespace, req.Name)
 	ctx := context.TODO()
 
 	// Fetch the MeshConfig
@@ -63,7 +63,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	// Fetch the ConfiguredService instance
+	// Fetch the ServiceConfig instance
 	instance := &meshv1alpha1.ServiceConfig{}
 	err = r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
@@ -86,10 +86,10 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// Update Status
-	klog.Infof("Update ConfiguredService[%s/%s] status...", req.Namespace, req.Name)
+	klog.Infof("Update ServiceConfig[%s/%s] status...", req.Namespace, req.Name)
 	err = r.updateStatus(ctx, req, instance)
 	if err != nil {
-		klog.Errorf("%s/%s update ConfiguredService failed, err: %+v", req.Namespace, req.Name, err)
+		klog.Errorf("%s/%s update ServiceConfig status failed, err: %+v", req.Namespace, req.Name, err)
 		return ctrl.Result{}, err
 	}
 
@@ -120,19 +120,19 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&meshv1alpha1.ServiceConfig{}).
 		Watches(
 			&source.Kind{Type: &networkingv1beta1.WorkloadEntry{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
 		).
 		Watches(
 			&source.Kind{Type: &networkingv1beta1.VirtualService{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
 		).
 		Watches(
 			&source.Kind{Type: &networkingv1beta1.DestinationRule{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
 		).
 		Watches(
 			&source.Kind{Type: &networkingv1beta1.ServiceEntry{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
 		).
 		Complete(r)
 }

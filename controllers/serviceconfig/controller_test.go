@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	. "github.com/symcn/mesh-operator/test"
+	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,6 +22,7 @@ var _ = Describe("Controller", func() {
 	var (
 		mockCtrl            *gomock.Controller
 		mockClient          *MockClient
+		mockStatusWriter    *MockStatusWriter
 		errReq              ctrl.Request
 		normalReq           ctrl.Request
 		normalServiceConfig *meshv1alpha1.ServiceConfig
@@ -167,6 +169,100 @@ var _ = Describe("Controller", func() {
 			Expect(result).To(Equal(reconcile.Result{}))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("get serviceconfig error"))
+		})
+	})
+
+	Describe("test reconcile used mock client - list destinationrules error", func() {
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockClient = NewMockClient(mockCtrl)
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			mockClient.EXPECT().
+				List(gomock.Any(), gomock.Not(&networkingv1beta1.DestinationRuleList{}), gomock.Any()).
+				Return(nil).AnyTimes()
+			mockClient.EXPECT().
+				List(gomock.Any(), gomock.Eq(&networkingv1beta1.DestinationRuleList{}), gomock.Any()).
+				Return(errors.New("list destinationrules error")).AnyTimes()
+		}, timeout)
+
+		AfterEach(func() {
+			mockCtrl.Finish()
+		}, timeout)
+
+		It("error occurred when list destinationrules", func() {
+			r := Reconciler{
+				Client:     mockClient,
+				Log:        nil,
+				Scheme:     getFakeScheme(),
+				Opt:        testOpt,
+				MeshConfig: getTestMeshConfig(),
+			}
+			result, err := r.Reconcile(errReq)
+			Expect(result).To(Equal(reconcile.Result{}))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("list destinationrules error"))
+		})
+	})
+
+	Describe("test reconcile used mock client - list virtualservice error", func() {
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockClient = NewMockClient(mockCtrl)
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			mockClient.EXPECT().
+				List(gomock.Any(), gomock.Not(&networkingv1beta1.VirtualServiceList{}), gomock.Any()).
+				Return(nil).AnyTimes()
+			mockClient.EXPECT().
+				List(gomock.Any(), gomock.Eq(&networkingv1beta1.VirtualServiceList{}), gomock.Any()).
+				Return(errors.New("list virtualservice error")).AnyTimes()
+		}, timeout)
+
+		AfterEach(func() {
+			mockCtrl.Finish()
+		}, timeout)
+
+		It("error occurred when list virtualservice ", func() {
+			r := Reconciler{
+				Client:     mockClient,
+				Log:        nil,
+				Scheme:     getFakeScheme(),
+				Opt:        testOpt,
+				MeshConfig: getTestMeshConfig(),
+			}
+			result, err := r.Reconcile(errReq)
+			Expect(result).To(Equal(reconcile.Result{}))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("list virtualservice error"))
+		})
+	})
+
+	Describe("test reconcile used mock client - update status error", func() {
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockClient = NewMockClient(mockCtrl)
+			mockStatusWriter = NewMockStatusWriter(mockCtrl)
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			mockClient.EXPECT().Status().Return(mockStatusWriter).AnyTimes()
+			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).Return(errors.New("update status error"))
+		}, timeout)
+
+		AfterEach(func() {
+			mockCtrl.Finish()
+		}, timeout)
+
+		It("error occurred when update status", func() {
+			r := Reconciler{
+				Client:     mockClient,
+				Log:        nil,
+				Scheme:     getFakeScheme(),
+				Opt:        testOpt,
+				MeshConfig: getTestMeshConfig(),
+			}
+			result, err := r.Reconcile(errReq)
+			Expect(result).To(Equal(reconcile.Result{}))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("update status error"))
 		})
 	})
 })
