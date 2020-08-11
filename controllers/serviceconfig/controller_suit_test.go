@@ -121,9 +121,9 @@ func getTestMeshConfig() *meshv1alpha1.MeshConfig {
 			MatchSourceLabelKeys:   []string{"test-group"},
 			WorkloadEntryLabelKeys: []string{"test-group"},
 			MeshLabelsRemap: map[string]string{
-				"test-group": "flag",
+				"flag": "test-group",
 			},
-			GlobalSubsets: []*meshv1alpha1.Subset{blueSubset, greenSubset},
+			GlobalSubsets: []*meshv1alpha1.Subset{blueSubset, greenSubset, canarySubset, redSubset},
 			GlobalPolicy: &meshv1alpha1.Policy{
 				LoadBalancer: map[string]string{
 					"simple": "ROUND_ROBIN",

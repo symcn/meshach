@@ -95,6 +95,7 @@ func (r *Reconciler) getVirtualServiceStatus(ctx context.Context, sc *meshv1alph
 		klog.Errorf("Get subset error: %+v", err)
 	}
 
+	klog.Infof("the length of subsets is %d", len(subsets))
 	if len(subsets) == 0 {
 		svcCount = 0
 		return &meshv1alpha1.SubStatus{
@@ -147,7 +148,7 @@ func (r *Reconciler) getDestinationRuleStatus(ctx context.Context, sc *meshv1alp
 
 func (r *Reconciler) count(ctx context.Context, sc *meshv1alpha1.ServiceConfig, list runtime.Object) *int {
 	var c int
-	labels := &client.MatchingLabels{"service": sc.Spec.OriginalName}
+	labels := &client.MatchingLabels{r.Opt.SelectLabel: truncated(sc.Spec.OriginalName)}
 	opts := &client.ListOptions{Namespace: sc.Namespace}
 	labels.ApplyToList(opts)
 
