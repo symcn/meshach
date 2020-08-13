@@ -140,18 +140,51 @@ var (
 	blueSubset = &meshv1alpha1.Subset{
 		Name:   "blue",
 		Labels: map[string]string{"test-group": "blue"},
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "RANDOM",
+			},
+			MaxConnections: 100,
+			Timeout:        "10s",
+			MaxRetries:     3,
+		},
 	}
 	greenSubset = &meshv1alpha1.Subset{
 		Name:   "green",
 		Labels: map[string]string{"test-group": "green"},
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "RANDOM",
+			},
+			MaxConnections: 100,
+			Timeout:        "10s",
+			MaxRetries:     3,
+		},
 	}
 	canarySubset = &meshv1alpha1.Subset{
-		Name:   "canary",
-		Labels: map[string]string{"test-group": "green"},
+		Name:     "canary",
+		Labels:   map[string]string{"test-group": "canary"},
+		IsCanary: true,
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "RANDOM",
+			},
+			MaxConnections: 100,
+			Timeout:        "10s",
+			MaxRetries:     3,
+		},
 	}
 	redSubset = &meshv1alpha1.Subset{
 		Name:   "red",
 		Labels: map[string]string{"test-group": "red"},
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "RANDOM",
+			},
+			MaxConnections: 100,
+			Timeout:        "10s",
+			MaxRetries:     3,
+		},
 	}
 )
 

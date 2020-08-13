@@ -128,14 +128,23 @@ func (r *Reconciler) buildVirtualService(svc *meshv1alpha1.ServiceConfig, actual
 
 func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) *v1beta1.HTTPRoute {
 	var buildRoutes []*v1beta1.HTTPRouteDestination
+	klog.Infof("length of actual subsets: %d, global subsets: %d", len(actualSubsets), len(r.MeshConfig.Spec.GlobalSubsets))
 	reroute := len(actualSubsets) < len(r.MeshConfig.Spec.GlobalSubsets)
+	for _, subset := range actualSubsets {
+		klog.V(6).Infof("actual subset name: %s, %+v", subset.Name, subset.Labels)
+	}
 	switch {
 	case svc.Spec.Route != nil && len(svc.Spec.Route) > 0 && !subset.IsCanary && !reroute:
-		dynamicRoute(svc.Name, buildRoutes, svc.Spec.Route)
+		klog.Infof("dynamic route service: %s, subset：%s", svc.Name, subset.Name)
+		for _, r := range svc.Spec.Route {
+			klog.Infof("dynamic route: %s, weight: %d", r.Subset, r.Weight)
+		}
+		buildRoutes = dynamicRoute(svc.Name, svc.Spec.Route)
 	case reroute:
-		rerouteSubset(svc.Name, buildRoutes, subset, actualSubsets)
+		klog.Infof("reroute service: %s, subset: %s, len of actualSubsets: %d", svc.Name, subset.Name, len(actualSubsets))
+		buildRoutes = rerouteSubset(svc.Name, subset, actualSubsets)
 	default:
-		defaultDestination(buildRoutes, svc.Name, subset.Name)
+		buildRoutes = defaultDestination(svc.Name, subset.Name)
 	}
 
 	// set SourceLabels in match
@@ -173,7 +182,8 @@ func (r *Reconciler) buildDefaultRoute(svc *meshv1alpha1.ServiceConfig) *v1beta1
 
 // A specific routing strategy is preferred if svc.Spec.Route exists.
 // NOTE: The canary group don't care specific routing strategy.
-func dynamicRoute(host string, buildRoutes []*v1beta1.HTTPRouteDestination, dynamicRoutes []*meshv1alpha1.Destination) []*v1beta1.HTTPRouteDestination {
+func dynamicRoute(host string, dynamicRoutes []*meshv1alpha1.Destination) []*v1beta1.HTTPRouteDestination {
+	var buildRoutes []*v1beta1.HTTPRouteDestination
 	for _, destination := range dynamicRoutes {
 		route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: host}}
 		if destination.Subset != "" {
@@ -187,22 +197,25 @@ func dynamicRoute(host string, buildRoutes []*v1beta1.HTTPRouteDestination, dyna
 	return buildRoutes
 }
 
-func rerouteSubset(host string, buildRoutes []*v1beta1.HTTPRouteDestination, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) []*v1beta1.HTTPRouteDestination {
+func rerouteSubset(host string, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) []*v1beta1.HTTPRouteDestination {
+	var buildRoutes []*v1beta1.HTTPRouteDestination
 	// The consumer of canary subset can only call the provider of the canary subset. When the
 	// Provider instance of a canary subset is empty, the traffic of the canary consumer is
 	// evenly distributed to other normal subsets.
 	switch {
 	case subset.IsCanary && !subset.In(actualSubsets):
+		klog.Infof("reroute canary subset: %s which is not in actual subsets", subset.Name)
 		for i, actual := range actualSubsets {
 			route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: host}}
 			route.Destination.Subset = actual.Name
 			route.Weight = int32(100 / len(actualSubsets))
 			if i == len(actualSubsets)-1 && len(actualSubsets) > 1 {
-				route.Weight = 100 - int32(100/len(actualSubsets))
+				route.Weight = 100 - int32(100/len(actualSubsets))*int32((len(actualSubsets)-1))
 			}
 			buildRoutes = append(buildRoutes, route)
 		}
 	case !subset.IsCanary && !subset.In(actualSubsets):
+		klog.Infof("reroute subset: %s which is not in actual subsets", subset.Name)
 		route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: host}}
 		route.Destination.Subset = subset.Name
 		route.Weight = 0
@@ -228,17 +241,26 @@ func rerouteSubset(host string, buildRoutes []*v1beta1.HTTPRouteDestination, sub
 			}
 			buildRoutes = append(buildRoutes, route)
 		}
-	// case subset.IsCanary && subset.In(actualSubsets):
-	// 	defaultDestination(buildRoutes, host, subset.Name)
-	// case !subset.IsCanary && subset.In(actualSubsets):
-	// 	defaultDestination(buildRoutes, host, subset.Name)
+	case subset.IsCanary && subset.In(actualSubsets):
+		klog.Infof("reroute canary subset: %s which is in actual subsets, use default route policy", subset.Name)
+		buildRoutes = defaultDestination(host, subset.Name)
+	case !subset.IsCanary && subset.In(actualSubsets):
+		klog.Infof("reroute subset: %s which is in actual subsets, use default route policy", subset.Name)
+		buildRoutes = defaultDestination(host, subset.Name)
 	default:
-		defaultDestination(buildRoutes, host, subset.Name)
+		buildRoutes = defaultDestination(host, subset.Name)
+	}
+
+	klog.Infof("the length of reroute build routes: %d", len(buildRoutes))
+	for _, r := range buildRoutes {
+		klog.Infof("host: %s, subset: %s, weight: %d", r.Destination.Host, r.Destination.Subset, r.Weight)
 	}
 	return buildRoutes
 }
 
-func defaultDestination(buildRoutes []*v1beta1.HTTPRouteDestination, host, subset string) []*v1beta1.HTTPRouteDestination {
+func defaultDestination(host, subset string) []*v1beta1.HTTPRouteDestination {
+	var buildRoutes []*v1beta1.HTTPRouteDestination
+	klog.Infof("use default destination policy, subset: %s", subset)
 	route := &v1beta1.HTTPRouteDestination{
 		Destination: &v1beta1.Destination{Host: host, Subset: subset},
 		Weight:      100,
@@ -262,18 +284,18 @@ func compareVirtualService(new, old *networkingv1beta1.VirtualService) bool {
 	return false
 }
 
-func getMatchType(matchType meshv1alpha1.StringMatchType, value string) *v1beta1.StringMatch {
-	s := &v1beta1.StringMatch{}
-	switch matchType {
-	case meshv1alpha1.Prefix:
-		s.MatchType = &v1beta1.StringMatch_Prefix{Prefix: value}
-	case meshv1alpha1.Regex:
-		s.MatchType = &v1beta1.StringMatch_Regex{Regex: value}
-	default:
-		s.MatchType = &v1beta1.StringMatch_Exact{Exact: value}
-	}
-	return s
-}
+// func getMatchType(matchType meshv1alpha1.StringMatchType, value string) *v1beta1.StringMatch {
+// 	s := &v1beta1.StringMatch{}
+// 	switch matchType {
+// 	case meshv1alpha1.Prefix:
+// 		s.MatchType = &v1beta1.StringMatch_Prefix{Prefix: value}
+// 	case meshv1alpha1.Regex:
+// 		s.MatchType = &v1beta1.StringMatch_Regex{Regex: value}
+// 	default:
+// 		s.MatchType = &v1beta1.StringMatch_Exact{Exact: value}
+// 	}
+// 	return s
+// }
 
 func (r *Reconciler) getVirtualServicesMap(ctx context.Context, sc *meshv1alpha1.ServiceConfig) (map[string]*networkingv1beta1.VirtualService, error) {
 	list := &networkingv1beta1.VirtualServiceList{}

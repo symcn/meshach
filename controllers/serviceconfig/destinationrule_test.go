@@ -257,5 +257,12 @@ var _ = Describe("test reconcile destinationrule", func() {
 				Expect(result).To(Equal(false))
 			}, timeout)
 		})
+
+		Context("test getlb", func() {
+			It("can not found in lbMap", func() {
+				result := getlb("test-lb")
+				Expect(result).To(Equal(v1beta1.LoadBalancerSettings_RANDOM))
+			})
+		})
 	})
 })
