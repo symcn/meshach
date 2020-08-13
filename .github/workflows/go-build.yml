@@ -37,7 +37,11 @@ jobs:
         export PATH=$PATH:/usr/local/kubebuilder/bin
 
     - name: Test
-      run: make test
+      run: |
+        go get -u github.com/onsi/ginkgo/ginkgo
+        export PATH=$PATH:$GOPATH/bin
+        echo $PATH
+        make test
 
     - name: Upload Coverage report to CodeCov
       uses: codecov/codecov-action@v1.0.0
