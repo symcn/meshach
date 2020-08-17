@@ -29,10 +29,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, req reconcile.Request, sc
 				return nil
 			}
 
-			getErr := r.Get(ctx, req.NamespacedName, sc)
-			if getErr != nil {
-				return getErr
-			}
+			// getErr := r.Get(ctx, req.NamespacedName, sc)
+			// if getErr != nil {
+			// 	return getErr
+			// }
 			return updateErr
 		})
 		return err

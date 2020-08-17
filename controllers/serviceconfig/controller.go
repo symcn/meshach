@@ -89,6 +89,10 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	klog.Infof("Update ServiceConfig[%s/%s] status...", req.Namespace, req.Name)
 	err = r.updateStatus(ctx, req, instance)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			klog.Infof("Can't found ServiceConfig[%s/%s], requeue...", req.Namespace, req.Name)
+			return ctrl.Result{}, nil
+		}
 		klog.Errorf("%s/%s update ServiceConfig status failed, err: %+v", req.Namespace, req.Name, err)
 		return ctrl.Result{}, err
 	}

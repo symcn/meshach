@@ -37,13 +37,14 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, sc *meshv1alph
 		return err
 	}
 
-	subsets, err := r.getSubset(ctx, sc)
+	subsets, err := r.getSubset(context.Background(), sc)
 	if err != nil {
 		klog.Errorf("Get subsets[%s/%s] error: %+v", sc.Namespace, sc.Name, err)
 		return err
 	}
 
 	// Skip if the service's subset is none
+	klog.V(6).Infof("virtualservice subsets length: %d", len(subsets))
 	if len(subsets) != 0 {
 		vs := r.buildVirtualService(sc, subsets)
 		// Set ServiceConfig instance as the owner and controller

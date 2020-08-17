@@ -9,7 +9,7 @@ spec:
   workloadEntryLabelKeys:
     - sym-group
   meshLabelsRemap:
-    sym-group: flag
+    flag: sym-group
   extractedLabels:
     - app
   sidecarSelectLabel: app

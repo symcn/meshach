@@ -85,22 +85,22 @@ var _ = Describe("test virtualservice", func() {
 				Instances: []*meshv1alpha1.Instance{
 					{
 						Host:   "1.1.1.1",
-						Labels: map[string]string{"flag": "red"},
+						Labels: map[string]string{"test": "ccc", "flag": "red"},
 						Port:   &meshv1alpha1.Port{Name: "test-port", Number: 12345, Protocol: "HTTP"},
 					},
 					{
 						Host:   "1.1.1.2",
-						Labels: map[string]string{"flag": "green"},
+						Labels: map[string]string{"test": "ccc", "flag": "green"},
 						Port:   &meshv1alpha1.Port{Name: "test-port", Number: 12345, Protocol: "HTTP"},
 					},
 					{
 						Host:   "1.1.1.3",
-						Labels: map[string]string{"flag": "canary"},
+						Labels: map[string]string{"test": "ccc", "flag": "canary"},
 						Port:   &meshv1alpha1.Port{Name: "test-port", Number: 12345, Protocol: "HTTP"},
 					},
 					{
 						Host:   "1.1.1.4",
-						Labels: map[string]string{"test-group": "blue"},
+						Labels: map[string]string{"test": "ccc", "test-group": "blue"},
 						Port:   &meshv1alpha1.Port{Name: "test-port", Number: 12345, Protocol: "HTTP"},
 					},
 				},
@@ -118,17 +118,17 @@ var _ = Describe("test virtualservice", func() {
 				Instances: []*meshv1alpha1.Instance{
 					{
 						Host:   "1.1.1.1",
-						Labels: map[string]string{"flag": "red"},
+						Labels: map[string]string{"test": "ccc", "flag": "red"},
 						Port:   &meshv1alpha1.Port{Name: "test-port", Number: 12345, Protocol: "HTTP"},
 					},
 					{
 						Host:   "1.1.1.2",
-						Labels: map[string]string{"flag": "green"},
+						Labels: map[string]string{"test": "ccc", "flag": "green"},
 						Port:   &meshv1alpha1.Port{Name: "test-port", Number: 12345, Protocol: "HTTP"},
 					},
 					{
 						Host:   "1.1.1.3",
-						Labels: map[string]string{"flag": "canary"},
+						Labels: map[string]string{"test": "ccc", "flag": "canary"},
 						Port:   &meshv1alpha1.Port{Name: "test-port", Number: 12345, Protocol: "HTTP"},
 					},
 				},

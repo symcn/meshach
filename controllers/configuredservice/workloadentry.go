@@ -174,7 +174,7 @@ func (r *Reconciler) getInstanceWeight(ctx context.Context, cr *meshv1alpha1.Con
 	m := make(map[string]uint32)
 	err := r.Get(ctx, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, config)
 	if err != nil {
-		klog.Warningf("Get ServiceConfig[%s/%s] err: %+v", cr.Namespace, cr.Name, err)
+		klog.V(6).Infof("Get ServiceConfig[%s/%s] err: %+v", cr.Namespace, cr.Name, err)
 		return m
 	}
 

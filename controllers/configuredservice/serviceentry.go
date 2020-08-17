@@ -119,19 +119,25 @@ func (r *Reconciler) buildServiceEntry(svc *meshv1alpha1.ConfiguredService) *net
 
 func findPorts(svc *meshv1alpha1.ConfiguredService) []*v1beta1.Port {
 	var ports []*v1beta1.Port
-	m := make(map[uint32]*v1beta1.Port)
-	for _, ins := range svc.Spec.Instances {
-		if _, ok := m[ins.Port.Number]; !ok {
-			m[ins.Port.Number] = &v1beta1.Port{
-				Name:     ins.Port.Name,
-				Protocol: ins.Port.Protocol,
-				Number:   ins.Port.Number,
-			}
-		}
+	// m := make(map[uint32]*v1beta1.Port)
+	// for _, ins := range svc.Spec.Instances {
+	// 	if _, ok := m[ins.Port.Number]; !ok {
+	// 		m[ins.Port.Number] = &v1beta1.Port{
+	// 			Name:     ins.Port.Name,
+	// 			Protocol: ins.Port.Protocol,
+	// 			Number:   ins.Port.Number,
+	// 		}
+	// 	}
+	// }
+	// for _, port := range m {
+	// 	ports = append(ports, port)
+	// }
+	port := &v1beta1.Port{
+		Number:   20882,
+		Protocol: "HTTP",
+		Name:     "dubbo-http",
 	}
-	for _, port := range m {
-		ports = append(ports, port)
-	}
+	ports = append(ports, port)
 	return ports
 }
 
