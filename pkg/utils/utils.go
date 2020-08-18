@@ -22,6 +22,10 @@ func FormatToDNS1123(name string) string {
 // 20ms => ptypes.Duration{Nanos: 20000000}
 // 2 => ptypes.Duration{Seconds: 2}
 func StringToDuration(s string, repeat int64) *ptypes.Duration {
+	if s == "" {
+		return nil
+	}
+
 	if strings.HasSuffix(s, "ms") {
 		t, err := strconv.ParseInt(strings.TrimSuffix(s, "ms"), 10, 64)
 		if err != nil {
@@ -46,7 +50,7 @@ func StringToDuration(s string, repeat int64) *ptypes.Duration {
 func DeleteInSlice(s interface{}, index int) interface{} {
 	value := reflect.ValueOf(s)
 	if value.Kind() == reflect.Slice {
-		//|| value.Kind() == reflect.Array {
+		// || value.Kind() == reflect.Array {
 		result := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, value.Len()))
 		return result.Interface()
 	}

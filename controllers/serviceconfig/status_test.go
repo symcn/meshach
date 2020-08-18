@@ -178,7 +178,7 @@ var _ = Describe("test status update", func() {
 
 			err := r.updateStatus(context.Background(), req, sc)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("update status error"))
+			Expect(err.Error()).To(Equal("get status error"))
 		}, timeout)
 	})
 

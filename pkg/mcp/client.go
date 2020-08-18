@@ -37,15 +37,15 @@ func NewClient() (client *sink.Client, err error) {
 		return nil, fmt.Errorf("Error connecting to server:%v", err)
 	}
 
-	//colOptions := []sink.CollectionOptions{}
-	//colOptions = append(colOptions, sink.CollectionOptions{
+	// colOptions := []sink.CollectionOptions{}
+	// colOptions = append(colOptions, sink.CollectionOptions{
 	//	Name:        "istio/networking/v1alpha3/serviceentries",
 	//	Incremental: false,
-	//})
-	//colOptions = append(colOptions, sink.CollectionOptions{
+	// })
+	// colOptions = append(colOptions, sink.CollectionOptions{
 	//	Name:        "istio/networking/v1alpha3/virtualservices",
 	//	Incremental: false,
-	//})
+	// })
 	all := collections.Pilot.All()
 	colOptions := make([]sink.CollectionOptions, 0, len(all))
 	for _, c := range all {
@@ -63,7 +63,7 @@ func NewClient() (client *sink.Client, err error) {
 	}
 
 	cl := mcp.NewResourceSourceClient(conn)
-	//cl := &clientStreamCreator{}
+	// cl := &clientStreamCreator{}
 
 	// rsClient, err :=
 	// cl.EstablishResourceStream(context.Background())

@@ -129,7 +129,7 @@ func (r *Reconciler) buildVirtualService(svc *meshv1alpha1.ServiceConfig, actual
 
 func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) *v1beta1.HTTPRoute {
 	var buildRoutes []*v1beta1.HTTPRouteDestination
-	klog.Infof("length of actual subsets: %d, global subsets: %d", len(actualSubsets), len(r.MeshConfig.Spec.GlobalSubsets))
+	klog.V(6).Infof("length of actual subsets: %d, global subsets: %d", len(actualSubsets), len(r.MeshConfig.Spec.GlobalSubsets))
 	reroute := len(actualSubsets) < len(r.MeshConfig.Spec.GlobalSubsets)
 	for _, subset := range actualSubsets {
 		klog.V(6).Infof("actual subset name: %s, %+v", subset.Name, subset.Labels)
@@ -159,12 +159,8 @@ func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *mes
 		Name:    httpRouteName + "-" + subset.Name,
 		Match:   []*v1beta1.HTTPMatchRequest{match},
 		Route:   buildRoutes,
-		Timeout: utils.StringToDuration(svc.Spec.Policy.Timeout, int64(svc.Spec.Policy.MaxRetries)),
-		Retries: &v1beta1.HTTPRetry{
-			Attempts:      svc.Spec.Policy.MaxRetries,
-			PerTryTimeout: utils.StringToDuration(svc.Spec.Policy.Timeout, 1),
-			RetryOn:       r.Opt.ProxyRetryOn,
-		},
+		Timeout: r.getTimeout(svc.Spec.Policy.Timeout, int64(svc.Spec.Policy.MaxRetries)),
+		Retries: r.getRetries(svc.Spec.Policy.Timeout, svc.Spec.Policy.MaxRetries),
 	}
 }
 
@@ -252,7 +248,6 @@ func rerouteSubset(host string, subset *meshv1alpha1.Subset, actualSubsets []*me
 		buildRoutes = defaultDestination(host, subset.Name)
 	}
 
-	klog.Infof("the length of reroute build routes: %d", len(buildRoutes))
 	for _, r := range buildRoutes {
 		klog.Infof("host: %s, subset: %s, weight: %d", r.Destination.Host, r.Destination.Subset, r.Weight)
 	}
@@ -261,7 +256,7 @@ func rerouteSubset(host string, subset *meshv1alpha1.Subset, actualSubsets []*me
 
 func defaultDestination(host, subset string) []*v1beta1.HTTPRouteDestination {
 	var buildRoutes []*v1beta1.HTTPRouteDestination
-	klog.Infof("use default destination policy, subset: %s", subset)
+	klog.V(6).Infof("use default destination policy, subset: %s", subset)
 	route := &v1beta1.HTTPRouteDestination{
 		Destination: &v1beta1.Destination{Host: host, Subset: subset},
 		Weight:      100,
@@ -314,4 +309,28 @@ func (r *Reconciler) getVirtualServicesMap(ctx context.Context, sc *meshv1alpha1
 		m[item.Name] = &item
 	}
 	return m, nil
+}
+
+func (r *Reconciler) getRetries(timeout string, maxRetries int32) *v1beta1.HTTPRetry {
+	if timeout == "" {
+		timeout = r.MeshConfig.Spec.GlobalPolicy.Timeout
+	}
+	if maxRetries == 0 {
+		maxRetries = r.MeshConfig.Spec.GlobalPolicy.MaxRetries
+	}
+	return &v1beta1.HTTPRetry{
+		Attempts:      maxRetries,
+		PerTryTimeout: utils.StringToDuration(timeout, 1),
+		RetryOn:       r.Opt.ProxyRetryOn,
+	}
+}
+
+func (r *Reconciler) getTimeout(timeout string, maxRetries int64) *ptypes.Duration {
+	if timeout == "" {
+		timeout = r.MeshConfig.Spec.GlobalPolicy.Timeout
+	}
+	if maxRetries == 0 {
+		maxRetries = int64(r.MeshConfig.Spec.GlobalPolicy.MaxRetries)
+	}
+	return utils.StringToDuration(timeout, maxRetries)
 }
