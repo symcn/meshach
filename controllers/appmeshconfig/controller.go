@@ -98,7 +98,7 @@ func (r *Reconciler) getMeshConfig(ctx context.Context) error {
 		return err
 	}
 	r.MeshConfig = meshConfig
-	klog.V(4).Infof("Get cluster MeshConfig: %+v", meshConfig)
+	klog.V(6).Infof("Get cluster MeshConfig: %+v", meshConfig)
 	return nil
 }
 

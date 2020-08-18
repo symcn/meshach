@@ -78,7 +78,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Get namespace of app pods
 	namespaces := r.getAppNamespace(instance.Name)
 	for namespace := range namespaces {
-		klog.V(6).Infof("create sidecar in namespace: %s", namespace)
+		klog.Infof("create sidecar in namespace: %s", namespace)
 		r.reconcileSidecar(ctx, namespace, instance)
 	}
 

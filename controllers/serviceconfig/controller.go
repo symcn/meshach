@@ -97,6 +97,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	klog.Infof("End Reconciliation, ServiceConfig: %s/%s.", req.Namespace, req.Name)
 	return ctrl.Result{}, nil
 }
 

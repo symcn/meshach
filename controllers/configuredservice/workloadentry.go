@@ -100,7 +100,7 @@ func (r *Reconciler) updateWorkloadEntry(ctx context.Context, weightMap map[stri
 
 		updateErr := r.Update(ctx, found)
 		if updateErr == nil {
-			klog.V(6).Infof("%s/%s update WorkloadEntry successfully", we.Namespace, we.Name)
+			klog.Infof("%s/%s update WorkloadEntry successfully", we.Namespace, we.Name)
 			return nil
 		}
 		return updateErr

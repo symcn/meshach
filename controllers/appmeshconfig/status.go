@@ -16,7 +16,7 @@ import (
 
 func (r *Reconciler) updateStatus(ctx context.Context, req reconcile.Request, cr *meshv1alpha1.AppMeshConfig) error {
 	status := r.buildStatus(cr)
-	if !equality.Semantic.DeepEqual(status, cr.Status) {
+	if !equality.Semantic.DeepEqual(status.Status, cr.Status.Status) {
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			status.DeepCopyInto(&cr.Status)
 			t := metav1.Now()
@@ -24,7 +24,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, req reconcile.Request, cr
 
 			updateErr := r.Status().Update(ctx, cr)
 			if updateErr == nil {
-				klog.V(4).Infof("%s/%s update status[%s] successfully",
+				klog.Infof("%s/%s update status[%s] successfully",
 					req.Namespace, req.Name, cr.Status.Phase)
 				return nil
 			}

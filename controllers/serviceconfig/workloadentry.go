@@ -47,7 +47,7 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, sc *meshv1alpha
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			updateErr := r.Update(ctx, found)
 			if updateErr == nil {
-				klog.V(6).Infof("%s/%s update WorkloadEntry successfully", found.Namespace, found.Name)
+				klog.Infof("%s/%s update WorkloadEntry successfully", found.Namespace, found.Name)
 				return nil
 			}
 			return updateErr

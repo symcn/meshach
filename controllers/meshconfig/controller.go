@@ -69,7 +69,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	scList := &meshv1alpha1.ServiceConfigList{}
 	err = r.List(context.TODO(), scList, &client.ListOptions{Namespace: corev1.NamespaceAll})
 	if err != nil {
-		klog.Infof("Get ServiceConfig error: %s", err)
+		klog.Infof("[meshconfig] Get ServiceConfig error: %s", err)
 	}
 	for i := range scList.Items {
 		sc := scList.Items[i]
@@ -78,7 +78,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				updateErr := r.Update(context.TODO(), &sc)
 				if updateErr == nil {
-					klog.V(4).Infof("update ServiceConfig[%s/%s] successfully", sc.Namespace, sc.Name)
+					klog.Infof("[meshconfig] update ServiceConfig[%s/%s] successfully", sc.Namespace, sc.Name)
 					return nil
 				}
 
@@ -93,7 +93,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return updateErr
 			})
 			if err != nil {
-				klog.Errorf("Update ServiceConfig[%s/%s] in MeshConfig reconcile error: %+v",
+				klog.Errorf("[meshconfig] Update ServiceConfig[%s/%s] in MeshConfig reconcile error: %+v",
 					sc.Namespace, sc.Name, err)
 			}
 		}
@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	csList := &meshv1alpha1.ConfiguredServiceList{}
 	err = r.List(context.TODO(), csList, &client.ListOptions{Namespace: corev1.NamespaceAll})
 	if err != nil {
-		klog.Infof("Get ConfiguredService error: %s", err)
+		klog.Infof("[meshconfig] Get ConfiguredService error: %s", err)
 	}
 	for i := range csList.Items {
 		cs := csList.Items[i]
@@ -111,7 +111,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				updateErr := r.Update(context.TODO(), &cs)
 				if updateErr == nil {
-					klog.V(4).Infof("update ConfiguraredService[%s/%s] successfully", cs.Namespace, cs.Name)
+					klog.Infof("[meshconfig] update ConfiguraredService[%s/%s] successfully", cs.Namespace, cs.Name)
 					return nil
 				}
 
@@ -126,7 +126,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return updateErr
 			})
 			if err != nil {
-				klog.Errorf("Update ConfiguredService[%s/%s] in MeshConfig reconcile error: %+v",
+				klog.Errorf("[meshconfig] Update ConfiguredService[%s/%s] in MeshConfig reconcile error: %+v",
 					cs.Namespace, cs.Name, err)
 			}
 		}

@@ -74,7 +74,7 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, sc *meshv1alph
 
 					updateErr := r.Update(ctx, found)
 					if updateErr == nil {
-						klog.V(4).Infof("%s/%s update VirtualService successfully",
+						klog.Infof("%s/%s update VirtualService successfully",
 							vs.Namespace, vs.Name)
 						return nil
 					}
@@ -201,7 +201,7 @@ func rerouteSubset(host string, subset *meshv1alpha1.Subset, actualSubsets []*me
 	// evenly distributed to other normal subsets.
 	switch {
 	case subset.IsCanary && !subset.In(actualSubsets):
-		klog.Infof("reroute canary subset: %s which is not in actual subsets", subset.Name)
+		klog.V(6).Infof("reroute canary subset: %s which is not in actual subsets", subset.Name)
 		for i, actual := range actualSubsets {
 			route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: host}}
 			route.Destination.Subset = actual.Name
@@ -212,7 +212,7 @@ func rerouteSubset(host string, subset *meshv1alpha1.Subset, actualSubsets []*me
 			buildRoutes = append(buildRoutes, route)
 		}
 	case !subset.IsCanary && !subset.In(actualSubsets):
-		klog.Infof("reroute subset: %s which is not in actual subsets", subset.Name)
+		klog.V(6).Infof("reroute subset: %s which is not in actual subsets", subset.Name)
 		route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: host}}
 		route.Destination.Subset = subset.Name
 		route.Weight = 0
@@ -239,10 +239,10 @@ func rerouteSubset(host string, subset *meshv1alpha1.Subset, actualSubsets []*me
 			buildRoutes = append(buildRoutes, route)
 		}
 	case subset.IsCanary && subset.In(actualSubsets):
-		klog.Infof("reroute canary subset: %s which is in actual subsets, use default route policy", subset.Name)
+		klog.V(6).Infof("reroute canary subset: %s which is in actual subsets, use default route policy", subset.Name)
 		buildRoutes = defaultDestination(host, subset.Name)
 	case !subset.IsCanary && subset.In(actualSubsets):
-		klog.Infof("reroute subset: %s which is in actual subsets, use default route policy", subset.Name)
+		klog.V(6).Infof("reroute subset: %s which is in actual subsets, use default route policy", subset.Name)
 		buildRoutes = defaultDestination(host, subset.Name)
 	default:
 		buildRoutes = defaultDestination(host, subset.Name)

@@ -25,7 +25,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, req reconcile.Request, sc
 
 			updateErr := r.Status().Update(ctx, sc)
 			if updateErr == nil {
-				klog.V(4).Infof("%s/%s update status[%s] successfully",
+				klog.Infof("%s/%s update status[%s] successfully",
 					req.Namespace, req.Name, sc.Status.Phase)
 				return nil
 			}
@@ -38,7 +38,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, req reconcile.Request, sc
 		})
 		return err
 	}
-	klog.V(4).Infof("%s/%s skip update status: [%s]", req.Namespace, req.Name, sc.Status.Phase)
 	return nil
 }
 
@@ -86,7 +85,7 @@ func (r *Reconciler) getWorkloadEntryStatus(ctx context.Context, sc *meshv1alpha
 	cs := &meshv1alpha1.ConfiguredService{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Name}, cs)
 	if err != nil {
-		klog.Infof("The configuredservice[%s/%s] in update status get error: %+v", sc.Namespace, sc.Name, err)
+		klog.Warningf("The configuredservice[%s/%s] in update status get error: %+v", sc.Namespace, sc.Name, err)
 		return zero
 	}
 

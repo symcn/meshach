@@ -88,7 +88,7 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, sc *meshv1alp
 
 					updateErr := r.Update(ctx, found)
 					if updateErr == nil {
-						klog.V(4).Infof("%s/%s update DestinationRule successfully",
+						klog.Infof("%s/%s update DestinationRule successfully",
 							dr.Namespace, dr.Name)
 						return nil
 					}
@@ -157,7 +157,7 @@ func (r *Reconciler) getSubset(ctx context.Context, sc *meshv1alpha1.ServiceConf
 	err := r.Get(ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Name}, cs)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			klog.Infof("The configuredservice[%s/%s] not found, skip", sc.Namespace, sc.Name)
+			klog.V(6).Infof("The configuredservice[%s/%s] not found, skip", sc.Namespace, sc.Name)
 			return subsets, nil
 		}
 		return subsets, err
