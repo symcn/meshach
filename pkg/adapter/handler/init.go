@@ -1,12 +1,9 @@
 package handler
 
 import (
-	"context"
-	"fmt"
 	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 	"time"
 
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
@@ -15,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -72,16 +68,6 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 		klog.Infof("caching objects to informer is successful")
 
 		if !opt.IsMultiClusters {
-			// it just need to synchronize services to a single cluster
-			mc := &v1.MeshConfig{}
-			err := mgr.GetClient().Get(context.Background(), client.ObjectKey{
-				Name:      meshConfigName,
-				Namespace: defaultNamespace,
-			}, mc)
-			if err != nil {
-				return nil, fmt.Errorf("loading mesh config has an error: %v", err)
-			}
-
 			converter := convert.DubboConverter{DefaultNamespace: defaultNamespace}
 			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr, &converter)
 			if err != nil {
