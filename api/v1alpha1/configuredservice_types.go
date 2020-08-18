@@ -100,6 +100,7 @@ type ConfiguredServiceStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
 // ConfiguredService is the Schema for the configuredservices API

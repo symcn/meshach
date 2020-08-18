@@ -15,6 +15,8 @@ spec:
     plural: appmeshconfigs
     singular: appmeshconfig
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: AppMeshConfig is the Schema for the appmeshconfigs API

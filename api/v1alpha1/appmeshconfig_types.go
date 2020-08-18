@@ -61,6 +61,7 @@ type AppMeshConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
 // AppMeshConfig is the Schema for the appmeshconfigs API

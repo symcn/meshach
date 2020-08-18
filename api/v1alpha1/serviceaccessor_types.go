@@ -33,6 +33,7 @@ type ServiceAccessorStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
 // ServiceAccessor is the Schema for the serviceaccessors API
@@ -45,6 +46,7 @@ type ServiceAccessor struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
 // ServiceAccessorList contains a list of ServiceAccessor
