@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,7 +75,25 @@ func (r *Reconciler) getServiceEntryStatus(ctx context.Context, sc *meshv1alpha1
 }
 
 func (r *Reconciler) getWorkloadEntryStatus(ctx context.Context, sc *meshv1alpha1.ServiceConfig) *meshv1alpha1.SubStatus {
-	insCount := len(sc.Spec.Instances)
+	insCount := 0
+	zero := &meshv1alpha1.SubStatus{
+		Desired:       insCount,
+		Distributed:   &insCount,
+		Undistributed: &insCount,
+	}
+
+	cs := &meshv1alpha1.ConfiguredService{}
+	err := r.Get(ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Name}, cs)
+	if err != nil {
+		klog.Infof("The configuredservice[%s/%s] in update status get error: %+v", sc.Namespace, sc.Name, err)
+		return zero
+	}
+
+	insCount = len(cs.Spec.Instances)
+	if insCount == 0 {
+		return zero
+	}
+
 	list := &networkingv1beta1.WorkloadEntryList{}
 	count := r.count(ctx, sc, list)
 	status := &meshv1alpha1.SubStatus{Desired: insCount, Distributed: count}
