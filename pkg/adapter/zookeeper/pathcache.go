@@ -21,8 +21,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/go-zookeeper/zk"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/samuel/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	"k8s.io/klog"
 )

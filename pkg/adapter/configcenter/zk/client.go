@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	zkClient "github.com/samuel/go-zookeeper/zk"
+	zkClient "github.com/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"

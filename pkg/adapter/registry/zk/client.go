@@ -11,7 +11,7 @@ import (
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	"github.com/symcn/mesh-operator/pkg/adapter/types"
 
-	zkClient "github.com/samuel/go-zookeeper/zk"
+	zkClient "github.com/go-zookeeper/zk"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/registry"
 	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
