@@ -39,6 +39,7 @@ type IstioConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
 // IstioConfig is the Schema for the istioconfigs API

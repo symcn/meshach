@@ -52,7 +52,6 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Registry.Address,
 		"registry_addr",
-		//"r",
 		opt.Registry.Address,
 		"address for registry center, e.g. zk: 127.0.0.1:2181")
 

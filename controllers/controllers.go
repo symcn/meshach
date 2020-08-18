@@ -61,7 +61,7 @@ func AddToManager(mgr ctrl.Manager, opt *option.ControllerOption) error {
 	}
 	if err := (&serviceconfig.Reconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ServiceController"),
+		Log:    ctrl.Log.WithName("controllers").WithName("ServiceConfig"),
 		Scheme: mgr.GetScheme(),
 		Opt:    opt,
 	}).SetupWithManager(mgr); err != nil {

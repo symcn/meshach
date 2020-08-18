@@ -18,10 +18,9 @@ func mapContains(std, obj, renameMap map[string]string) bool {
 		if !ok {
 			rk = sk
 		}
-
-		if ov, ok := obj[rk]; !ok || ov != sv {
-			return false
+		if ov, ok := obj[rk]; ok && ov == sv {
+			return true
 		}
 	}
-	return true
+	return false
 }

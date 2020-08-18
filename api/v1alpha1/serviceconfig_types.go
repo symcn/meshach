@@ -175,7 +175,9 @@ type ServiceConfigStatus struct {
 	Status         *Status      `json:"status,omitempty"`
 }
 
+// +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 
 // ServiceConfig is the Schema for the serviceconfigs API
 type ServiceConfig struct {

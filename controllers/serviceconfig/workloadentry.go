@@ -35,7 +35,7 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, sc *meshv1alpha
 		err := r.Get(ctx, types.NamespacedName{Namespace: sc.Namespace, Name: name}, found)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				klog.Infof("Can't found WorkloadEntry[%s/%s], skip", sc.Namespace, name)
+				klog.V(6).Infof("Can't found WorkloadEntry[%s/%s], skip", sc.Namespace, name)
 				continue
 			}
 			return err

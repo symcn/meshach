@@ -58,6 +58,7 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, sc *meshv1alp
 	}
 
 	// Skip if the service's subset is none
+	klog.V(6).Infof("destinationrule subsets length: %d", len(subsets))
 	if len(subsets) != 0 {
 		dr := r.buildDestinationRule(sc, subsets)
 		// Set ServiceConfig instance as the owner and controller

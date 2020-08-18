@@ -24,7 +24,7 @@ var _ = Describe("test utils function", func() {
 	Context("test map contains", func() {
 		It("return true", func() {
 			renameMap := map[string]string{"flag": "group"}
-			obj := map[string]string{"group": "blue", "app": "aaa", "service": "bbb"}
+			obj := map[string]string{"app": "aaa", "group": "blue", "service": "bbb"}
 			std := map[string]string{"flag": "blue"}
 			result := mapContains(std, obj, renameMap)
 			Expect(result).To(Equal(true))
@@ -32,7 +32,7 @@ var _ = Describe("test utils function", func() {
 
 		It("return true", func() {
 			renameMap := map[string]string{"flag": "group"}
-			obj := map[string]string{"flag": "blue", "app": "aaa", "service": "bbb"}
+			obj := map[string]string{"test": "aaa", "flag": "blue", "app": "aaa", "service": "bbb"}
 			std := map[string]string{"app": "aaa"}
 			result := mapContains(std, obj, renameMap)
 			Expect(result).To(Equal(true))
@@ -40,7 +40,7 @@ var _ = Describe("test utils function", func() {
 
 		It("return false", func() {
 			renameMap := map[string]string{"flag": "group"}
-			obj := map[string]string{"flag": "blue", "app": "aaa", "service": "bbb"}
+			obj := map[string]string{"cc": "dd", "flag": "blue", "app": "aaa", "service": "bbb"}
 			std := map[string]string{"ddd": "ccc"}
 			result := mapContains(std, obj, renameMap)
 			Expect(result).To(Equal(false))

@@ -79,7 +79,7 @@ func (c *RegistryClient) Start() error {
 				case <-tick:
 					klog.Infof("Observing cache of root path:%v\n  caches: %v\n  services: %v",
 						scache.Path, scache.Cached, c.services)
-					//spew.Dump(scache)
+					// spew.Dump(scache)
 				}
 			}
 		}()
@@ -276,9 +276,9 @@ func (c *RegistryClient) deleteServiceInstance(hostname string, rawURL string) {
 			Instance:  i,
 		})
 		// TODO should we unregister the service when all the instances are offline?
-		//if len(s.instances) == 0 {
+		// if len(s.instances) == 0 {
 		//	c.deleteService(i.Service)
-		//}
+		// }
 	}
 }
 

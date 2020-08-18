@@ -69,6 +69,7 @@ type MeshConfigStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:subresource:status
 
 // MeshConfig is the Schema for the meshconfigs API
 type MeshConfig struct {
