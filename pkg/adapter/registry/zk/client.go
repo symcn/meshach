@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/symcn/mesh-operator/pkg/adapter/constant"
@@ -30,6 +31,7 @@ type RegistryClient struct {
 	serviceOut             chan *types.ServiceEvent
 	accessors              map[string]*types.Service
 	accessorOut            chan *types.ServiceEvent
+	scopeLocker            sync.Mutex
 	scopedAccessorsMapping map[string]map[string]struct{}
 	scache                 *zookeeper.PathCache
 	pcaches                map[string]*zookeeper.PathCache
@@ -423,10 +425,12 @@ func (c *RegistryClient) replaceAccessorInstances(hostname string, rawURLs []str
 		// cache an accessor instance based on a scope key.
 		scopedKey := instances[k].Labels["app"]
 		_, ok := c.scopedAccessorsMapping[scopedKey]
+		c.scopeLocker.Lock()
 		if !ok {
 			c.scopedAccessorsMapping[scopedKey] = make(map[string]struct{})
 		}
 		c.scopedAccessorsMapping[scopedKey][a.Name] = struct{}{}
+		c.scopeLocker.Unlock()
 	}
 
 	a.Instances = instances
