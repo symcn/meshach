@@ -15,7 +15,7 @@ var _ = Describe("Test cases for adapter", func() {
 	BeforeEach(
 		func() {
 			logf.Log.Info("Start testing the adapter")
-			//configcenter.Registry("zk", New)
+			// configcenter.Registry("zk", New)
 			adapter, err = NewAdapter(testOpt)
 			Expect(err).ToNot(HaveOccurred())
 
