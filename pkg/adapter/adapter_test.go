@@ -23,14 +23,14 @@ var _ = Describe("Test cases for adapter", func() {
 		})
 
 	Describe("Testing creating a new adapter", func() {
-		//JustBeforeEach(func() {
-		//	logf.Log.Info("Before creating an adapter")
-		//}, 5)
-		//
-		//AfterEach(func() {
-		//	logf.Log.Info("After creating an adapter")
-		//	// done <- struct{}{}
-		//}, 5)
+		JustBeforeEach(func() {
+			logf.Log.Info("Before creating an adapter")
+		}, 5)
+
+		AfterEach(func() {
+			logf.Log.Info("After creating an adapter")
+			// done <- struct{}{}
+		}, 5)
 
 		Context("Creating context", func() {
 			It("creating", func() {

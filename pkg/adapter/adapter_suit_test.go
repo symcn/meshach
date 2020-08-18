@@ -37,7 +37,7 @@ var testOpt = &option.AdapterOption{
 	Registry: option.Registry{
 		Type:    "zk",
 		Address: []string{"devzk.dmall.com:2181"},
-		Timeout: 0,
+		Timeout: 15,
 	},
 	Configuration: option.Configuration{
 		Type:    "zk",
