@@ -17,7 +17,7 @@ import (
 
 func (r *Reconciler) updateStatus(ctx context.Context, req reconcile.Request, sc *meshv1alpha1.ServiceConfig) error {
 	status := r.buildStatus(sc)
-	if !equality.Semantic.DeepEqual(status, sc.Status) {
+	if !equality.Semantic.DeepEqual(status.Status, sc.Status.Status) {
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			status.DeepCopyInto(&sc.Status)
 			t := metav1.Now()
@@ -38,6 +38,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, req reconcile.Request, sc
 		})
 		return err
 	}
+	klog.V(4).Infof("%s/%s skip update status: [%s]", req.Namespace, req.Name, sc.Status.Phase)
 	return nil
 }
 
@@ -114,7 +115,6 @@ func (r *Reconciler) getVirtualServiceStatus(ctx context.Context, sc *meshv1alph
 		klog.Errorf("Get subset error: %+v", err)
 	}
 
-	klog.Infof("the length of subsets is %d", len(subsets))
 	if len(subsets) == 0 {
 		svcCount = 0
 		return &meshv1alpha1.SubStatus{
