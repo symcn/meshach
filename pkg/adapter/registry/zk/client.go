@@ -95,7 +95,7 @@ func (c *RegistryClient) eventLoop() {
 	for event := range c.scache.Events() {
 		hostname := path.Base(event.Path)
 		if zookeeper.Ignore(hostname) {
-			klog.Infof("Path should be ignored by registry client: %s", event.Path)
+			klog.Infof("Paths should be ignored by registry client: %s", event.Path)
 			continue
 		}
 

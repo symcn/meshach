@@ -25,6 +25,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
 	go.opencensus.io v0.22.2
+	golang.org/x/sys v0.0.0-20200819171115-d785dc25833f // indirect
 	google.golang.org/grpc v1.28.1
 	istio.io/api v0.0.0-20200521171657-32375f234cc1
 	istio.io/client-go v0.0.0-20200518164621-ef682e2929e5
