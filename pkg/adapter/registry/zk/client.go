@@ -128,7 +128,6 @@ func (c *RegistryClient) eventLoop() {
 			cpath := path.Join(event.Path, zookeeper.ConsumersPath)
 			ccache, err := zookeeper.NewPathCache(c.conn, cpath, "REGISTRY", false)
 			if err != nil {
-				klog.Errorf("Create a consumer cache %s has an error: %v", cpath, err)
 				continue
 			}
 			c.ccaches[hostname] = ccache
@@ -380,7 +379,7 @@ func (c *RegistryClient) makeAccessorInstance(hostname string, rawURL string) (*
 
 	instance := &types.Instance{
 		Host:   ep.Host,
-		Labels: make(map[string]string),
+		Labels: make(map[string]string, 30),
 	}
 
 	for key, value := range ep.Query() {

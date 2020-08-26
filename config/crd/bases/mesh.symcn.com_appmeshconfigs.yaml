@@ -69,22 +69,14 @@ spec:
                           properties:
                             name:
                               description: Label assigned to the port.
-                              maxLength: 15
-                              minLength: 1
                               type: string
                             number:
                               description: A valid non-negative integer port number.
                               format: int32
-                              maximum: 65535
-                              minimum: 1
                               type: integer
                             protocol:
                               description: The protocol exposed on the port. MUST
                                 BE HTTP TO ROUTE DUBBO SERVICE.
-                              enum:
-                              - HTTP
-                              - HTTPS
-                              - TCP
                               type: string
                           required:
                           - name
@@ -147,22 +139,14 @@ spec:
                       properties:
                         name:
                           description: Label assigned to the port.
-                          maxLength: 15
-                          minLength: 1
                           type: string
                         number:
                           description: A valid non-negative integer port number.
                           format: int32
-                          maximum: 65535
-                          minimum: 1
                           type: integer
                         protocol:
                           description: The protocol exposed on the port. MUST BE HTTP
                             TO ROUTE DUBBO SERVICE.
-                          enum:
-                          - HTTP
-                          - HTTPS
-                          - TCP
                           type: string
                       required:
                       - name

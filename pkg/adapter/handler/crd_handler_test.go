@@ -22,7 +22,6 @@ var _ = Describe("Test cases for crd handler.", func() {
 					TypeMeta:   metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{},
 					Spec:       v1.ConfiguredServiceSpec{},
-					Status:     v1.ConfiguredServiceStatus{},
 				}
 			})
 

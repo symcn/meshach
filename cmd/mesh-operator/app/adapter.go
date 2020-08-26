@@ -17,12 +17,30 @@ limitations under the License.
 package app
 
 import (
+	"net/http"
+
+	// pprof
+	_ "net/http/pprof"
+
 	"github.com/spf13/cobra"
 	"github.com/symcn/mesh-operator/pkg/adapter"
 	"github.com/symcn/mesh-operator/pkg/option"
 	"github.com/symcn/mesh-operator/pkg/utils"
 	"k8s.io/klog"
 )
+
+func init() {
+	go func() {
+		// terminal: $ go tool pprof -http=:8081 http://localhost:6066/debug/pprof/{heap,allocs,block,cmdline,goroutine,mutex,profile,threadcreate,trace}
+		// web:
+		// 1、http://localhost:8081/ui
+		// 2、http://localhost:6066/debug/charts
+		// 3、http://localhost:6066/debug/pprof
+		klog.Info(http.ListenAndServe("0.0.0.0:6066", nil))
+	}()
+
+	return
+}
 
 // NewAdapterCmd ...
 func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {

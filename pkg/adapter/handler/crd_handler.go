@@ -33,7 +33,7 @@ func createConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 	err := c.Create(context.Background(), cs)
 	klog.Infof("The generation of cs when creating: %d", cs.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Creating an cs has an error:%v\n", err)
+		klog.Errorf("Creating an cs has an error:%v\n", err)
 		return err
 	}
 	return nil

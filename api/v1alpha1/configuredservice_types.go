@@ -58,18 +58,13 @@ type Instance struct {
 // Port describes the properties of a specific port of a service.
 type Port struct {
 	// Label assigned to the port.
-	// +kubebuilder:validation:MaxLength=15
-	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
 	// The protocol exposed on the port.
 	// MUST BE HTTP TO ROUTE DUBBO SERVICE.
-	// +kubebuilder:validation:Enum=HTTP;HTTPS;TCP
 	Protocol string `json:"protocol"`
 
 	// A valid non-negative integer port number.
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=65535
 	Number uint32 `json:"number"`
 }
 
