@@ -101,7 +101,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 			if ok {
 				changedScopes[sk] = struct{}{}
 			} else {
-				klog.Warningf("Could't find label [app]'s value, instance: %s, skip updating the associated scope", ins.Host)
+				klog.V(6).Infof("Could't find label [app]'s value, instance: %s, skip updating the associated scope", ins.Host)
 			}
 		}
 	}
@@ -121,7 +121,6 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 			Spec: v1.ServiceAccessorSpec{
 				AccessHosts: accessedServices,
 			},
-			Status: v1.ServiceAccessorStatus{},
 		}
 
 		retry.RetryOnConflict(retry.DefaultRetry, func() error {

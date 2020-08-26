@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 	"sync"
+
+	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -98,7 +99,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteInstance(event *types2.Servi
 // ReplaceAccessorInstances ...
 func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(event *types2.ServiceEvent,
 	getScopedServices func(s string) map[string]struct{}) {
-	klog.Infof("event handler for multiple clusters: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
+	klog.V(6).Infof("event handler for multiple clusters: Replacing these instances(size: %d)", len(event.Instances))
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(kubeMceh.handlers))

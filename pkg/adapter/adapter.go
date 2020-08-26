@@ -118,7 +118,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				klog.Infof("end handling event - DELETE INSTANCE with uuid: %s", uuid)
 			}
 		case ae := <-a.registryClient.AccessorEvents():
-			klog.Infof("Accessor which has been received by adapter: %v", ae)
+			klog.V(6).Infof("Accessor which has been received by adapter: %v", ae)
 			switch ae.EventType {
 			case types.ServiceInstancesReplace:
 				for _, h := range a.eventHandlers {
