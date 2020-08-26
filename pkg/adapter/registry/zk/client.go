@@ -379,7 +379,7 @@ func (c *RegistryClient) makeAccessorInstance(hostname string, rawURL string) (*
 
 	instance := &types.Instance{
 		Host:   ep.Host,
-		Labels: make(map[string]string, 30),
+		Labels: make(map[string]string),
 	}
 
 	for key, value := range ep.Query() {
