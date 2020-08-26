@@ -29,5 +29,5 @@ var (
 
 // test constant
 var (
-	PromHTTPPort = ":8315"
+	HTTPPort = ":8315"
 )

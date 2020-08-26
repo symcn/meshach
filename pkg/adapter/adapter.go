@@ -1,6 +1,13 @@
 package adapter
 
 import (
+	// terminal: $ go tool pprof http://localhost:6066/debug/pprof/{heap,allocs,block,cmdline,goroutine,mutex,profile,threadcreate,trace}
+	// web:
+	// 1、http://localhost:8081/ui
+	// 2、http://localhost:6066/debug/charts
+	// 3、http://localhost:6066/debug/pprof
+	_ "net/http/pprof"
+
 	"net/http"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
@@ -76,8 +83,8 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 
 	// Prometheus HTTP server
 	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(constant.PromHTTPPort, nil)
-	klog.Infof("Started prometheus HTTP server on port: %s", constant.PromHTTPPort)
+	go http.ListenAndServe(constant.HTTPPort, nil)
+	klog.Infof("Started HTTP server for providing some features such as exposing metrics and pprof on port: %s", constant.HTTPPort)
 
 	for {
 		select {
