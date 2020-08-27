@@ -29,7 +29,7 @@ test: generate fmt vet manifests
 
 # Build manager binary
 manager: generate fmt vet
-	GOOS=linux GOARCH=amd64 go build -v -o bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
 	-X  $(ROOT)/pkg/version.BuildDate=$(BUILD_DATE)" cmd/mesh-operator/main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
