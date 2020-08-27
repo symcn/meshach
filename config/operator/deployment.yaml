@@ -22,6 +22,8 @@ spec:
             - "ctl"
             - "-v"
             - "4"
+            - "max-concurrent-reconciles"
+            - "1000"
           resources:
             limits:
               cpu: 1

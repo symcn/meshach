@@ -118,7 +118,11 @@ func (r *Reconciler) buildWorkloadEntry(svc *meshv1alpha1.ConfiguredService, ins
 	labels := make(map[string]string)
 	labels[r.Opt.SelectLabel] = svc.Name
 	for _, k := range r.MeshConfig.Spec.WorkloadEntryLabelKeys {
-		labels[k] = ins.Labels[r.MeshConfig.Spec.MeshLabelsRemap[k]]
+		for rk, rv := range r.MeshConfig.Spec.MeshLabelsRemap {
+			if k == rv {
+				labels[k] = ins.Labels[rk]
+			}
+		}
 	}
 
 	return &networkingv1beta1.WorkloadEntry{

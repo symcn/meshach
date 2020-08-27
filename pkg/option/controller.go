@@ -41,7 +41,7 @@ func DefaultControllerOption() *ControllerOption {
 		LeaderElectionNamespace: "sym-admin",
 		PprofEnabled:            true,
 		GoroutineThreshold:      1000,
-		MaxConcurrentReconciles: 20,
+		MaxConcurrentReconciles: 100,
 		ProxyHost:               "mosn.io.dubbo.proxy",
 		ProxyAttempts:           3,
 		ProxyPerTryTimeout:      2,
