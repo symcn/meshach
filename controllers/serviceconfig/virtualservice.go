@@ -150,10 +150,12 @@ func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *mes
 
 	// set SourceLabels in match
 	s := make(map[string]string)
+	header := make(map[string]*v1beta1.StringMatch)
 	for _, key := range r.MeshConfig.Spec.MatchSourceLabelKeys {
 		s[key] = subset.Labels[key]
+		header[key] = &v1beta1.StringMatch{MatchType: &v1beta1.StringMatch_Exact{Exact: subset.Labels[key]}}
 	}
-	match := &v1beta1.HTTPMatchRequest{SourceLabels: s}
+	match := &v1beta1.HTTPMatchRequest{SourceLabels: s, Headers: header}
 
 	return &v1beta1.HTTPRoute{
 		Name:    httpRouteName + "-" + subset.Name,
