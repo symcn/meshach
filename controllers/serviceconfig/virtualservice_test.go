@@ -193,7 +193,7 @@ var _ = Describe("test virtualservice", func() {
 
 	Describe("test reroute logic", func() {
 		Context("when canary group is empty", func() {
-			It("and not in actural subsets, success", func() {
+			It("and not in actural subsets, go dynamic logic", func() {
 				r := Reconciler{
 					Client:     getFakeClient(getTestMeshConfig(), sc, rerouteCsNoCanary, vs),
 					Scheme:     getFakeScheme(),
@@ -221,7 +221,7 @@ var _ = Describe("test virtualservice", func() {
 				Expect(err).NotTo(HaveOccurred())
 				for _, r := range found.Spec.Http {
 					if r.Name == "dubbo-http-route-canary" {
-						Expect(r.Route).NotTo(ContainElement(want))
+						Expect(r.Route).NotTo(Equal(want))
 					}
 				}
 			}, timeout)

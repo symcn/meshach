@@ -23,6 +23,7 @@ spec:
       labels:
         sym-group: green
     - name: gray
+      isCanary: true
       labels:
         sym-group: gray
   globalPolicy:
