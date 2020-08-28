@@ -129,10 +129,10 @@ func (r *Reconciler) buildVirtualService(svc *meshv1alpha1.ServiceConfig, actual
 
 func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) *v1beta1.HTTPRoute {
 	var buildRoutes []*v1beta1.HTTPRouteDestination
-	klog.V(6).Infof("length of actual subsets: %d, global subsets: %d", len(actualSubsets), len(r.MeshConfig.Spec.GlobalSubsets))
+	klog.V(6).Infof("%s length of actual subsets: %d, global subsets: %d", svc.Name, len(actualSubsets), len(r.MeshConfig.Spec.GlobalSubsets))
 	reroute := len(actualSubsets) < len(r.MeshConfig.Spec.GlobalSubsets)
 	for _, subset := range actualSubsets {
-		klog.V(6).Infof("actual subset name: %s, %+v", subset.Name, subset.Labels)
+		klog.V(6).Infof("%s actual subset name: %s, %+v", svc.Name, subset.Name, subset.Labels)
 	}
 	switch {
 	case len(svc.Spec.Route) > 0 && !subset.IsCanary && onlyMissingCanary(actualSubsets, r.MeshConfig.Spec.GlobalSubsets):
@@ -141,10 +141,12 @@ func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *mes
 			klog.Infof("dynamic route: %s, weight: %d", r.Subset, r.Weight)
 		}
 		buildRoutes = dynamicRoute(svc.Name, svc.Spec.Route)
-	case reroute:
+	case (reroute && !onlyMissingCanary(actualSubsets, r.MeshConfig.Spec.GlobalSubsets)) || reroute && subset.IsCanary:
+		klog.Infof("only missing canary %s: %v", svc.Name, onlyMissingCanary(actualSubsets, r.MeshConfig.Spec.GlobalSubsets))
 		klog.Infof("reroute service: %s, subset: %s, len of actualSubsets: %d", svc.Name, subset.Name, len(actualSubsets))
 		buildRoutes = rerouteSubset(svc.Name, subset, actualSubsets)
 	default:
+		klog.Infof("default route service: %s, subset: %s, len of actualSubsets: %d", svc.Name, subset.Name, len(actualSubsets))
 		buildRoutes = defaultDestination(svc.Name, subset.Name)
 	}
 
