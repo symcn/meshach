@@ -135,7 +135,7 @@ func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *mes
 		klog.V(6).Infof("actual subset name: %s, %+v", subset.Name, subset.Labels)
 	}
 	switch {
-	case svc.Spec.Route != nil && len(svc.Spec.Route) > 0 && !subset.IsCanary && !reroute:
+	case len(svc.Spec.Route) > 0 && !subset.IsCanary && onlyMissingCanary(actualSubsets, r.MeshConfig.Spec.GlobalSubsets):
 		klog.Infof("dynamic route service: %s, subset：%s", svc.Name, subset.Name)
 		for _, r := range svc.Spec.Route {
 			klog.Infof("dynamic route: %s, weight: %d", r.Subset, r.Weight)
@@ -335,4 +335,20 @@ func (r *Reconciler) getTimeout(timeout string, maxRetries int64) *ptypes.Durati
 		maxRetries = int64(r.MeshConfig.Spec.GlobalPolicy.MaxRetries)
 	}
 	return utils.StringToDuration(timeout, maxRetries)
+}
+
+func onlyMissingCanary(actualSubsets, globalSubsets []*meshv1alpha1.Subset) bool {
+	missingSubset := []*meshv1alpha1.Subset{}
+	for _, global := range globalSubsets {
+		if !global.In(actualSubsets) {
+			missingSubset = append(missingSubset, global)
+		}
+	}
+
+	for _, missing := range missingSubset {
+		if !missing.IsCanary {
+			return false
+		}
+	}
+	return true
 }
