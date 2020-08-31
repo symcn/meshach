@@ -18,14 +18,11 @@ package configuredservice
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	. "github.com/symcn/mesh-operator/test"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,8 +37,6 @@ var timeout = 5.0
 
 var _ = Describe("Controller", func() {
 	var (
-		mockCtrl            *gomock.Controller
-		mockClient          *MockClient
 		errReq              ctrl.Request
 		onlyServiceEntryReq ctrl.Request
 		normalReq           ctrl.Request
@@ -145,35 +140,6 @@ var _ = Describe("Controller", func() {
 				MeshConfigGeneration: 0,
 			},
 		}
-	})
-
-	Describe("test reconcile serviceentry use mock client Create function", func() {
-		BeforeEach(func() {
-			mockCtrl = gomock.NewController(GinkgoT())
-			mockClient = NewMockClient(mockCtrl)
-			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("create se error"))
-			mockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-		}, timeout)
-		AfterEach(func() {
-			mockCtrl.Finish()
-		}, timeout)
-
-		Context("test crate serviceentry error", func() {
-			It("return create error from mock client", func() {
-				r := Reconciler{
-					Client:     mockClient,
-					Log:        nil,
-					Scheme:     getFakeScheme(),
-					Opt:        testOpt,
-					MeshConfig: getTestMeshConfig(),
-				}
-				result, err := r.Reconcile(onlyServiceEntryReq)
-				Expect(result).To(Equal(reconcile.Result{}))
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("create se error"))
-			})
-		})
 	})
 
 	Describe("test configuredservice reconcile", func() {
