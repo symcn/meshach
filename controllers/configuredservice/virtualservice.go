@@ -63,9 +63,12 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, cs *meshv1alph
 
 func (r *Reconciler) buildVirtualService(cs *meshv1alpha1.ConfiguredService) *networkingv1beta1.VirtualService {
 	httpRoute := []*v1beta1.HTTPRoute{}
-	for _, subset := range r.MeshConfig.Spec.GlobalSubsets {
-		http := r.buildHTTPRoute(cs, subset)
-		httpRoute = append(httpRoute, http)
+	actualSubsets := r.getSubset(context.Background(), cs)
+	if len(actualSubsets) > 0 {
+		for _, subset := range r.MeshConfig.Spec.GlobalSubsets {
+			http := r.buildHTTPRoute(cs, subset, actualSubsets)
+			httpRoute = append(httpRoute, http)
+		}
 	}
 
 	defaultRoute := r.buildDefaultRoute(cs)
@@ -84,9 +87,21 @@ func (r *Reconciler) buildVirtualService(cs *meshv1alpha1.ConfiguredService) *ne
 	}
 }
 
-func (r *Reconciler) buildHTTPRoute(cs *meshv1alpha1.ConfiguredService, subset *meshv1alpha1.Subset) *v1beta1.HTTPRoute {
+func (r *Reconciler) buildHTTPRoute(cs *meshv1alpha1.ConfiguredService, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) *v1beta1.HTTPRoute {
 	var buildRoutes []*v1beta1.HTTPRouteDestination
-	buildRoutes = defaultDestination(cs.Name, subset.Name)
+	if subset.IsCanary && !subset.In(actualSubsets) {
+		for i, actual := range actualSubsets {
+			route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: cs.Name}}
+			route.Destination.Subset = actual.Name
+			route.Weight = int32(100 / len(actualSubsets))
+			if i == len(actualSubsets)-1 && len(actualSubsets) > 1 {
+				route.Weight = 100 - int32(100/len(actualSubsets))*int32((len(actualSubsets)-1))
+			}
+			buildRoutes = append(buildRoutes, route)
+		}
+	} else {
+		buildRoutes = defaultDestination(cs.Name, subset.Name)
+	}
 
 	// set SourceLabels in match
 	s := make(map[string]string)
@@ -143,4 +158,29 @@ func (r *Reconciler) getDefaultTimeout() *ptypes.Duration {
 	timeout := r.MeshConfig.Spec.GlobalPolicy.Timeout
 	maxRetries := int64(r.MeshConfig.Spec.GlobalPolicy.MaxRetries)
 	return utils.StringToDuration(timeout, maxRetries)
+}
+
+func (r *Reconciler) getSubset(ctx context.Context, cs *meshv1alpha1.ConfiguredService) []*meshv1alpha1.Subset {
+	var subsets []*meshv1alpha1.Subset
+	for _, global := range r.MeshConfig.Spec.GlobalSubsets {
+		for _, ins := range cs.Spec.Instances {
+			if mapContains(ins.Labels, global.Labels, r.MeshConfig.Spec.MeshLabelsRemap) {
+				subsets = append(subsets, global)
+			}
+		}
+	}
+	return subsets
+}
+
+func mapContains(std, obj, renameMap map[string]string) bool {
+	for sk, sv := range std {
+		rk, ok := renameMap[sk]
+		if !ok {
+			rk = sk
+		}
+		if ov, ok := obj[rk]; ok && ov == sv {
+			return true
+		}
+	}
+	return false
 }

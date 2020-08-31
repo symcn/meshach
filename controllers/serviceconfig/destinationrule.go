@@ -82,6 +82,7 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, sc *meshv1alp
 				klog.Infof("Update DestinationRule, Namespace: %s, Name: %s",
 					found.Namespace, found.Name)
 				err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+					// TODO get found
 					dr.Spec.DeepCopyInto(&found.Spec)
 					found.Finalizers = dr.Finalizers
 					found.Labels = dr.ObjectMeta.Labels
