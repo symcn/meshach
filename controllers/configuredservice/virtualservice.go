@@ -48,15 +48,15 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, cs *meshv1alph
 	err := r.Get(ctx, types.NamespacedName{Namespace: cs.Namespace, Name: cs.Name}, found)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			klog.Infof("Creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
+			klog.Infof("[configuredservice] creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
 			err := r.Create(ctx, vs)
 			if err != nil {
-				klog.Errorf("Create VirtualService error: %+v", err)
+				klog.Errorf("[configuredservice] create VirtualService [%s/%s], error: %+v", vs.Namespace, vs.Name, err)
 				return err
 			}
 			return nil
 		}
-		klog.Errorf("[configuredservice] creating  [%s/%s] error: %+v", vs.Namespace, vs.Name, err)
+		klog.Errorf("[configuredservice] get cs [%s/%s] error: %+v", vs.Namespace, vs.Name, err)
 	}
 
 	return nil
