@@ -15,6 +15,8 @@ spec:
   sidecarSelectLabel: app
   sidecarDefaultHosts:
     - "istio-system/*"
+    - "*/com.dmall.quasar.dsf.proxy.api.zoneproviderproxy"
+    - "*/com.dmall.quasar.dsf.proxy.api.zoneconsumerproxy"
   globalSubsets:
     - name: blue
       labels:
