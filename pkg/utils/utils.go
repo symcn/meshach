@@ -20,29 +20,29 @@ func FormatToDNS1123(name string) string {
 // e.g.
 // 2s => ptypes.Duration{Seconds: 2}
 // 20ms => ptypes.Duration{Nanos: 20000000}
-// 2 => ptypes.Duration{Seconds: 2}
+// 2 => ptypes.Duration{Nanos: 2000000}
 func StringToDuration(s string, repeat int64) *ptypes.Duration {
 	if s == "" {
 		return nil
 	}
 
-	if strings.HasSuffix(s, "ms") {
-		t, err := strconv.ParseInt(strings.TrimSuffix(s, "ms"), 10, 64)
+	if strings.HasSuffix(s, "s") {
+		t, err := strconv.ParseInt(strings.TrimSuffix(s, "s"), 10, 64)
 		if err != nil {
 			klog.Errorf("parse %s to protobuf duration error: %v", s, err)
 			t = 0
 		}
 		t *= repeat
-		return &ptypes.Duration{Nanos: int32(t) * 1000000}
+		return &ptypes.Duration{Seconds: t}
 	}
 
-	t, err := strconv.ParseInt(strings.TrimSuffix(s, "s"), 10, 64)
+	t, err := strconv.ParseInt(strings.TrimSuffix(s, "ms"), 10, 64)
 	if err != nil {
 		klog.Errorf("parse %s to protobuf duration error: %v", s, err)
 		t = 0
 	}
 	t *= repeat
-	return &ptypes.Duration{Seconds: t}
+	return &ptypes.Duration{Nanos: int32(t) * 1000000}
 }
 
 // DeleteInSlice delete an element from a Slice with an index.

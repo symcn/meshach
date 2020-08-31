@@ -16,6 +16,7 @@ package configuredservice
 
 import (
 	"context"
+	"strconv"
 
 	ptypes "github.com/gogo/protobuf/types"
 	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
@@ -112,12 +113,28 @@ func (r *Reconciler) buildHTTPRoute(cs *meshv1alpha1.ConfiguredService, subset *
 	}
 	match := &v1beta1.HTTPMatchRequest{SourceLabels: s, Headers: header}
 
+	var timeout string
+	var retries int64
+	var err error
+
+	for _, ins := range cs.Spec.Instances {
+		timeout = ins.Labels["timeout"]
+		retriesStr, ok := ins.Labels["retries"]
+		if ok {
+			retries, err = strconv.ParseInt(retriesStr, 10, 64)
+			if err != nil {
+				klog.Errorf("[configuredservice] ParseInt %s error: %+v", retriesStr, err)
+			}
+		}
+		break
+	}
+
 	return &v1beta1.HTTPRoute{
 		Name:    httpRouteName + "-" + subset.Name,
 		Match:   []*v1beta1.HTTPMatchRequest{match},
 		Route:   buildRoutes,
-		Timeout: r.getDefaultTimeout(),
-		Retries: r.getDefaultRetries(),
+		Timeout: r.getTimeout(timeout, retries),
+		Retries: r.getRetries(timeout, int32(retries)),
 	}
 }
 
@@ -144,20 +161,28 @@ func defaultDestination(host, subset string) []*v1beta1.HTTPRouteDestination {
 	return buildRoutes
 }
 
-func (r *Reconciler) getDefaultRetries() *v1beta1.HTTPRetry {
-	timeout := r.MeshConfig.Spec.GlobalPolicy.Timeout
-	maxRetries := r.MeshConfig.Spec.GlobalPolicy.MaxRetries
+func (r *Reconciler) getTimeout(timeout string, maxRetries int64) *ptypes.Duration {
+	if timeout == "" {
+		timeout = r.MeshConfig.Spec.GlobalPolicy.Timeout
+	}
+	if maxRetries == 0 {
+		maxRetries = int64(r.MeshConfig.Spec.GlobalPolicy.MaxRetries)
+	}
+	return utils.StringToDuration(timeout, maxRetries)
+}
+
+func (r *Reconciler) getRetries(timeout string, maxRetries int32) *v1beta1.HTTPRetry {
+	if timeout == "" {
+		timeout = r.MeshConfig.Spec.GlobalPolicy.Timeout
+	}
+	if maxRetries == 0 {
+		maxRetries = r.MeshConfig.Spec.GlobalPolicy.MaxRetries
+	}
 	return &v1beta1.HTTPRetry{
 		Attempts:      maxRetries,
 		PerTryTimeout: utils.StringToDuration(timeout, 1),
 		RetryOn:       r.Opt.ProxyRetryOn,
 	}
-}
-
-func (r *Reconciler) getDefaultTimeout() *ptypes.Duration {
-	timeout := r.MeshConfig.Spec.GlobalPolicy.Timeout
-	maxRetries := int64(r.MeshConfig.Spec.GlobalPolicy.MaxRetries)
-	return utils.StringToDuration(timeout, maxRetries)
 }
 
 func (r *Reconciler) getSubset(ctx context.Context, cs *meshv1alpha1.ConfiguredService) []*meshv1alpha1.Subset {
