@@ -60,6 +60,7 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, cs *meshv1alp
 				klog.Errorf("[configuredservice] Create DestinationRule error: %+v", err)
 				return err
 			}
+			return nil
 		}
 		klog.Errorf("[configuredservice] Get DestinationRule error: %+v", err)
 	}

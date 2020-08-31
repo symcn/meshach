@@ -53,6 +53,7 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, cs *meshv1alph
 				klog.Errorf("Create VirtualService error: %+v", err)
 				return err
 			}
+			return nil
 		}
 		klog.Errorf("[configuredservice] creating  [%s/%s] error: %+v", vs.Namespace, vs.Name, err)
 	}
