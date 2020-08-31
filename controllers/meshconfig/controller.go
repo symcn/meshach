@@ -66,6 +66,39 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	saList := &meshv1alpha1.ServiceAccessorList{}
+	err = r.List(context.TODO(), saList, &client.ListOptions{Namespace: corev1.NamespaceAll})
+	if err != nil {
+		klog.Infof("[meshconfig] Get ServiceConfig error: %s", err)
+	}
+	for i := range saList.Items {
+		sa := saList.Items[i]
+		if sa.Spec.MeshConfigGeneration != instance.Generation {
+			sa.Spec.MeshConfigGeneration = instance.Generation
+			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				updateErr := r.Update(context.TODO(), &sa)
+				if updateErr == nil {
+					klog.Infof("[meshconfig] update ServiceAccessor[%s/%s] successfully", sa.Namespace, sa.Name)
+					return nil
+				}
+
+				getErr := r.Get(context.TODO(), types.NamespacedName{
+					Namespace: sa.Namespace,
+					Name:      sa.Name,
+				}, &sa)
+				if getErr != nil {
+					return getErr
+				}
+
+				return updateErr
+			})
+			if err != nil {
+				klog.Errorf("[meshconfig] Update ServiceAccessor[%s/%s] in MeshConfig reconcile error: %+v",
+					sa.Namespace, sa.Name, err)
+			}
+		}
+	}
+
 	scList := &meshv1alpha1.ServiceConfigList{}
 	err = r.List(context.TODO(), scList, &client.ListOptions{Namespace: corev1.NamespaceAll})
 	if err != nil {

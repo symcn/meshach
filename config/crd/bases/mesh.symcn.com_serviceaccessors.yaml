@@ -40,6 +40,11 @@ spec:
               items:
                 type: string
               type: array
+            meshConfigGeneration:
+              description: The Generation of MeshConfig, which to reconcile AppMeshConfig
+                when MeshConfig changes.
+              format: int64
+              type: integer
           required:
           - accessHosts
           type: object

@@ -23,6 +23,8 @@ import (
 // ServiceAccessorSpec defines the desired state of ServiceAccessor
 type ServiceAccessorSpec struct {
 	AccessHosts []string `json:"accessHosts"`
+	// The Generation of MeshConfig, which to reconcile AppMeshConfig when MeshConfig changes.
+	MeshConfigGeneration int64 `json:"meshConfigGeneration,omitempty"`
 }
 
 // ServiceAccessorStatus defines the observed state of ServiceAccessor
