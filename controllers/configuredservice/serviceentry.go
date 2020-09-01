@@ -24,6 +24,7 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
@@ -51,6 +52,9 @@ func (r *Reconciler) reconcileServiceEntry(ctx context.Context, cr *meshv1alpha1
 		klog.Infof("Creating a new ServiceEntry, Namespace: %s, Name: %s", se.Namespace, se.Name)
 		err = r.Create(ctx, se)
 		if err != nil {
+			if apierrors.IsAlreadyExists(err) {
+				return nil
+			}
 			klog.Errorf("Create ServiceEntry error: %+v", err)
 			return err
 		}

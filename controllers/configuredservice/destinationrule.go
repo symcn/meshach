@@ -54,10 +54,10 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, cs *meshv1alp
 	err := r.Get(ctx, types.NamespacedName{Namespace: cs.Namespace, Name: cs.Name}, found)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			klog.Infof("[configuredservice] Creating a default DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
+			klog.Infof("[configuredservice] creating a default DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
 			err = r.Create(ctx, dr)
 			if err != nil {
-				klog.Errorf("[configuredservice] Create DestinationRule error: %+v", err)
+				klog.Errorf("[configuredservice] create DestinationRule error: %+v", err)
 				return err
 			}
 			return nil

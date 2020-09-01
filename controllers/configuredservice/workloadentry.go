@@ -26,6 +26,7 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -59,6 +60,9 @@ func (r *Reconciler) reconcileWorkloadEntry(ctx context.Context, cr *meshv1alpha
 			klog.Infof("Creating a new WorkloadEntry, Namespace: %s, Name: %s", we.Namespace, we.Name)
 			err = r.Create(ctx, we)
 			if err != nil {
+				if apierrors.IsAlreadyExists(err) {
+					continue
+				}
 				klog.Errorf("Create WorkloadEntry error: %+v", err)
 				return err
 			}

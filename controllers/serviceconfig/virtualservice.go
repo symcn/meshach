@@ -23,6 +23,7 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
@@ -56,6 +57,9 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, sc *meshv1alph
 		// Check if this VirtualService already exists
 		found, ok := foundMap[vs.Name]
 		if !ok {
+			if apierrors.IsAlreadyExists(err) {
+				return nil
+			}
 			klog.Infof("[serviceconfig] creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
 			err = r.Create(ctx, vs)
 			if err != nil {
@@ -88,17 +92,17 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, sc *meshv1alph
 			}
 			delete(foundMap, vs.Name)
 		}
-	}
-
-	// Delete old VirtualServices
-	for name, vs := range foundMap {
-		klog.Infof("Delete unused VirtualService: %s", name)
-		err := r.Delete(ctx, vs)
-		if err != nil {
-			klog.Errorf("Delete unused VirtualService error: %+v", err)
-			return err
+		// Delete old VirtualServices
+		for name, vs := range foundMap {
+			klog.Infof("Delete unused VirtualService: %s", name)
+			err := r.Delete(ctx, vs)
+			if err != nil {
+				klog.Errorf("Delete unused VirtualService error: %+v", err)
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 

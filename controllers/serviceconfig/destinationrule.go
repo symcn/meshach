@@ -25,6 +25,7 @@ import (
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -70,6 +71,9 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, sc *meshv1alp
 		// Check if this DestinationRule already exists
 		found, ok := foundMap[dr.Name]
 		if !ok {
+			if apierrors.IsAlreadyExists(err) {
+				return nil
+			}
 			klog.Infof("Creating a new DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
 			err = r.Create(ctx, dr)
 			if err != nil {
@@ -103,17 +107,18 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, sc *meshv1alp
 			}
 			delete(foundMap, dr.Name)
 		}
-	}
 
-	// Delete old DestinationRules
-	for name, dr := range foundMap {
-		klog.Infof("Delete unused DestinationRule: %s", name)
-		err := r.Delete(ctx, dr)
-		if err != nil {
-			klog.Errorf("Delete unused DestinationRule error: %+v", err)
-			return err
+		// Delete old DestinationRules
+		for name, dr := range foundMap {
+			klog.Infof("Delete unused DestinationRule: %s", name)
+			err := r.Delete(ctx, dr)
+			if err != nil {
+				klog.Errorf("Delete unused DestinationRule error: %+v", err)
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
