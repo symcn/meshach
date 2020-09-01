@@ -25,7 +25,7 @@
 
 #### ConfiguredService
 
-`ConfiguredService` 保存注册中心中服务及实例的信息，通过 `ServiceEntry` 将服务注册在 `Pilot` 中，服务实例通过 `WorkloadEntry` 映射。如服务实例 `label` 中包含蓝绿灰等分组信息，将创建默认的 `VirtualService` 和 `DestinationRule` 策略，`Consumer` 只能调用同组的 `Provider` 。
+`ConfiguredService` 保存注册中心中服务及实例的信息，通过 `ServiceEntry` 将服务注册在 `Pilot` 中，服务实例通过 `WorkloadEntry` 映射。若服务实例 `label` 中包含蓝绿灰等分组信息，将创建默认的 `VirtualService` 和 `DestinationRule` 策略，`Consumer` 只能调用同组的 `Provider` 。
 
 根据 zk 中的数据实时更新。
 
@@ -35,7 +35,7 @@
 
 #### ServiceAccessor
 
-`ServiceAccessor` 保存了同一个应用（通过标签 `app` 选择）下所有服务的调用关系，`Controller` 将根据这些调用关系生成 `Sidecar` 限定服务的作用域，通过 `egress` 限定代理可以访问的服务，当 xDS 更新时，仅下发到此作用域内的代理 MOSN 中，极大提高 xDS 下发的效率。
+`ServiceAccessor` 保存了同一个应用（通过标签 `app` 选择）下所有服务的调用关系，`Controller` 将根据这些调用关系生成 [Sidecar](https://istio.io/latest/docs/reference/config/networking/sidecar/) 限定服务的作用域，通过配置 [egress](https://istio.io/latest/docs/reference/config/networking/sidecar/#IstioEgressListener) 限定代理可以访问的服务，当 xDS 更新时，仅下发配置到此作用域内的代理 MOSN 中，极大提高 xDS 下发的效率。
 
 #### MeshConfig
 

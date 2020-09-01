@@ -58,7 +58,7 @@ Deploy adapter and controller:
 $ make deploy
 ```
 
-You can customize the deployment by modifying the `config/operator` and `config/adapter` kustomize cofig files.
+You can customize the deployment by modifying the `config/operator` and `config/adapter` kustomize config files.
 
 ## Getting support
 
