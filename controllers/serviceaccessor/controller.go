@@ -66,22 +66,32 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// Fetch the ServiceAccessor instance
-	instance := &meshv1alpha1.ServiceAccessor{}
-	err = r.Get(ctx, req.NamespacedName, instance)
+	list := &meshv1alpha1.ServiceAccessorList{}
+	fileds := &client.MatchingFields{"name": req.Name}
+	opts := &client.ListOptions{}
+	fileds.ApplyToList(opts)
+
+	err = r.List(ctx, list, opts)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			klog.Infof("no serviceaccessor list [%s]", req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
+		klog.Errorf("list serviceaccessor[%s] err: %+v", req.NamespacedName, err)
 		return ctrl.Result{}, err
 	}
 
-	// Get namespace of app pods
-	namespaces := r.getAppNamespace(instance.Name)
-	for namespace := range namespaces {
-		klog.Infof("create sidecar in namespace: %s", namespace)
-		r.reconcileSidecar(ctx, namespace, instance)
+	for i := range list.Items {
+		instance := &list.Items[i]
+		// Get namespace of app pods
+		namespaces := r.getAppNamespace(instance.Name)
+		for namespace := range namespaces {
+			klog.Infof("create sidecar in namespace: %s", namespace)
+			r.reconcileSidecar(ctx, namespace, instance)
+		}
 	}
 
+	klog.Infof("End Reconciliation, ServiceAccessor: %s/%s.", req.Namespace, req.Name)
 	return ctrl.Result{}, nil
 }
 
@@ -94,7 +104,7 @@ func (r *Reconciler) reconcileSidecar(ctx context.Context, namespace string, cr 
 	// }
 
 	found := &networkingv1beta1.Sidecar{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, found)
+	err := r.Get(ctx, types.NamespacedName{Namespace: namespace, Name: sidecar.Name}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err := r.Create(ctx, sidecar)
@@ -226,11 +236,24 @@ func (r *Reconciler) getAppNamespace(appName string) map[string]struct{} {
 
 // SetupWithManager ...
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(
+		&meshv1alpha1.ServiceAccessor{},
+		"name",
+		func(rawObj runtime.Object) []string {
+			sa := rawObj.(*meshv1alpha1.ServiceAccessor)
+			return []string{sa.Name}
+		},
+	); err != nil {
+		klog.Warningf("add field index serviceaccessor.name, err: %#v", err)
+	} else {
+		klog.Info("add field index serviceaccessor.name successfully")
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meshv1alpha1.ServiceAccessor{}).
 		Watches(
 			&source.Kind{Type: &networkingv1beta1.Sidecar{}},
-			&handler.EnqueueRequestForOwner{IsController: true},
+			&handler.EnqueueRequestForObject{},
 		).
 		Complete(r)
 }
