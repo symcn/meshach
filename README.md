@@ -17,21 +17,16 @@ What are our tasks?
 
 ### Build
 
-Using Docker unified compilation(with version information):
-
-```shell
-$ make docker-build
-```
-
 Direct compilation:
 
 ```shell
-$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build/_output/bin/mesh-operator -ldflags "-s -w" cmd/mesh-operator/main.go
+$ make manager
 ```
 
 Build docker image and push:
 
 ```shell
+$ make docker-build
 $ make docker-push
 ```
 
@@ -42,36 +37,32 @@ You can customize the docker repository by modifying the `IMG_ADDR` variable in 
 Install CRD:
 
 ```shell
-$ cd deploy/crds
-$ kubectl apply -f mesh.symcn.com_appmeshconfigs_crd.yaml -f mesh.symcn.com_istioconfigs_crd.yaml -f mesh.symcn.com_meshconfigs_crd.yaml -f mesh.symcn.com_configuredservices_crd.yaml
+$ make install
 ```
 
 Install CRD no validations:
+
 ```shell
-$ cd deploy/crds
-$ kubectl apply -f simple_appmeshconfigs_crd.yaml -f simple_istioconfigs_crd.yaml -f simple_meshconfigs_crd.yaml -f simple_configuredservice_crd.yaml
+$ kubectl apply -f config/crd/simple
 ```
 
-Create ClusterRole, ClusterRoleBinding and ServiceAccount:
+Create sample Meshconfig:
+
 ```shell
-$ cd deploy
-$ kubectl apply -f role.yaml -f role_binding.yaml -f service_account.yaml
+$ kubectl apply -f config/samples/mesh_v1alpha1_meshconfig.yaml
 ```
 
-Deploy adapter:
+Deploy adapter and controller:
+
 ```shell
-$ kubectl apply -f deploy/adapter.yaml
+$ make deploy
 ```
 
-Deploy controller:
-```shell
-$ kubectl apply -f deploy/controller.yaml
-```
-
+You can customize the deployment by modifying the `config/operator` and `config/adapter` kustomize cofig files.
 
 ## Getting support
 
-- Some docs comming soon
+- [Chinese Docs](./docs/chinese.md)
 
 ## Features
 Adapter:
