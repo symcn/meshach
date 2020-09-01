@@ -229,6 +229,42 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 		opt.MaxConcurrentReconciles,
 		"MaxConcurrentReconciles is the maximum number of concurrent Reconciles which can be run. Defaults to 10.",
 	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.EnableAppMeshConfig,
+		"enable-appmeshconfig",
+		opt.EnableAppMeshConfig,
+		"Enable appmeshconfig controller.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.EnableConfiguredService,
+		"enable-configuredservice",
+		opt.EnableConfiguredService,
+		"Enable configuredservice controller.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.EnableMeshConfig,
+		"enable-meshconfig",
+		opt.EnableMeshConfig,
+		"Enable meshconfig controller.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.EnableIstioConfig,
+		"enable-istioconfig",
+		opt.EnableIstioConfig,
+		"Enable istioconfig controller.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.EnableServiceConfig,
+		"enable-serviceconfig",
+		opt.EnableServiceConfig,
+		"Enable serviceconfig controller.",
+	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.EnableServiceAccessor,
+		"enable-serviceaccessor",
+		opt.EnableServiceAccessor,
+		"Enable serviceaccessor controller.",
+	)
 
 	return cmd
 }

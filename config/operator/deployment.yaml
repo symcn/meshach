@@ -2,32 +2,142 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mesh-operator
+  name: mesh-operator-configuredservice
   namespace: sym-admin
 spec:
   selector:
     matchLabels:
-      name: mesh-operator
+      name: mesh-operator-configuredservice
   replicas: 1
   template:
     metadata:
       labels:
-        name: mesh-operator
+        name: mesh-operator-configuredservice
     spec:
       containers:
-        - name: mesh-operator
+        - name: mesh-operator-configuredservice
           image: controller:latest
           imagePullPolicy: Always
           args:
             - "ctl"
             - "-v"
             - "4"
-            - "max-concurrent-reconciles"
-            - "1000"
+            - "--enable-configuredservice"
+            - "true"
+            - "--leader-election-id"
+            - "mesh-operator-lock-configuredservice"
           resources:
             limits:
-              cpu: 1
+              cpu: 2
               memory: 512Mi
             requests:
-              cpu: 500m
+              cpu: 1
+              memory: 256Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh-operator-serviceconfig
+  namespace: sym-admin
+spec:
+  selector:
+    matchLabels:
+      name: mesh-operator-serviceconfig
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: mesh-operator-serviceconfig
+    spec:
+      containers:
+        - name: mesh-operator-serviceconfig
+          image: controller:latest
+          imagePullPolicy: Always
+          args:
+            - "ctl"
+            - "-v"
+            - "4"
+            - "--enable-serviceconfig"
+            - "true"
+            - "--leader-election-id"
+            - "mesh-operator-lock-serviceconfig"
+          resources:
+            limits:
+              cpu: 2
+              memory: 512Mi
+            requests:
+              cpu: 1
+              memory: 256Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh-operator-meshconfig
+  namespace: sym-admin
+spec:
+  selector:
+    matchLabels:
+      name: mesh-operator-meshconfig
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: mesh-operator-meshconfig
+    spec:
+      containers:
+        - name: mesh-operator-meshconfig
+          image: controller:latest
+          imagePullPolicy: Always
+          args:
+            - "ctl"
+            - "-v"
+            - "4"
+            - "--enable-meshconfig"
+            - "true"
+            - "--leader-election-id"
+            - "mesh-operator-lock-meshconfig"
+          resources:
+            limits:
+              cpu: 2
+              memory: 512Mi
+            requests:
+              cpu: 1
+              memory: 256Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh-operator-serviceaccessor
+  namespace: sym-admin
+spec:
+  selector:
+    matchLabels:
+      name: mesh-operator-serviceaccessor
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: mesh-operator-serviceaccessor
+    spec:
+      containers:
+        - name: mesh-operator-serviceaccessor
+          image: controller:latest
+          imagePullPolicy: Always
+          args:
+            - "ctl"
+            - "-v"
+            - "4"
+            - "--enable-serviceaccessor"
+            - "true"
+            - "--leader-election-id"
+            - "mesh-operator-lock-serviceaccessor"
+          resources:
+            limits:
+              cpu: 2
+              memory: 512Mi
+            requests:
+              cpu: 1
               memory: 256Mi

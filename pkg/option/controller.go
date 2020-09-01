@@ -26,6 +26,14 @@ type ControllerOption struct {
 
 	// Custome some labels
 	SelectLabel string
+
+	// Controller Enabled
+	EnableAppMeshConfig     bool
+	EnableConfiguredService bool
+	EnableIstioConfig       bool
+	EnableMeshConfig        bool
+	EnableServiceAccessor   bool
+	EnableServiceConfig     bool
 }
 
 // DefaultControllerOption ...
@@ -40,8 +48,8 @@ func DefaultControllerOption() *ControllerOption {
 		LeaderElectionID:        "mesh-operator-lock",
 		LeaderElectionNamespace: "sym-admin",
 		PprofEnabled:            true,
-		GoroutineThreshold:      1000,
-		MaxConcurrentReconciles: 100,
+		GoroutineThreshold:      10000,
+		MaxConcurrentReconciles: 1000,
 		ProxyHost:               "mosn.io.dubbo.proxy",
 		ProxyAttempts:           3,
 		ProxyPerTryTimeout:      2,
@@ -49,5 +57,11 @@ func DefaultControllerOption() *ControllerOption {
 		MeshConfigName:          "sym-meshconfig",
 		MeshConfigNamespace:     "sym-admin",
 		SelectLabel:             "service",
+		EnableAppMeshConfig:     false,
+		EnableConfiguredService: false,
+		EnableIstioConfig:       false,
+		EnableMeshConfig:        false,
+		EnableServiceAccessor:   false,
+		EnableServiceConfig:     false,
 	}
 }

@@ -139,5 +139,21 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&source.Kind{Type: &networkingv1beta1.ServiceEntry{}},
 			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
 		).
+		Watches(
+			&source.Kind{Type: &networkingv1beta1.WorkloadEntry{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+		).
+		Watches(
+			&source.Kind{Type: &networkingv1beta1.VirtualService{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+		).
+		Watches(
+			&source.Kind{Type: &networkingv1beta1.DestinationRule{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+		).
+		Watches(
+			&source.Kind{Type: &networkingv1beta1.ServiceEntry{}},
+			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
+		).
 		Complete(r)
 }
