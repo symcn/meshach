@@ -40,12 +40,12 @@ var _ = Describe("Controller", func() {
 		errReq              ctrl.Request
 		onlyServiceEntryReq ctrl.Request
 		normalReq           ctrl.Request
-		wrongHostReq        ctrl.Request
-		onlyServiceEntryCs  *meshv1alpha1.ConfiguredService
-		wrongHostCs         *meshv1alpha1.ConfiguredService
-		normalCs            *meshv1alpha1.ConfiguredService
-		existWorkloadEntry  *networkingv1beta1.WorkloadEntry
-		reconciler          Reconciler
+		// wrongHostReq        ctrl.Request
+		onlyServiceEntryCs *meshv1alpha1.ConfiguredService
+		wrongHostCs        *meshv1alpha1.ConfiguredService
+		normalCs           *meshv1alpha1.ConfiguredService
+		existWorkloadEntry *networkingv1beta1.WorkloadEntry
+		reconciler         Reconciler
 	)
 
 	BeforeEach(func() {
@@ -67,12 +67,12 @@ var _ = Describe("Controller", func() {
 				Name:      "only.serviceentry.com",
 			},
 		}
-		wrongHostReq = ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Namespace: "mesh-test",
-				Name:      "wrong.host.configuredservice.com",
-			},
-		}
+		// wrongHostReq = ctrl.Request{
+		// 	NamespacedName: types.NamespacedName{
+		// 		Namespace: "mesh-test",
+		// 		Name:      "wrong.host.configuredservice.com",
+		// 	},
+		// }
 		normalReq = ctrl.Request{
 			NamespacedName: types.NamespacedName{
 				Namespace: "mesh-test",
@@ -219,12 +219,6 @@ var _ = Describe("Controller", func() {
 				err = reconciler.Create(context.Background(), normalCs)
 				Expect(err).NotTo(HaveOccurred())
 			})
-
-			It("occured error", func() {
-				result, err := reconciler.Reconcile(wrongHostReq)
-				Expect(result).To(Equal(reconcile.Result{}))
-				Expect(err).To(HaveOccurred())
-			}, timeout)
 
 			It("returned success", func() {
 				result, err := reconciler.Reconcile(normalReq)

@@ -218,7 +218,7 @@ func (r *Reconciler) getAppNamespace(appName string) map[string]struct{} {
 			namespaces[pod.Namespace] = struct{}{}
 		}
 	} else {
-		klog.Warningf("No pods founds, skip create Sidecar[%s]", err)
+		klog.Warningf("No pods founds, skip create Sidecar[%s]", appName)
 	}
 
 	return namespaces
@@ -230,7 +230,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&meshv1alpha1.ServiceAccessor{}).
 		Watches(
 			&source.Kind{Type: &networkingv1beta1.Sidecar{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceAccessor{}},
+			&handler.EnqueueRequestForOwner{IsController: true},
 		).
 		Complete(r)
 }
