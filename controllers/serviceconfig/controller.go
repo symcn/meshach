@@ -68,7 +68,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err = r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			klog.Infof("Can't found ServiceConfig[%s/%s], skip...", req.Namespace, req.Name)
+			klog.V(6).Infof("Can't found ServiceConfig[%s/%s], skip...", req.Namespace, req.Name)
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
