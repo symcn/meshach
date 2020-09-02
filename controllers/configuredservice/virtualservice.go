@@ -189,7 +189,7 @@ func (r *Reconciler) getSubset(ctx context.Context, cs *meshv1alpha1.ConfiguredS
 	var subsets []*meshv1alpha1.Subset
 	for _, global := range r.MeshConfig.Spec.GlobalSubsets {
 		for _, ins := range cs.Spec.Instances {
-			if mapContains(ins.Labels, global.Labels, r.MeshConfig.Spec.MeshLabelsRemap) {
+			if mapContains(ins.Labels, global.Labels, r.MeshConfig.Spec.MeshLabelsRemap) && !global.In(subsets) {
 				subsets = append(subsets, global)
 			}
 		}
