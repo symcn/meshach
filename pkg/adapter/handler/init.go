@@ -73,7 +73,7 @@ func buildClientSet(cfg *rest.Config) *kubernetes.Clientset {
 	// initializing kube client with the config we has decided
 	kubeCli, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		klog.Fatalf("failed to get kubernetes Clientset: %v", err)
+		klog.Fatalf("failed to initialize kubernetes Clientset: %v", err)
 	}
 	return kubeCli
 }
@@ -96,7 +96,7 @@ func buildCtrlManager(cfg *rest.Config) ctrlmanager.Manager {
 	stopCh := utils.SetupSignalHandler()
 	go func() {
 		if err := ctrlMgr.Start(stopCh); err != nil {
-			klog.Fatalf("problem start running manager err: %v", err)
+			klog.Fatalf("start to run the controllers manager, err: %v", err)
 		}
 	}()
 	for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
@@ -123,18 +123,18 @@ func buildMultiClusterEventHandler(opt option.EventHandlers, ctrlMgr ctrlmanager
 	if opt.ClusterNamespace != "" {
 		clustersMgrOpt.Namespace = opt.ClusterNamespace
 	}
-	k8sMgr, err := k8smanager.NewClusterManager(masterClient, clustersMgrOpt)
+	clustersMgr, err := k8smanager.NewClusterManager(masterClient, clustersMgrOpt)
 	if err != nil {
 		klog.Fatalf("unable to create a new k8s manager, err: %v", err)
 	}
 
 	// initializing the handlers that you decide to utilize
-	kubeMceh, err := NewKubeMultiClusterEventHandler(k8sMgr)
+	kubeMultiHandler, err := NewKubeMultiClusterEventHandler(clustersMgr)
 	if err != nil {
 		return nil, err
 	}
 	klog.Info("event handler for synchronizing to multiple clusters has been initialized.")
-	return kubeMceh, nil
+	return kubeMultiHandler, nil
 }
 
 func buildSingleClusterEventHandler(opt option.EventHandlers, ctrlMgr ctrlmanager.Manager, kubeCli *kubernetes.Clientset) (component.EventHandler, error) {
