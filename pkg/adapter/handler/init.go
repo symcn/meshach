@@ -20,6 +20,8 @@ import (
 func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 	var eventHandlers []component.EventHandler
 	// If this flag has been set as true, it means you want to synchronize all services to a kubernetes cluster.
+	// although we usually synchronize services to a couple of k8s clusters, we still probably to run a dry-run mode
+	// with a debug target.
 	if opt.EnableK8s {
 		// deciding which kubeconfig we shall use.
 		var cfg *rest.Config
@@ -41,7 +43,7 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 
 		// initializing control manager with the config
 		rp := time.Second * 120
-		mgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
+		ctrlMgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
 			Scheme:             k8sclient.GetScheme(),
 			MetricsBindAddress: "0",
 			LeaderElection:     false,
@@ -54,14 +56,12 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 
 		klog.Info("starting the control manager")
 		stopCh := utils.SetupSignalHandler()
-		// mgr.Add(adp)
-		// mgr.Add(adp.K8sMgr)
 		go func() {
-			if err := mgr.Start(stopCh); err != nil {
+			if err := ctrlMgr.Start(stopCh); err != nil {
 				klog.Fatalf("problem start running manager err: %v", err)
 			}
 		}()
-		for !mgr.GetCache().WaitForCacheSync(stopCh) {
+		for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
 			klog.Warningf("Waiting for caching objects to informer")
 			time.Sleep(5 * time.Second)
 		}
@@ -69,51 +69,50 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 
 		if !opt.IsMultiClusters {
 			converter := convert.DubboConverter{DefaultNamespace: defaultNamespace}
-			kubeSceh, err := NewKubeSingleClusterEventHandler(mgr, &converter)
+			kubeSingleHandler, err := NewKubeSingleClusterEventHandler(ctrlMgr, &converter)
 			if err != nil {
 				klog.Errorf("Initializing an event handler for synchronizing to multiple clusters has an error: %v", err)
 				return nil, err
 			}
 			klog.Infof("event handler for synchronizing to multiple clusters has been initialized.")
-			eventHandlers = append(eventHandlers, kubeSceh)
+			eventHandlers = append(eventHandlers, kubeSingleHandler)
 		} else {
 			// it need to synchronize services to the clusters we found with a configmap which is used for
 			// defining these clusters
 			masterClient := k8smanager.MasterClient{
 				KubeCli: kubeCli,
-				Manager: mgr,
+				Manager: ctrlMgr,
 			}
 			// initializing multiple k8s cluster manager
 			klog.Info("start to initializing multiple cluster managers ... ")
 			labels := map[string]string{
 				"ClusterOwner": opt.ClusterOwner,
 			}
-			mgrOpt := k8smanager.DefaultClusterManagerOption(opt.ClusterNamespace, labels)
+			clustersMgrOpt := k8smanager.DefaultClusterManagerOption(opt.ClusterNamespace, labels)
 			if opt.ClusterNamespace != "" {
-				mgrOpt.Namespace = opt.ClusterNamespace
+				clustersMgrOpt.Namespace = opt.ClusterNamespace
 			}
-			k8sMgr, err := k8smanager.NewManager(masterClient, mgrOpt)
+			clustersMgr, err := k8smanager.NewClusterManager(masterClient, clustersMgrOpt)
 			if err != nil {
 				klog.Fatalf("unable to create a new k8s manager, err: %v", err)
 			}
 
 			// initializing the handlers that you decide to utilize
-			kubeMceh, err := NewKubeMultiClusterEventHandler(k8sMgr)
+			kubeMultiHandler, err := NewKubeMultiClusterEventHandler(clustersMgr)
 			if err != nil {
 				return nil, err
 			}
-			eventHandlers = append(eventHandlers, kubeMceh)
+			eventHandlers = append(eventHandlers, kubeMultiHandler)
 		}
-
 	}
 
 	if opt.EnableDebugLog {
-		logh, err := NewLogEventHandler()
+		logHandler, err := NewLogEventHandler()
 		if err != nil {
 			return nil, err
 		}
 
-		eventHandlers = append(eventHandlers, logh)
+		eventHandlers = append(eventHandlers, logHandler)
 	}
 
 	return eventHandlers, nil
