@@ -40,7 +40,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent
 
 // ReplaceInstances ...
 func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent) {
-	klog.Infof("event handler for a single cluster: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
+	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)\n%v", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
 	metrics.SynchronizedInstanceCounter.Add(float64(len(event.Instances)))
@@ -54,7 +54,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 		// loading cs CR from k8s cluster
 		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, kubeSceh.ctrlManager.GetClient())
 		if err != nil {
-			klog.Warningf("Can not find an existed cs CR: %v, then create such cs instead.", err)
+			klog.Warningf("Can not find an existed cs {%s/%s} CR: %v, then create such cs instead.", cs.Namespace, cs.Name, err)
 			if errors.IsNotFound(err) {
 				return createConfiguredService(cs, kubeSceh.ctrlManager.GetClient())
 			}
@@ -68,7 +68,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 
 // DeleteService ...
 func (kubeSceh *KubeSingleClusterEventHandler) DeleteService(event *types.ServiceEvent) {
-	klog.Infof("event handler for a single cluster: Deleting a service\n%v\n", event.Service)
+	klog.V(6).Infof("event handler for a single cluster: Deleting a service: %v", event.Service)
 	metrics.DeletedServiceCounter.Inc()
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		err := deleteConfiguredService(&v1.ConfiguredService{
@@ -88,9 +88,11 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteInstance(e *types.ServiceEv
 }
 
 // ReplaceAccessorInstances ...
-func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types.ServiceEvent,
+func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
+	e *types.ServiceEvent,
 	getScopedServices func(s string) map[string]struct{}) {
-	klog.Infof("event handler for a single cluster: replacing the accessor's instances: %s", e.Service.Name)
+
+	klog.V(6).Infof("event handler for a single cluster: replacing the accessor's instances: %s", e.Service.Name)
 	metrics.ReplacedAccessorInstancesCounter.Inc()
 
 	instances := e.Instances
@@ -126,7 +128,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 		retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			foundSas, err := getScopedAccessServices(sas.Namespace, sas.Name, kubeSceh.ctrlManager.GetClient())
 			if err != nil {
-				klog.Warningf("Can not find an existed asm CR: %v, then create a new one instead.", err)
+				klog.Warningf("Can not find an existed asm {%s/%s} CR: %v, then create a new one instead.", sas.Namespace, sas.Name, err)
 				if errors.IsNotFound(err) {
 					return createScopedAccessServices(sas, kubeSceh.ctrlManager.GetClient())
 				}
@@ -141,7 +143,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(e *types
 
 // AddConfigEntry ...
 func (kubeSceh *KubeSingleClusterEventHandler) AddConfigEntry(e *types.ConfigEvent) {
-	klog.Infof("event handler for a single cluster: adding a configuration: %s", e.Path)
+	klog.V(6).Infof("event handler for a single cluster: adding a configuration: %s", e.Path)
 	metrics.AddedConfigurationCounter.Inc()
 	// Adding a new configuration for a service is same as changing it.
 	kubeSceh.ChangeConfigEntry(e)
@@ -149,7 +151,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) AddConfigEntry(e *types.ConfigEve
 
 // ChangeConfigEntry ...
 func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.ConfigEvent) {
-	klog.Infof("event handler for a single cluster: change a configuration %s", e.Path)
+	klog.V(6).Infof("event handler for a single cluster: change a configuration %s", e.Path)
 	metrics.ChangedConfigurationCounter.Inc()
 	timer := prometheus.NewTimer(metrics.ChangingConfigurationHistogram)
 	defer timer.ObserveDuration()

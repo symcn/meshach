@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/symcn/mesh-operator/pkg/adapter/convert"
@@ -28,8 +29,7 @@ func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (compone
 	for _, c := range k8sMgr.GetAll() {
 		h, err := NewKubeSingleClusterEventHandler(c.Mgr, converter)
 		if err != nil {
-			klog.Errorf("initializing kube handler with a manager failed: %v", err)
-			return nil, err
+			return nil, fmt.Errorf("initializing kube handler with a manager failed: %v", err)
 		}
 
 		kubeHandlers = append(kubeHandlers, h)
@@ -55,7 +55,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) AddInstance(event *types2.ServiceE
 
 // ReplaceInstances ...
 func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.ServiceEvent) {
-	klog.Infof("event handler for multiple clusters: Replacing these instances(size: %d)\n%v", len(event.Instances), event.Instances)
+	klog.V(6).Infof("event handler for multiple clusters: Replacing these instances(size: %d)\n%v", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
 	metrics.SynchronizedInstanceCounter.Add(float64(len(event.Instances)))
