@@ -3,9 +3,8 @@ package handler
 import (
 	"time"
 
-	"github.com/symcn/mesh-operator/pkg/adapter/convert"
-
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	"github.com/symcn/mesh-operator/pkg/option"
@@ -21,12 +20,10 @@ import (
 func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 	var eventHandlers []component.EventHandler
 	// If this flag has been set as true, it means you want to synchronize all services to a kubernetes cluster.
-	// although we usually synchronize services to a couple of k8s clusters, we still probably to run a dry-run mode
-	// with a debug target.
 	if opt.EnableK8s {
 		cfg := buildRestConfig(opt)
 		kubeCli := buildClientSet(cfg)
-		mgr := buildCtrlManager(cfg)
+		ctrlMgr := buildCtrlManager(cfg)
 
 		var (
 			eh  component.EventHandler
@@ -34,9 +31,9 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 		)
 
 		if opt.IsMultiClusters {
-			eh, err = buildMultiClusterEventHandler(opt, mgr, kubeCli)
+			eh, err = buildMultiClusterEventHandler(opt, ctrlMgr, kubeCli)
 		} else {
-			eh, err = buildSingleClusterEventHandler(opt, mgr, kubeCli)
+			eh, err = buildSingleClusterEventHandler(opt, ctrlMgr, kubeCli)
 		}
 		if err != nil {
 			klog.Fatalf("Build cluster event handler err:%v", err)
@@ -84,7 +81,7 @@ func buildClientSet(cfg *rest.Config) *kubernetes.Clientset {
 func buildCtrlManager(cfg *rest.Config) ctrlmanager.Manager {
 	// initializing control manager with the config
 	rp := time.Second * 120
-	mgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
+	ctrlMgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
 		Scheme:             k8sclient.GetScheme(),
 		MetricsBindAddress: "0",
 		LeaderElection:     false,
@@ -97,38 +94,36 @@ func buildCtrlManager(cfg *rest.Config) ctrlmanager.Manager {
 
 	klog.Info("starting the control manager")
 	stopCh := utils.SetupSignalHandler()
-	// mgr.Add(adp)
-	// mgr.Add(adp.K8sMgr)
 	go func() {
-		if err := mgr.Start(stopCh); err != nil {
+		if err := ctrlMgr.Start(stopCh); err != nil {
 			klog.Fatalf("problem start running manager err: %v", err)
 		}
 	}()
-	for !mgr.GetCache().WaitForCacheSync(stopCh) {
+	for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
 		klog.Warningf("Waiting for caching objects to informer")
 		time.Sleep(5 * time.Second)
 	}
 	klog.Infof("caching objects to informer is successful")
-	return mgr
+	return ctrlMgr
 }
 
-func buildMultiClusterEventHandler(opt option.EventHandlers, mgr ctrlmanager.Manager, kubeCli *kubernetes.Clientset) (component.EventHandler, error) {
+func buildMultiClusterEventHandler(opt option.EventHandlers, ctrlMgr ctrlmanager.Manager, kubeCli *kubernetes.Clientset) (component.EventHandler, error) {
 	// it need to synchronize services to the clusters we found with a configmap which is used for
 	// defining these clusters
 	masterClient := k8smanager.MasterClient{
 		KubeCli: kubeCli,
-		Manager: mgr,
+		Manager: ctrlMgr,
 	}
 	// initializing multiple k8s cluster manager
 	klog.Info("start to initializing multiple cluster managers ... ")
 	labels := map[string]string{
 		"ClusterOwner": opt.ClusterOwner,
 	}
-	mgrOpt := k8smanager.DefaultClusterManagerOption(opt.ClusterNamespace, labels)
+	clustersMgrOpt := k8smanager.DefaultClusterManagerOption(opt.ClusterNamespace, labels)
 	if opt.ClusterNamespace != "" {
-		mgrOpt.Namespace = opt.ClusterNamespace
+		clustersMgrOpt.Namespace = opt.ClusterNamespace
 	}
-	k8sMgr, err := k8smanager.NewClusterManager(masterClient, mgrOpt)
+	k8sMgr, err := k8smanager.NewClusterManager(masterClient, clustersMgrOpt)
 	if err != nil {
 		klog.Fatalf("unable to create a new k8s manager, err: %v", err)
 	}
@@ -142,13 +137,13 @@ func buildMultiClusterEventHandler(opt option.EventHandlers, mgr ctrlmanager.Man
 	return kubeMceh, nil
 }
 
-func buildSingleClusterEventHandler(opt option.EventHandlers, mgr ctrlmanager.Manager, kubeCli *kubernetes.Clientset) (component.EventHandler, error) {
+func buildSingleClusterEventHandler(opt option.EventHandlers, ctrlMgr ctrlmanager.Manager, kubeCli *kubernetes.Clientset) (component.EventHandler, error) {
 	converter := convert.DubboConverter{DefaultNamespace: defaultNamespace}
-	kubeSceh, err := NewKubeSingleClusterEventHandler(mgr, &converter)
+	kubeSingleHandler, err := NewKubeSingleClusterEventHandler(ctrlMgr, &converter)
 	if err != nil {
 		klog.Errorf("Initializing an event handler for synchronizing to multiple clusters has an error: %v", err)
 		return nil, err
 	}
 	klog.Info("event handler for synchronizing to single clusters has been initialized.")
-	return kubeSceh, nil
+	return kubeSingleHandler, nil
 }
