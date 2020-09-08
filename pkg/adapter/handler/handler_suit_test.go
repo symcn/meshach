@@ -45,6 +45,10 @@ var _ = BeforeSuite(func(done Done) {
 	}
 
 	var err error
+	// If you plan to start testEnv you should install kubebuilder first to this path below:
+	// /usr/local/kubebuilder/bin
+	// etcd
+	// kube-apiserver
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
@@ -63,7 +67,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	// initializing control manager with the config
 	rp := time.Second * 120
-	mgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
+	ctrlMgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
 		Scheme:             k8sclient.GetScheme(),
 		MetricsBindAddress: "0",
 		LeaderElection:     false,
@@ -76,20 +80,18 @@ var _ = BeforeSuite(func(done Done) {
 
 	klog.Info("starting the control manager")
 	stopCh := utils.SetupSignalHandler()
-	// mgr.Add(adp)
-	// mgr.Add(adp.K8sMgr)
 	go func() {
-		if err := mgr.Start(stopCh); err != nil {
+		if err := ctrlMgr.Start(stopCh); err != nil {
 			klog.Fatalf("problem start running manager err: %v", err)
 		}
 	}()
-	for !mgr.GetCache().WaitForCacheSync(stopCh) {
+	for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
 		klog.Warningf("Waiting for caching objects to informer")
 		time.Sleep(5 * time.Second)
 	}
 	klog.Infof("caching objects to informer is successful")
 
-	singleClusterHandler, err = NewKubeSingleClusterEventHandler(mgr, &convert.DubboConverter{DefaultNamespace: defaultNamespace})
+	singleClusterHandler, err = NewKubeSingleClusterEventHandler(ctrlMgr, &convert.DubboConverter{DefaultNamespace: defaultNamespace})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(singleClusterHandler).ToNot(BeNil())
 

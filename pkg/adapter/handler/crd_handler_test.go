@@ -29,7 +29,7 @@ var _ = Describe("Test cases for crd handler.", func() {
 				klog.Info("start to test method: #getConfiguredService()")
 				foundCs, err := getConfiguredService(cs.Name, cs.Namespace, k8sClient)
 				Expect(err).To(HaveOccurred())
-				Expect(foundCs.ObjectMeta.Name).To(BeZero())
+				Expect(foundCs).To(BeNil())
 			})
 
 			It("create", func() {
@@ -83,7 +83,7 @@ var _ = Describe("Test cases for crd handler.", func() {
 				foundSc, err := getConfiguredService("default", "foo", k8sClient)
 				// could not retrieve the cs
 				Expect(err).To(HaveOccurred())
-				Expect(foundSc.Name).Should(BeZero())
+				Expect(foundSc).Should(BeNil())
 			})
 
 			AfterEach(func() {
@@ -107,7 +107,7 @@ var _ = Describe("Test cases for crd handler.", func() {
 				klog.Info("start to test method: #getServiceConfig()")
 				foundCs, err := getServiceConfig(sc.Name, sc.Namespace, k8sClient)
 				Expect(err).To(HaveOccurred())
-				Expect(foundCs.ObjectMeta.Name).To(BeZero())
+				Expect(foundCs).To(BeNil())
 			})
 
 			It("create", func() {

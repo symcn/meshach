@@ -85,7 +85,7 @@ func convertToKubeconfig(cm *corev1.ConfigMap) (string, bool) {
 }
 
 // NewManager ...
-func NewManager(cli MasterClient, opt *ClusterManagerOption) (*ClusterManager, error) {
+func NewClusterManager(cli MasterClient, opt *ClusterManagerOption) (*ClusterManager, error) {
 	cMgr := &ClusterManager{
 		MasterClient:   cli,
 		clusters:       make([]*Cluster, 0, 4),
