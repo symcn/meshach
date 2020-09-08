@@ -31,11 +31,11 @@ func createConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 
 	// !import this method will panic concurrent map writes
 	err := c.Create(context.Background(), cs)
-	klog.Infof("The generation of cs when creating: %d", cs.ObjectMeta.Generation)
 	if err != nil {
-		klog.Errorf("Creating an cs has an error:%v\n", err)
+		klog.Errorf("Creating a ConfiguredService {%s/%s} has an error: %v", cs.Namespace, cs.Name, err)
 		return err
 	}
+	klog.V(6).Infof("Create ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
 	return nil
 }
 
@@ -46,11 +46,11 @@ func updateConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 
 	// !import this method will panic concurrent map writes
 	err := c.Update(context.Background(), cs)
-	klog.Infof("The generation of  after updating: %d", cs.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Updating a ConfiguredService has an error: %v\n", err)
+		klog.Errorf("Updating a ConfiguredService {%s/%s} has an error: %v", cs.Namespace, cs.Name, err)
 		return err
 	}
+	klog.V(6).Infof("Update ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
 
 	return nil
 }
@@ -59,15 +59,25 @@ func updateConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 func getConfiguredService(namespace, name string, c client.Client) (*v1.ConfiguredService, error) {
 	cs := &v1.ConfiguredService{}
 	err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, cs)
-	klog.Infof("The generation of ConfiguredService when getting: %d", cs.ObjectMeta.Generation)
-	return cs, err
+	if err != nil {
+		klog.Errorf("Get a ConfiguredService {%s/%s} has an error:%v", namespace, name, err)
+		return nil, err
+	}
+
+	klog.V(6).Infof("Get ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
+	return cs, nil
 }
 
 // deleteConfiguredService
 func deleteConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 	err := c.Delete(context.Background(), cs)
-	klog.Infof("The generation of ConfiguredService when getting: %d", cs.ObjectMeta.Generation)
-	return err
+	if err != nil {
+		klog.Errorf("Delete a ConfiguredService {%s/%s} has an error: %v", cs.Namespace, cs.Name, err)
+		return err
+	}
+
+	klog.V(6).Infof("Delete ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
+	return nil
 }
 
 // createScopedAccessServices
@@ -77,11 +87,12 @@ func createScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) error {
 
 	// !import this method will panic concurrent map writes
 	err := c.Create(context.Background(), sa)
-	klog.Infof("The generation of ServiceAccessor when creating: %d", sa.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Creating an ServiceAccessor has an error:%v\n", err)
+		klog.Errorf("Creating a ServiceAccessor {%s/%s} has an error:%v", sa.Namespace, sa.Name, err)
 		return err
 	}
+
+	klog.V(6).Infof("Create ServiceAccessor {%s/%s} success.", sa.Namespace, sa.Name)
 	return nil
 }
 
@@ -92,21 +103,25 @@ func updateScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) error {
 
 	// !import this method will panic concurrent map writes
 	err := c.Update(context.Background(), sa)
-	klog.Infof("The generation of ServiceAccessor after updating: %d", sa.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Updating a ServiceAccessor has an error: %v\n", err)
+		klog.Errorf("Updating a ServiceAccessor {%s/%s} has an error: %v", sa.Namespace, sa.Name, err)
 		return err
 	}
 
+	klog.V(6).Infof("Updating ServiceAccessor {%s/%s} success.", sa.Namespace, sa.Name)
 	return nil
 }
 
 // getScopedAccessServices
 func getScopedAccessServices(namespace, name string, c client.Client) (*v1.ServiceAccessor, error) {
 	sa := &v1.ServiceAccessor{}
-	err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, sa)
-	klog.Infof("The generation of ServiceAccessor when getting: %d", sa.ObjectMeta.Generation)
-	return sa, err
+	if err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, sa); err != nil {
+		klog.Errorf("Get a ServiceAccessor {%s/%s} has an error: %v", namespace, name, err)
+		return nil, err
+	}
+
+	klog.V(6).Infof("Get ServiceAccessor {%s/%s} success.", namespace, name)
+	return sa, nil
 }
 
 // createServiceConfig
@@ -116,11 +131,12 @@ func createServiceConfig(sc *v1.ServiceConfig, c client.Client) error {
 
 	// !import this method will panic concurrent map writes
 	err := c.Create(context.Background(), sc)
-	klog.Infof("The generation of ServiceConfig when creating: %d", sc.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Creating an ServiceConfig has an error:%v\n", err)
+		klog.Errorf("Create a ServiceConfig {%s/%s} has an error: %v", sc.Namespace, sc.Name, err)
 		return err
 	}
+
+	klog.V(6).Infof("Create ServiceConfig {%s/%s} success.", sc.Namespace, sc.Name)
 	return nil
 }
 
@@ -131,12 +147,12 @@ func updateServiceConfig(sc *v1.ServiceConfig, c client.Client) error {
 
 	// !import this method will panic concurrent map writes
 	err := c.Update(context.Background(), sc)
-	klog.Infof("The generation of ServiceConfig after updating: %d", sc.ObjectMeta.Generation)
 	if err != nil {
-		klog.Infof("Updating a ServiceConfig has an error: %v\n", err)
+		klog.Errorf("Update a ServiceConfig {%s/%s} has an err: %v", sc.Namespace, sc.Name, err)
 		return err
 	}
 
+	klog.V(6).Infof("Update ServiceConfig {%s/%s} success.", sc.Namespace, sc.Name)
 	return nil
 }
 
@@ -144,13 +160,26 @@ func updateServiceConfig(sc *v1.ServiceConfig, c client.Client) error {
 func getServiceConfig(namespace, name string, c client.Client) (*v1.ServiceConfig, error) {
 	sc := &v1.ServiceConfig{}
 	err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, sc)
-	klog.Infof("The generation of ServiceConfig when getting: %d", sc.ObjectMeta.Generation)
-	return sc, err
+	if err != nil {
+		klog.Errorf("Get a ServiceConfig {%s/%s} has an err: %v", namespace, name, err)
+		return nil, err
+	}
+
+	klog.V(6).Infof("Get ServiceConfig {%s/%s} success.", namespace, name)
+	return sc, nil
 }
 
 // deleteServiceConfig
 func deleteServiceConfig(sc *v1.ServiceConfig, c client.Client) error {
+	scLock.Lock()
+	defer scLock.Unlock()
+
 	err := c.Delete(context.Background(), sc)
-	klog.Infof("The generation of ServiceConfig when getting: %d", sc.ObjectMeta.Generation)
-	return err
+	if err != nil {
+		klog.Errorf("Delete a ServiceConfig {%s/%s} has an err: %v", sc.Namespace, sc.Name, err)
+		return err
+	}
+
+	klog.V(6).Infof("Delete ServiceConfig {%s/%s} success.", sc.Namespace, sc.Name)
+	return nil
 }
