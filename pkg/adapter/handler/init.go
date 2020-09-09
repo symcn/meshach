@@ -81,7 +81,7 @@ func buildClientSet(cfg *rest.Config) (*kubernetes.Clientset, error) {
 	// initializing kube client with the config we has decided
 	kubeCli, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get kubernetes Clientset: %v", err)
+		return nil, fmt.Errorf("failed to initialize kubernetes Clientse: %v", err)
 	}
 	return kubeCli, nil
 }
@@ -104,7 +104,7 @@ func buildCtrlManager(cfg *rest.Config) (ctrlmanager.Manager, error) {
 	stopCh := utils.SetupSignalHandler()
 	go func() {
 		if err := ctrlMgr.Start(stopCh); err != nil {
-			klog.Fatalf("problem start running manager err: %v", err)
+			klog.Fatalf("start to run the controllers manager, err: %v", err)
 		}
 	}()
 	for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
@@ -131,26 +131,25 @@ func buildMultiClusterEventHandler(opt option.EventHandlers, ctrlMgr ctrlmanager
 	if opt.ClusterNamespace != "" {
 		clustersMgrOpt.Namespace = opt.ClusterNamespace
 	}
-	k8sMgr, err := k8smanager.NewClusterManager(masterClient, clustersMgrOpt)
+	clustersMgr, err := k8smanager.NewClusterManager(masterClient, clustersMgrOpt)
 	if err != nil {
-		klog.Fatalf("unable to create a new k8s manager, err: %v", err)
+		return nil, fmt.Errorf("unable to create a new k8s manager, err: %v", err)
 	}
 
 	// initializing the handlers that you decide to utilize
-	kubeMceh, err := NewKubeMultiClusterEventHandler(k8sMgr)
+	kubeMultiHandler, err := NewKubeMultiClusterEventHandler(clustersMgr)
 	if err != nil {
 		return nil, err
 	}
 	klog.Info("event handler for synchronizing to multiple clusters has been initialized.")
-	return kubeMceh, nil
+	return kubeMultiHandler, nil
 }
 
 func buildSingleClusterEventHandler(opt option.EventHandlers, ctrlMgr ctrlmanager.Manager, kubeCli *kubernetes.Clientset) (component.EventHandler, error) {
 	converter := convert.DubboConverter{DefaultNamespace: defaultNamespace}
 	kubeSingleHandler, err := NewKubeSingleClusterEventHandler(ctrlMgr, &converter)
 	if err != nil {
-		klog.Errorf("Initializing an event handler for synchronizing to multiple clusters has an error: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Initializing an event handler for synchronizing to multiple clusters has an error: %v", err)
 	}
 	klog.Info("event handler for synchronizing to single clusters has been initialized.")
 	return kubeSingleHandler, nil
