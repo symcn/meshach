@@ -26,6 +26,7 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 		if err != nil {
 			klog.Fatal(err)
 		}
+		klog.Infof("QPS: %+v, Burst: %+v", cfg.QPS, cfg.Burst)
 
 		kubeCli, err := buildClientSet(cfg)
 		if err != nil {
@@ -71,10 +72,11 @@ func buildRestConfig(opt option.EventHandlers) (*rest.Config, error) {
 	} else {
 		cfg, err = k8sclient.GetConfigWithContext(opt.Kubeconfig, opt.ConfigContext)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to load the default kubeconfig, err: %v", err)
 	}
-	return cfg, nil
+	return k8sclient.SetDefaultQPS(cfg), nil
 }
 
 func buildClientSet(cfg *rest.Config) (*kubernetes.Clientset, error) {
