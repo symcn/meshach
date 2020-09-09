@@ -26,6 +26,10 @@ spec:
             - "true"
             - "--leader-election-id"
             - "mesh-operator-lock-configuredservice"
+            - "--max-concurrent-reconciles"
+            - "100"
+            - "--goroutine-threshold"
+            - "100000"
           resources:
             limits:
               cpu: 2

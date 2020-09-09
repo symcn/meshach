@@ -40,7 +40,7 @@ func (h *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent) {
 
 // ReplaceInstances ...
 func (h *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent) {
-	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)\n%v", len(event.Instances))
+	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)\n", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
 	metrics.SynchronizedInstanceCounter.Add(float64(len(event.Instances)))

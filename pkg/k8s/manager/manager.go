@@ -84,7 +84,7 @@ func convertToKubeconfig(cm *corev1.ConfigMap) (string, bool) {
 	return kubeconfig, true
 }
 
-// NewManager ...
+// NewClusterManager ...
 func NewClusterManager(cli MasterClient, opt *ClusterManagerOption) (*ClusterManager, error) {
 	cMgr := &ClusterManager{
 		MasterClient:   cli,
