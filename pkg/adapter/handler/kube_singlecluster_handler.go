@@ -41,7 +41,7 @@ func (h *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent) {
 
 // ReplaceInstances ...
 func (h *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent) {
-	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)", len(event.Instances))
+	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)\n", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
 	metrics.SynchronizedInstanceCounter.Add(float64(len(event.Instances)))
@@ -133,7 +133,7 @@ func (h *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 				if errors.IsNotFound(err) {
 					return createScopedAccessServices(sas, h.ctrlMgr.GetClient())
 				}
-				return err
+				return nil
 			}
 			foundSas.Spec = sas.Spec
 			return updateScopedAccessServices(foundSas, h.ctrlMgr.GetClient())
