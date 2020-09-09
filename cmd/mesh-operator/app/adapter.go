@@ -51,25 +51,25 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Registry.Address,
-		"registry_addr",
+		"reg-addr",
 		opt.Registry.Address,
 		"address for registry center, e.g. zk: 127.0.0.1:2181")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Registry.Timeout,
-		"registry_timeout",
+		"reg-timeout",
 		opt.Registry.Timeout,
 		"the zookeeper session timeout second for registry")
 
 	cmd.PersistentFlags().StringArrayVar(
 		&opt.Configuration.Address,
-		"config_center_addr",
+		"conf-addr",
 		opt.Configuration.Address,
 		"address for configuration center, e.g. zk: 127.0.0.1:2181")
 
 	cmd.PersistentFlags().Int64Var(
 		&opt.Configuration.Timeout,
-		"config_center_timeout",
+		"conf-timeout",
 		opt.Configuration.Timeout,
 		"the zookeeper session timeout second for configuration center")
 
@@ -78,6 +78,12 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 		"is-multi-clusters",
 		opt.EventHandlers.IsMultiClusters,
 		"deciding if it will synchronizes to more than one kubernetes cluster")
+
+	cmd.PersistentFlags().IntVar(
+		&opt.EventHandlers.AcceleratorSize,
+		"acc-size",
+		opt.EventHandlers.AcceleratorSize,
+		"the size of accelerator's channels, e.g. 500, 100 as default")
 
 	cmd.PersistentFlags().StringVar(
 		&opt.EventHandlers.ClusterOwner,

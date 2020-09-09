@@ -9,7 +9,7 @@ import (
 )
 
 // Launching a test case via command line:
-// go run main.go adapter --is-multi-clusters false --registry_addr devzk.dmall.com:2181 --config_center_addr devzk.dmall.com:2181 -v 4
+// go run main.go adapter --is-multi-clusters false --reg-addr devzk.dmall.com:2181 --conf-addr devzk.dmall.com:2181 --acc-size 5 -v 4
 
 var _ = Describe("Test cases for adapter", func() {
 	var adapter *Adapter

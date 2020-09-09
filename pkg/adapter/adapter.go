@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/symcn/mesh-operator/pkg/adapter/accelerate"
 	// terminal: $ go tool pprof http://localhost:6066/debug/pprof/{heap,allocs,block,cmdline,goroutine,mutex,profile,threadcreate,trace}
 	// web:
 	// 1、http://localhost:8081/ui
@@ -10,7 +11,6 @@ import (
 
 	"net/http"
 
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
@@ -32,9 +32,6 @@ type Adapter struct {
 
 // NewAdapter ...
 func NewAdapter(opt *option.AdapterOption) (*Adapter, error) {
-	// TODO init health check handler
-	// TODO init router
-
 	// Initializing event handlers
 	eventHandlers, err := handler.Init(opt.EventHandlers)
 	if err != nil {
@@ -86,50 +83,47 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 	go http.ListenAndServe(constant.HTTPPort, nil)
 	klog.Infof("Started HTTP server for providing some features such as exposing metrics and pprof on port: %s", constant.HTTPPort)
 
+	// Using an accelerator can improve the efficient of interacting with k8s api server
+	accelerator := accelerate.NewAccelerator(a.opt.EventHandlers.AcceleratorSize, stop)
+
 	for {
 		select {
-		case event := <-a.registryClient.ServiceEvents():
-			klog.Infof("Registry component which has been received by adapter: %s", event.Service.Name)
-			switch event.EventType {
+		case se := <-a.registryClient.ServiceEvents():
+			klog.Infof("Registry component which has been received by adapter: %s", se.Service.Name)
+			switch se.EventType {
 			case types.ServiceAdded:
-				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - ADD SERVICE with uuid: %s", uuid)
 				for _, h := range a.eventHandlers {
-					h.AddService(event)
+					h.AddService(se)
 				}
-				klog.Infof("end handling event - ADD SERVICE with uuid: %s", uuid)
 			case types.ServiceDeleted:
 				for _, h := range a.eventHandlers {
-					h.DeleteService(event)
+					h.DeleteService(se)
 				}
 			case types.ServiceInstanceAdded:
-				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - ADD INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
-					h.AddInstance(event)
+					h.AddInstance(se)
 				}
-				klog.Infof("end handling event - ADD INSTANCE with uuid: %s", uuid)
 			case types.ServiceInstancesReplace:
-				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - REPLACES INSTANCES with uuid: %s, %d", uuid, len(event.Instances))
 				for _, h := range a.eventHandlers {
-					h.ReplaceInstances(event)
+					handler := h
+					accelerator.Accelerate(func() {
+						handler.ReplaceInstances(se)
+					}, se.Service.Name)
 				}
-				klog.Infof("end handling event - REPLACES INSTANCES with uuid: %s", uuid)
 			case types.ServiceInstanceDeleted:
-				uuid := utils.GetUUID()
-				klog.Infof("Start to handle event - DELETE INSTANCE with uuid: %s, %s", uuid, event.Instance.Host)
 				for _, h := range a.eventHandlers {
-					h.DeleteInstance(event)
+					h.DeleteInstance(se)
 				}
-				klog.Infof("end handling event - DELETE INSTANCE with uuid: %s", uuid)
 			}
 		case ae := <-a.registryClient.AccessorEvents():
 			klog.V(6).Infof("Accessor which has been received by adapter: %v", ae)
 			switch ae.EventType {
 			case types.ServiceInstancesReplace:
 				for _, h := range a.eventHandlers {
-					h.ReplaceAccessorInstances(ae, a.registryClient.GetCachedScopedMapping)
+					handler := h
+					accelerator.Accelerate(func() {
+						handler.ReplaceAccessorInstances(ae, a.registryClient.GetCachedScopedMapping)
+					}, ae.Service.Name)
 				}
 			default:
 				klog.Warningf("The event with %v type has not been support yet.", ae.EventType)

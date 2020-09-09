@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -40,7 +41,7 @@ func (h *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent) {
 
 // ReplaceInstances ...
 func (h *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent) {
-	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)\n%v", len(event.Instances))
+	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
 	metrics.SynchronizedInstanceCounter.Add(float64(len(event.Instances)))
@@ -58,7 +59,7 @@ func (h *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEve
 			if errors.IsNotFound(err) {
 				return createConfiguredService(cs, h.ctrlMgr.GetClient())
 			}
-			return nil
+			return err
 		}
 		foundCs.Spec = cs.Spec
 		return updateConfiguredService(foundCs, h.ctrlMgr.GetClient())
@@ -132,7 +133,7 @@ func (h *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 				if errors.IsNotFound(err) {
 					return createScopedAccessServices(sas, h.ctrlMgr.GetClient())
 				}
-				return nil
+				return err
 			}
 			foundSas.Spec = sas.Spec
 			return updateScopedAccessServices(foundSas, h.ctrlMgr.GetClient())
@@ -161,8 +162,7 @@ func (h *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.ConfigEvent) 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		sc := h.converter.ToServiceConfig(e.ConfigEntry)
 		if sc == nil {
-			klog.Infof("Config[%s]'s event has an empty config key, skip it.", e.Path)
-			return nil
+			return fmt.Errorf("config[%s]'s event has an empty config key, skip it", e.Path)
 		}
 
 		foundSc, err := getServiceConfig(defaultNamespace, utils.FormatToDNS1123(sc.Name), h.ctrlMgr.GetClient())
@@ -173,7 +173,7 @@ func (h *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.ConfigEvent) 
 				return createServiceConfig(sc, h.ctrlMgr.GetClient())
 			}
 			// TODO Is there a requirement to requeue this event?
-			return nil
+			return err
 		}
 
 		foundSc.Spec = sc.Spec
@@ -197,7 +197,7 @@ func (h *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.ConfigEvent) 
 		if err != nil {
 			klog.Errorf("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?
-			return nil
+			return err
 		}
 		return deleteServiceConfig(sc, h.ctrlMgr.GetClient())
 	})

@@ -23,6 +23,8 @@ type Configuration struct {
 
 // EventHandlers ...
 type EventHandlers struct {
+	AcceleratorSize int
+
 	// options for kubernetes
 	EnableK8s        bool
 	IsMultiClusters  bool
