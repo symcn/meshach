@@ -12,6 +12,7 @@ type Accelerator struct {
 	done     <-chan struct{}
 }
 
+// ExeRequest ...
 type ExeRequest struct {
 	fn func()
 }
