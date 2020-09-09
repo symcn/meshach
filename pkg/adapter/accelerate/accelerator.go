@@ -48,14 +48,19 @@ func NewAccelerator(size int, done <-chan struct{}) *Accelerator {
 // 1.dividing the events into a group of channels by calculating hash code of event's name
 // 2.there is one goroutine for each channel is waiting for handling the accelerate request
 func (ac *Accelerator) Accelerate(fn func(), hashKey string) {
-	hashNumber := FNV32a(hashKey)
-	c := ac.channels[int(hashNumber)%ac.size]
+	// The case that channels' size is less than 0 means this function could be execute in current goroutine.
+	if ac.size <= 0 {
+		fn()
+	} else {
+		hashcode := FNV32a(hashKey)
+		c := ac.channels[int(hashcode)%ac.size]
 
-	go func(fn func()) {
-		c <- &ExeRequest{
-			fn: fn,
-		}
-	}(fn)
+		go func(fn func()) {
+			c <- &ExeRequest{
+				fn: fn,
+			}
+		}(fn)
+	}
 }
 
 // FNV32a calculating the hash code of a text

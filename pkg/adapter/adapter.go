@@ -85,6 +85,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 
 	// Using an accelerator can improve the efficient of interacting with k8s api server
 	accelerator := accelerate.NewAccelerator(a.opt.EventHandlers.AcceleratorSize, stop)
+	klog.Infof("Initializing an accelerator with a channels size %d", a.opt.EventHandlers.AcceleratorSize)
 
 	for {
 		select {

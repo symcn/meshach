@@ -83,7 +83,7 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 		&opt.EventHandlers.AcceleratorSize,
 		"acc-size",
 		opt.EventHandlers.AcceleratorSize,
-		"the size of accelerator's channels, e.g. 500, 100 as default")
+		"the size of accelerator's channels, e.g. 500, 0 as default, using sequence executions if the size is less than 0 ")
 
 	cmd.PersistentFlags().StringVar(
 		&opt.EventHandlers.ClusterOwner,
