@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			// Request foundect not found, could have been deleted after reconcile req.
 			// Owned foundects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.Infof("Can't found AppMeshConfig[%s/%s], requeue...", req.Namespace, req.Name)
+			klog.V(6).Infof("Can't found AppMeshConfig[%s/%s], skip", req.Namespace, req.Name)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the foundect - requeue the req.
