@@ -183,7 +183,7 @@ func (h *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.ConfigEvent) 
 }
 
 // DeleteConfigEntry ...
-func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.ConfigEvent) {
+func (h *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.ConfigEvent) {
 	klog.V(6).Infof("event handler for a single cluster: delete a configuration %s", e.Path)
 
 	metrics.DeletedConfigurationCounter.Inc()
@@ -193,12 +193,12 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.FormatToDNS1123(utils.ResolveServiceName(e.Path))
-		sc, err := getServiceConfig(defaultNamespace, serviceName, kubeSceh.ctrlMgr.GetClient())
+		sc, err := getServiceConfig(defaultNamespace, serviceName, h.ctrlMgr.GetClient())
 		if err != nil {
 			klog.Errorf("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
-		return deleteServiceConfig(sc, kubeSceh.ctrlMgr.GetClient())
+		return deleteServiceConfig(sc, h.ctrlMgr.GetClient())
 	})
 }
