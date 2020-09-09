@@ -11,20 +11,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // KubeSingleClusterEventHandler ...
 type KubeSingleClusterEventHandler struct {
-	ctrlManager manager.Manager
-	converter   component.Converter
+	ctrlMgr   ctrlmanager.Manager
+	converter component.Converter
 }
 
 // NewKubeSingleClusterEventHandler ...
-func NewKubeSingleClusterEventHandler(mgr manager.Manager, converter component.Converter) (component.EventHandler, error) {
+func NewKubeSingleClusterEventHandler(ctrlMgr ctrlmanager.Manager, converter component.Converter) (component.EventHandler, error) {
 	return &KubeSingleClusterEventHandler{
-		ctrlManager: mgr,
-		converter:   converter,
+		ctrlMgr:   ctrlMgr,
+		converter: converter,
 	}, nil
 }
 
@@ -52,16 +52,16 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 		cs := kubeSceh.converter.ToConfiguredService(event.Service)
 
 		// loading cs CR from k8s cluster
-		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, kubeSceh.ctrlManager.GetClient())
+		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, kubeSceh.ctrlMgr.GetClient())
 		if err != nil {
 			klog.Warningf("Can not find an existed cs {%s/%s} CR: %v, then create such cs instead.", cs.Namespace, cs.Name, err)
 			if errors.IsNotFound(err) {
-				return createConfiguredService(cs, kubeSceh.ctrlManager.GetClient())
+				return createConfiguredService(cs, kubeSceh.ctrlMgr.GetClient())
 			}
 			return nil
 		}
 		foundCs.Spec = cs.Spec
-		return updateConfiguredService(foundCs, kubeSceh.ctrlManager.GetClient())
+		return updateConfiguredService(foundCs, kubeSceh.ctrlMgr.GetClient())
 	})
 
 }
@@ -76,7 +76,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteService(event *types.Servic
 				Name:      utils.FormatToDNS1123(event.Service.Name),
 				Namespace: defaultNamespace,
 			},
-		}, kubeSceh.ctrlManager.GetClient())
+		}, kubeSceh.ctrlMgr.GetClient())
 		return err
 	})
 
@@ -126,16 +126,16 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 		}
 
 		retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			foundSas, err := getScopedAccessServices(sas.Namespace, sas.Name, kubeSceh.ctrlManager.GetClient())
+			foundSas, err := getScopedAccessServices(sas.Namespace, sas.Name, kubeSceh.ctrlMgr.GetClient())
 			if err != nil {
 				klog.Warningf("Can not find an existed asm {%s/%s} CR: %v, then create a new one instead.", sas.Namespace, sas.Name, err)
 				if errors.IsNotFound(err) {
-					return createScopedAccessServices(sas, kubeSceh.ctrlManager.GetClient())
+					return createScopedAccessServices(sas, kubeSceh.ctrlMgr.GetClient())
 				}
 				return nil
 			}
 			foundSas.Spec = sas.Spec
-			return updateScopedAccessServices(foundSas, kubeSceh.ctrlManager.GetClient())
+			return updateScopedAccessServices(foundSas, kubeSceh.ctrlMgr.GetClient())
 		})
 	}
 
@@ -144,6 +144,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 // AddConfigEntry ...
 func (kubeSceh *KubeSingleClusterEventHandler) AddConfigEntry(e *types.ConfigEvent) {
 	klog.V(6).Infof("event handler for a single cluster: adding a configuration: %s", e.Path)
+
 	metrics.AddedConfigurationCounter.Inc()
 	// Adding a new configuration for a service is same as changing it.
 	kubeSceh.ChangeConfigEntry(e)
@@ -152,6 +153,7 @@ func (kubeSceh *KubeSingleClusterEventHandler) AddConfigEntry(e *types.ConfigEve
 // ChangeConfigEntry ...
 func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.ConfigEvent) {
 	klog.V(6).Infof("event handler for a single cluster: change a configuration %s", e.Path)
+
 	metrics.ChangedConfigurationCounter.Inc()
 	timer := prometheus.NewTimer(metrics.ChangingConfigurationHistogram)
 	defer timer.ObserveDuration()
@@ -162,25 +164,28 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 			klog.Infof("Config[%s]'s event has an empty config key, skip it.", e.Path)
 			return nil
 		}
-		foundSc, err := getServiceConfig(defaultNamespace, utils.FormatToDNS1123(sc.Name), kubeSceh.ctrlManager.GetClient())
+
+		foundSc, err := getServiceConfig(defaultNamespace, utils.FormatToDNS1123(sc.Name), kubeSceh.ctrlMgr.GetClient())
 		if err != nil {
 			klog.Errorf("Finding ServiceConfig with name %s has an error: %v", sc.Name, err)
 			if errors.IsNotFound(err) {
-				klog.Infof("Could not find the ConfiguredService %s, then create it. %v", sc.Name, err)
-				return createServiceConfig(sc, kubeSceh.ctrlManager.GetClient())
+				klog.Errorf("Could not find the ConfiguredService %s, then create it. %v", sc.Name, err)
+				return createServiceConfig(sc, kubeSceh.ctrlMgr.GetClient())
 			}
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
+
 		foundSc.Spec = sc.Spec
-		return updateServiceConfig(foundSc, kubeSceh.ctrlManager.GetClient())
+		return updateServiceConfig(foundSc, kubeSceh.ctrlMgr.GetClient())
 	})
 
 }
 
 // DeleteConfigEntry ...
 func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.ConfigEvent) {
-	klog.Infof("event handler for a single cluster: delete a configuration %s", e.Path)
+	klog.V(6).Infof("event handler for a single cluster: delete a configuration %s", e.Path)
+
 	metrics.DeletedConfigurationCounter.Inc()
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -188,12 +193,12 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.FormatToDNS1123(utils.ResolveServiceName(e.Path))
-		sc, err := getServiceConfig(defaultNamespace, serviceName, kubeSceh.ctrlManager.GetClient())
+		sc, err := getServiceConfig(defaultNamespace, serviceName, kubeSceh.ctrlMgr.GetClient())
 		if err != nil {
-			klog.Infof("Finding cs with name %s has an error: %v", serviceName, err)
+			klog.Errorf("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
-		return deleteServiceConfig(sc, kubeSceh.ctrlManager.GetClient())
+		return deleteServiceConfig(sc, kubeSceh.ctrlMgr.GetClient())
 	})
 }

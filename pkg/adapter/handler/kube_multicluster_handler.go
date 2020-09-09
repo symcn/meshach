@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/symcn/mesh-operator/pkg/adapter/convert"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
@@ -31,7 +30,6 @@ func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (compone
 		if err != nil {
 			return nil, fmt.Errorf("initializing kube handler with a manager failed: %v", err)
 		}
-
 		kubeHandlers = append(kubeHandlers, h)
 	}
 
@@ -55,7 +53,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) AddInstance(event *types2.ServiceE
 
 // ReplaceInstances ...
 func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.ServiceEvent) {
-	klog.V(6).Infof("event handler for multiple clusters: Replacing these instances(size: %d)\n%v", len(event.Instances))
+	klog.V(6).Infof("event handler for multiple clusters: Replacing these instances(size: %d)", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
 	metrics.SynchronizedInstanceCounter.Add(float64(len(event.Instances)))
@@ -77,7 +75,8 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
 func (kubeMceh *KubeMultiClusterEventHandler) DeleteService(event *types2.ServiceEvent) {
-	klog.Infof("event handler for multiple clusters: Deleting a service: \n%v", event.Service)
+	klog.V(6).Infof("event handler for multiple clusters: Deleting a service: %v", event.Service)
+
 	metrics.DeletedServiceCounter.Inc()
 
 	wg := sync.WaitGroup{}
@@ -97,7 +96,8 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteInstance(event *types2.Servi
 }
 
 // ReplaceAccessorInstances ...
-func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(event *types2.ServiceEvent,
+func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(
+	event *types2.ServiceEvent,
 	getScopedServices func(s string) map[string]struct{}) {
 	klog.V(6).Infof("event handler for multiple clusters: Replacing these instances(size: %d)", len(event.Instances))
 
@@ -115,7 +115,7 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(event *ty
 
 // AddConfigEntry ...
 func (kubeMceh *KubeMultiClusterEventHandler) AddConfigEntry(e *types2.ConfigEvent) {
-	klog.Infof("event handler for multiple clusters: adding a configuration: %s", e.Path)
+	klog.V(6).Infof("event handler for multiple clusters: adding a configuration: %s", e.Path)
 	metrics.AddedConfigurationCounter.Inc()
 	// Adding a new configuration for a service is same as changing it.
 	kubeMceh.ChangeConfigEntry(e)
@@ -123,7 +123,8 @@ func (kubeMceh *KubeMultiClusterEventHandler) AddConfigEntry(e *types2.ConfigEve
 
 // ChangeConfigEntry ...
 func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.ConfigEvent) {
-	klog.Infof("event handler for multiple clusters: changing a configuration: %s", e.Path)
+	klog.V(6).Infof("event handler for multiple clusters: changing a configuration: %s", e.Path)
+
 	metrics.ChangedConfigurationCounter.Inc()
 	timer := prometheus.NewTimer(metrics.ChangingConfigurationHistogram)
 	defer timer.ObserveDuration()
@@ -142,7 +143,8 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 
 // DeleteConfigEntry ...
 func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.ConfigEvent) {
-	klog.Infof("event handler for multiple clusters: deleting a configuration %s", e.Path)
+	klog.V(6).Infof("event handler for multiple clusters: deleting a configuration %s", e.Path)
+
 	metrics.DeletedConfigurationCounter.Inc()
 
 	wg := sync.WaitGroup{}
