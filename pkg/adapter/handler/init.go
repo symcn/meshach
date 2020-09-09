@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -21,15 +22,22 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 	var eventHandlers []component.EventHandler
 	// If this flag has been set as true, it means you want to synchronize all services to a kubernetes cluster.
 	if opt.EnableK8s {
-		cfg := buildRestConfig(opt)
-		kubeCli := buildClientSet(cfg)
-		ctrlMgr := buildCtrlManager(cfg)
+		cfg, err := buildRestConfig(opt)
+		if err != nil {
+			klog.Fatal(err)
+		}
 
-		var (
-			eh  component.EventHandler
-			err error
-		)
+		kubeCli, err := buildClientSet(cfg)
+		if err != nil {
+			klog.Fatal(err)
+		}
 
+		ctrlMgr, err := buildCtrlManager(cfg)
+		if err != nil {
+			klog.Fatal(err)
+		}
+
+		var eh component.EventHandler
 		if opt.IsMultiClusters {
 			eh, err = buildMultiClusterEventHandler(opt, ctrlMgr, kubeCli)
 		} else {
@@ -54,7 +62,7 @@ func Init(opt option.EventHandlers) ([]component.EventHandler, error) {
 	return eventHandlers, nil
 }
 
-func buildRestConfig(opt option.EventHandlers) *rest.Config {
+func buildRestConfig(opt option.EventHandlers) (*rest.Config, error) {
 	// deciding which kubeconfig we shall use.
 	var cfg *rest.Config
 	var err error
@@ -64,21 +72,21 @@ func buildRestConfig(opt option.EventHandlers) *rest.Config {
 		cfg, err = k8sclient.GetConfigWithContext(opt.Kubeconfig, opt.ConfigContext)
 	}
 	if err != nil {
-		klog.Fatalf("unable to load the default kubeconfig, err: %v", err)
+		return nil, fmt.Errorf("unable to load the default kubeconfig, err: %v", err)
 	}
-	return cfg
+	return cfg, nil
 }
 
-func buildClientSet(cfg *rest.Config) *kubernetes.Clientset {
+func buildClientSet(cfg *rest.Config) (*kubernetes.Clientset, error) {
 	// initializing kube client with the config we has decided
 	kubeCli, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		klog.Fatalf("failed to get kubernetes Clientset: %v", err)
+		return nil, fmt.Errorf("failed to get kubernetes Clientset: %v", err)
 	}
-	return kubeCli
+	return kubeCli, nil
 }
 
-func buildCtrlManager(cfg *rest.Config) ctrlmanager.Manager {
+func buildCtrlManager(cfg *rest.Config) (ctrlmanager.Manager, error) {
 	// initializing control manager with the config
 	rp := time.Second * 120
 	ctrlMgr, err := ctrlmanager.New(cfg, ctrlmanager.Options{
@@ -89,7 +97,7 @@ func buildCtrlManager(cfg *rest.Config) ctrlmanager.Manager {
 		SyncPeriod: &rp,
 	})
 	if err != nil {
-		klog.Fatalf("unable to create a manager, err: %v", err)
+		return nil, fmt.Errorf("unable to create a manager, err: %v", err)
 	}
 
 	klog.Info("starting the control manager")
@@ -104,7 +112,7 @@ func buildCtrlManager(cfg *rest.Config) ctrlmanager.Manager {
 		time.Sleep(5 * time.Second)
 	}
 	klog.Infof("caching objects to informer is successful")
-	return ctrlMgr
+	return ctrlMgr, nil
 }
 
 func buildMultiClusterEventHandler(opt option.EventHandlers, ctrlMgr ctrlmanager.Manager, kubeCli *kubernetes.Clientset) (component.EventHandler, error) {
