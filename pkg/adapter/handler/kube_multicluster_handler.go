@@ -17,15 +17,14 @@ import (
 // to a kubernetes cluster which has an istio controller there.
 // It usually uses a CRD group to depict both registered services and instances.
 type KubeMultiClusterEventHandler struct {
-	k8sMgr   *k8smanager.ClusterManager
 	handlers []component.EventHandler
 }
 
 // NewKubeMultiClusterEventHandler ...
-func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
+func NewKubeMultiClusterEventHandler(clustersMgr *k8smanager.ClusterManager) (component.EventHandler, error) {
 	converter := &convert.DubboConverter{DefaultNamespace: defaultNamespace}
 	var kubeHandlers []component.EventHandler
-	for _, c := range k8sMgr.GetAll() {
+	for _, c := range clustersMgr.GetAll() {
 		h, err := NewKubeSingleClusterEventHandler(c.Mgr, converter)
 		if err != nil {
 			return nil, fmt.Errorf("initializing kube handler with a manager failed: %v", err)
@@ -34,25 +33,24 @@ func NewKubeMultiClusterEventHandler(k8sMgr *k8smanager.ClusterManager) (compone
 	}
 
 	return &KubeMultiClusterEventHandler{
-		k8sMgr:   k8sMgr,
 		handlers: kubeHandlers,
 	}, nil
 }
 
 // AddService ...
-func (kubeMceh *KubeMultiClusterEventHandler) AddService(event *types2.ServiceEvent) {
+func (h *KubeMultiClusterEventHandler) AddService(event *types2.ServiceEvent) {
 	// klog.Infof("Kube multiple clusters event handler: Adding a service: %s", event.Service.Name)
 	klog.Warningf("Adding a service has not been implemented yet by multiple clusters handler.")
 	// kubeMceh .ReplaceInstances(event, configuratorFinder)
 }
 
 // AddInstance ...
-func (kubeMceh *KubeMultiClusterEventHandler) AddInstance(event *types2.ServiceEvent) {
+func (h *KubeMultiClusterEventHandler) AddInstance(event *types2.ServiceEvent) {
 	klog.Warningf("Adding an instance has not been implemented yet by multiple clusters handler.")
 }
 
 // ReplaceInstances ...
-func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.ServiceEvent) {
+func (h *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.ServiceEvent) {
 	klog.V(6).Infof("event handler for multiple clusters: Replacing these instances(size: %d)", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
@@ -61,8 +59,8 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 	defer timer.ObserveDuration()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.handlers))
-	for _, h := range kubeMceh.handlers {
+	wg.Add(len(h.handlers))
+	for _, h := range h.handlers {
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 
@@ -74,14 +72,14 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceInstances(event *types2.Ser
 
 // DeleteService we assume we need to remove the service Spec part of AppMeshConfig
 // after received a service deleted notification.
-func (kubeMceh *KubeMultiClusterEventHandler) DeleteService(event *types2.ServiceEvent) {
+func (h *KubeMultiClusterEventHandler) DeleteService(event *types2.ServiceEvent) {
 	klog.V(6).Infof("event handler for multiple clusters: Deleting a service: %v", event.Service)
 
 	metrics.DeletedServiceCounter.Inc()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.handlers))
-	for _, h := range kubeMceh.handlers {
+	wg.Add(len(h.handlers))
+	for _, h := range h.handlers {
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 			handler.DeleteService(event)
@@ -91,19 +89,19 @@ func (kubeMceh *KubeMultiClusterEventHandler) DeleteService(event *types2.Servic
 }
 
 // DeleteInstance ...
-func (kubeMceh *KubeMultiClusterEventHandler) DeleteInstance(event *types2.ServiceEvent) {
+func (h *KubeMultiClusterEventHandler) DeleteInstance(event *types2.ServiceEvent) {
 	klog.Warningf("Deleting an instance has not been implemented yet by multiple clusters handler.")
 }
 
 // ReplaceAccessorInstances ...
-func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(
+func (h *KubeMultiClusterEventHandler) ReplaceAccessorInstances(
 	event *types2.ServiceEvent,
 	getScopedServices func(s string) map[string]struct{}) {
 	klog.V(6).Infof("event handler for multiple clusters: Replacing these instances(size: %d)", len(event.Instances))
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.handlers))
-	for _, h := range kubeMceh.handlers {
+	wg.Add(len(h.handlers))
+	for _, h := range h.handlers {
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 
@@ -114,15 +112,15 @@ func (kubeMceh *KubeMultiClusterEventHandler) ReplaceAccessorInstances(
 }
 
 // AddConfigEntry ...
-func (kubeMceh *KubeMultiClusterEventHandler) AddConfigEntry(e *types2.ConfigEvent) {
+func (h *KubeMultiClusterEventHandler) AddConfigEntry(e *types2.ConfigEvent) {
 	klog.V(6).Infof("event handler for multiple clusters: adding a configuration: %s", e.Path)
 	metrics.AddedConfigurationCounter.Inc()
 	// Adding a new configuration for a service is same as changing it.
-	kubeMceh.ChangeConfigEntry(e)
+	h.ChangeConfigEntry(e)
 }
 
 // ChangeConfigEntry ...
-func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.ConfigEvent) {
+func (h *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.ConfigEvent) {
 	klog.V(6).Infof("event handler for multiple clusters: changing a configuration: %s", e.Path)
 
 	metrics.ChangedConfigurationCounter.Inc()
@@ -130,8 +128,8 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 	defer timer.ObserveDuration()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.handlers))
-	for _, h := range kubeMceh.handlers {
+	wg.Add(len(h.handlers))
+	for _, h := range h.handlers {
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 
@@ -142,14 +140,14 @@ func (kubeMceh *KubeMultiClusterEventHandler) ChangeConfigEntry(e *types2.Config
 }
 
 // DeleteConfigEntry ...
-func (kubeMceh *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.ConfigEvent) {
+func (h *KubeMultiClusterEventHandler) DeleteConfigEntry(e *types2.ConfigEvent) {
 	klog.V(6).Infof("event handler for multiple clusters: deleting a configuration %s", e.Path)
 
 	metrics.DeletedConfigurationCounter.Inc()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(kubeMceh.handlers))
-	for _, h := range kubeMceh.handlers {
+	wg.Add(len(h.handlers))
+	for _, h := range h.handlers {
 		go func(handler component.EventHandler) {
 			defer wg.Done()
 

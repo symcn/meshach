@@ -35,7 +35,7 @@ func createConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 		klog.Errorf("Creating a ConfiguredService {%s/%s} has an error: %v", cs.Namespace, cs.Name, err)
 		return err
 	}
-	klog.V(6).Infof("Create ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
+	klog.V(6).Infof("Created ConfiguredService {%s/%s} successfully.", cs.Namespace, cs.Name)
 	return nil
 }
 
@@ -50,7 +50,7 @@ func updateConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 		klog.Errorf("Updating a ConfiguredService {%s/%s} has an error: %v", cs.Namespace, cs.Name, err)
 		return err
 	}
-	klog.V(6).Infof("Update ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
+	klog.V(6).Infof("Updated ConfiguredService {%s/%s} successfully.", cs.Namespace, cs.Name)
 
 	return nil
 }
@@ -64,7 +64,7 @@ func getConfiguredService(namespace, name string, c client.Client) (*v1.Configur
 		return nil, err
 	}
 
-	klog.V(6).Infof("Get ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
+	klog.V(6).Infof("Got ConfiguredService {%s/%s} successfully.", cs.Namespace, cs.Name)
 	return cs, nil
 }
 
@@ -76,7 +76,7 @@ func deleteConfiguredService(cs *v1.ConfiguredService, c client.Client) error {
 		return err
 	}
 
-	klog.V(6).Infof("Delete ConfiguredService {%s/%s} success.", cs.Namespace, cs.Name)
+	klog.V(6).Infof("Deleted ConfiguredService {%s/%s} successfully.", cs.Namespace, cs.Name)
 	return nil
 }
 
@@ -92,7 +92,7 @@ func createScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) error {
 		return err
 	}
 
-	klog.V(6).Infof("Create ServiceAccessor {%s/%s} success.", sa.Namespace, sa.Name)
+	klog.V(6).Infof("Created ServiceAccessor {%s/%s} successfully.", sa.Namespace, sa.Name)
 	return nil
 }
 
@@ -108,7 +108,7 @@ func updateScopedAccessServices(sa *v1.ServiceAccessor, c client.Client) error {
 		return err
 	}
 
-	klog.V(6).Infof("Updating ServiceAccessor {%s/%s} success.", sa.Namespace, sa.Name)
+	klog.V(6).Infof("Updated ServiceAccessor {%s/%s} successfully.", sa.Namespace, sa.Name)
 	return nil
 }
 
@@ -120,7 +120,7 @@ func getScopedAccessServices(namespace, name string, c client.Client) (*v1.Servi
 		return nil, err
 	}
 
-	klog.V(6).Infof("Get ServiceAccessor {%s/%s} success.", namespace, name)
+	klog.V(6).Infof("Got ServiceAccessor {%s/%s} successfully.", namespace, name)
 	return sa, nil
 }
 
@@ -136,7 +136,7 @@ func createServiceConfig(sc *v1.ServiceConfig, c client.Client) error {
 		return err
 	}
 
-	klog.V(6).Infof("Create ServiceConfig {%s/%s} success.", sc.Namespace, sc.Name)
+	klog.V(6).Infof("Created ServiceConfig {%s/%s} successfully.", sc.Namespace, sc.Name)
 	return nil
 }
 
@@ -152,7 +152,7 @@ func updateServiceConfig(sc *v1.ServiceConfig, c client.Client) error {
 		return err
 	}
 
-	klog.V(6).Infof("Update ServiceConfig {%s/%s} success.", sc.Namespace, sc.Name)
+	klog.V(6).Infof("Updated ServiceConfig {%s/%s} successfully.", sc.Namespace, sc.Name)
 	return nil
 }
 
@@ -165,7 +165,7 @@ func getServiceConfig(namespace, name string, c client.Client) (*v1.ServiceConfi
 		return nil, err
 	}
 
-	klog.V(6).Infof("Get ServiceConfig {%s/%s} success.", namespace, name)
+	klog.V(6).Infof("Got ServiceConfig {%s/%s} successfully.", namespace, name)
 	return sc, nil
 }
 
@@ -180,6 +180,6 @@ func deleteServiceConfig(sc *v1.ServiceConfig, c client.Client) error {
 		return err
 	}
 
-	klog.V(6).Infof("Delete ServiceConfig {%s/%s} success.", sc.Namespace, sc.Name)
+	klog.V(6).Infof("Deleted ServiceConfig {%s/%s} successfully.", sc.Namespace, sc.Name)
 	return nil
 }

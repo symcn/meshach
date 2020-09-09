@@ -16,46 +16,46 @@ func NewLogEventHandler() (component.EventHandler, error) {
 }
 
 // AddService ...
-func (leh *LogEventHandler) AddService(e *types.ServiceEvent) {
+func (h *LogEventHandler) AddService(e *types.ServiceEvent) {
 	klog.Infof("Simple event handler: Adding a service\n%v\n", e.Service)
 }
 
 // DeleteService ...
-func (leh *LogEventHandler) DeleteService(e *types.ServiceEvent) {
+func (h *LogEventHandler) DeleteService(e *types.ServiceEvent) {
 	klog.Infof("Simple event handler: Deleting a service\n%v\n", e.Service)
 }
 
 // AddInstance ...
-func (leh *LogEventHandler) AddInstance(e *types.ServiceEvent) {
+func (h *LogEventHandler) AddInstance(e *types.ServiceEvent) {
 	klog.Infof("Simple event handler: Adding an instance\n%v\n", e.Instance)
 }
 
 // ReplaceInstances ...
-func (leh *LogEventHandler) ReplaceInstances(e *types.ServiceEvent) {
+func (h *LogEventHandler) ReplaceInstances(e *types.ServiceEvent) {
 	klog.Infof("Simple event handler: Replacing these instances\n%v\n", e.Instances)
 }
 
 // DeleteInstance ...
-func (leh *LogEventHandler) DeleteInstance(e *types.ServiceEvent) {
+func (h *LogEventHandler) DeleteInstance(e *types.ServiceEvent) {
 	klog.Infof("Simple event handler: Deleting an instance\n%v\n", e.Instance)
 }
 
 // ReplaceAccessorInstances ...
-func (leh *LogEventHandler) ReplaceAccessorInstances(e *types.ServiceEvent, getScopedServices func(s string) map[string]struct{}) {
+func (h *LogEventHandler) ReplaceAccessorInstances(e *types.ServiceEvent, getScopedServices func(s string) map[string]struct{}) {
 	klog.Infof("Simple event handler: Replacing the accessors' instances\n%v\n", e.Instance)
 }
 
 // AddConfigEntry ...
-func (leh *LogEventHandler) AddConfigEntry(e *types.ConfigEvent) {
+func (h *LogEventHandler) AddConfigEntry(e *types.ConfigEvent) {
 	klog.Infof("Simple event handler: adding a configuration\n%v", e.Path)
 }
 
 // ChangeConfigEntry ...
-func (leh *LogEventHandler) ChangeConfigEntry(e *types.ConfigEvent) {
+func (h *LogEventHandler) ChangeConfigEntry(e *types.ConfigEvent) {
 	klog.Infof("Simple event handler: change a configuration\n%v", e.Path)
 }
 
 // DeleteConfigEntry ...
-func (leh *LogEventHandler) DeleteConfigEntry(e *types.ConfigEvent) {
+func (h *LogEventHandler) DeleteConfigEntry(e *types.ConfigEvent) {
 	klog.Infof("Simple event handler: delete a configuration\n%v", e.Path)
 }

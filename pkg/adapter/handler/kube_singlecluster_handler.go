@@ -29,17 +29,17 @@ func NewKubeSingleClusterEventHandler(ctrlMgr ctrlmanager.Manager, converter com
 }
 
 // AddService ...
-func (kubeSceh *KubeSingleClusterEventHandler) AddService(e *types.ServiceEvent) {
+func (h *KubeSingleClusterEventHandler) AddService(e *types.ServiceEvent) {
 	klog.Warningf("Adding a service has not been implemented yet by single clusters handler.")
 }
 
 // AddInstance ...
-func (kubeSceh *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent) {
+func (h *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent) {
 	klog.Warningf("Adding an instance has not been implemented yet by single clusters handler.")
 }
 
 // ReplaceInstances ...
-func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent) {
+func (h *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEvent) {
 	klog.V(6).Infof("event handler for a single cluster: Replacing these instances(size: %d)\n%v", len(event.Instances))
 
 	metrics.SynchronizedServiceCounter.Inc()
@@ -48,26 +48,26 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceInstances(event *types.Ser
 	defer timer.ObserveDuration()
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// Convert a service event that noticed by zookeeper to a Service CRD
-		cs := kubeSceh.converter.ToConfiguredService(event.Service)
+		// Convert a service event that notified by zookeeper to a Service CRD
+		cs := h.converter.ToConfiguredService(event.Service)
 
 		// loading cs CR from k8s cluster
-		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, kubeSceh.ctrlMgr.GetClient())
+		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, h.ctrlMgr.GetClient())
 		if err != nil {
 			klog.Warningf("Can not find an existed cs {%s/%s} CR: %v, then create such cs instead.", cs.Namespace, cs.Name, err)
 			if errors.IsNotFound(err) {
-				return createConfiguredService(cs, kubeSceh.ctrlMgr.GetClient())
+				return createConfiguredService(cs, h.ctrlMgr.GetClient())
 			}
 			return nil
 		}
 		foundCs.Spec = cs.Spec
-		return updateConfiguredService(foundCs, kubeSceh.ctrlMgr.GetClient())
+		return updateConfiguredService(foundCs, h.ctrlMgr.GetClient())
 	})
 
 }
 
 // DeleteService ...
-func (kubeSceh *KubeSingleClusterEventHandler) DeleteService(event *types.ServiceEvent) {
+func (h *KubeSingleClusterEventHandler) DeleteService(event *types.ServiceEvent) {
 	klog.V(6).Infof("event handler for a single cluster: Deleting a service: %v", event.Service)
 	metrics.DeletedServiceCounter.Inc()
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -76,19 +76,19 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteService(event *types.Servic
 				Name:      utils.FormatToDNS1123(event.Service.Name),
 				Namespace: defaultNamespace,
 			},
-		}, kubeSceh.ctrlMgr.GetClient())
+		}, h.ctrlMgr.GetClient())
 		return err
 	})
 
 }
 
 // DeleteInstance ...
-func (kubeSceh *KubeSingleClusterEventHandler) DeleteInstance(e *types.ServiceEvent) {
+func (h *KubeSingleClusterEventHandler) DeleteInstance(e *types.ServiceEvent) {
 	klog.Warningf("Deleting an instance has not been implemented yet by single clusters handler.")
 }
 
 // ReplaceAccessorInstances ...
-func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
+func (h *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 	e *types.ServiceEvent,
 	getScopedServices func(s string) map[string]struct{}) {
 
@@ -126,32 +126,32 @@ func (kubeSceh *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 		}
 
 		retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			foundSas, err := getScopedAccessServices(sas.Namespace, sas.Name, kubeSceh.ctrlMgr.GetClient())
+			foundSas, err := getScopedAccessServices(sas.Namespace, sas.Name, h.ctrlMgr.GetClient())
 			if err != nil {
 				klog.Warningf("Can not find an existed asm {%s/%s} CR: %v, then create a new one instead.", sas.Namespace, sas.Name, err)
 				if errors.IsNotFound(err) {
-					return createScopedAccessServices(sas, kubeSceh.ctrlMgr.GetClient())
+					return createScopedAccessServices(sas, h.ctrlMgr.GetClient())
 				}
 				return nil
 			}
 			foundSas.Spec = sas.Spec
-			return updateScopedAccessServices(foundSas, kubeSceh.ctrlMgr.GetClient())
+			return updateScopedAccessServices(foundSas, h.ctrlMgr.GetClient())
 		})
 	}
 
 }
 
 // AddConfigEntry ...
-func (kubeSceh *KubeSingleClusterEventHandler) AddConfigEntry(e *types.ConfigEvent) {
+func (h *KubeSingleClusterEventHandler) AddConfigEntry(e *types.ConfigEvent) {
 	klog.V(6).Infof("event handler for a single cluster: adding a configuration: %s", e.Path)
 
 	metrics.AddedConfigurationCounter.Inc()
 	// Adding a new configuration for a service is same as changing it.
-	kubeSceh.ChangeConfigEntry(e)
+	h.ChangeConfigEntry(e)
 }
 
 // ChangeConfigEntry ...
-func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.ConfigEvent) {
+func (h *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.ConfigEvent) {
 	klog.V(6).Infof("event handler for a single cluster: change a configuration %s", e.Path)
 
 	metrics.ChangedConfigurationCounter.Inc()
@@ -159,31 +159,31 @@ func (kubeSceh *KubeSingleClusterEventHandler) ChangeConfigEntry(e *types.Config
 	defer timer.ObserveDuration()
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		sc := kubeSceh.converter.ToServiceConfig(e.ConfigEntry)
+		sc := h.converter.ToServiceConfig(e.ConfigEntry)
 		if sc == nil {
 			klog.Infof("Config[%s]'s event has an empty config key, skip it.", e.Path)
 			return nil
 		}
 
-		foundSc, err := getServiceConfig(defaultNamespace, utils.FormatToDNS1123(sc.Name), kubeSceh.ctrlMgr.GetClient())
+		foundSc, err := getServiceConfig(defaultNamespace, utils.FormatToDNS1123(sc.Name), h.ctrlMgr.GetClient())
 		if err != nil {
 			klog.Errorf("Finding ServiceConfig with name %s has an error: %v", sc.Name, err)
 			if errors.IsNotFound(err) {
 				klog.Errorf("Could not find the ConfiguredService %s, then create it. %v", sc.Name, err)
-				return createServiceConfig(sc, kubeSceh.ctrlMgr.GetClient())
+				return createServiceConfig(sc, h.ctrlMgr.GetClient())
 			}
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
 
 		foundSc.Spec = sc.Spec
-		return updateServiceConfig(foundSc, kubeSceh.ctrlMgr.GetClient())
+		return updateServiceConfig(foundSc, h.ctrlMgr.GetClient())
 	})
 
 }
 
 // DeleteConfigEntry ...
-func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.ConfigEvent) {
+func (h *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.ConfigEvent) {
 	klog.V(6).Infof("event handler for a single cluster: delete a configuration %s", e.Path)
 
 	metrics.DeletedConfigurationCounter.Inc()
@@ -193,12 +193,12 @@ func (kubeSceh *KubeSingleClusterEventHandler) DeleteConfigEntry(e *types.Config
 		// Usually deleting event don't include the configuration data, so that we should
 		// parse the zNode path to decide what is the service name.
 		serviceName := utils.FormatToDNS1123(utils.ResolveServiceName(e.Path))
-		sc, err := getServiceConfig(defaultNamespace, serviceName, kubeSceh.ctrlMgr.GetClient())
+		sc, err := getServiceConfig(defaultNamespace, serviceName, h.ctrlMgr.GetClient())
 		if err != nil {
 			klog.Errorf("Finding cs with name %s has an error: %v", serviceName, err)
 			// TODO Is there a requirement to requeue this event?
 			return nil
 		}
-		return deleteServiceConfig(sc, kubeSceh.ctrlMgr.GetClient())
+		return deleteServiceConfig(sc, h.ctrlMgr.GetClient())
 	})
 }
