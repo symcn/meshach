@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/convert"
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
@@ -102,6 +103,13 @@ func buildCtrlManager(cfg *rest.Config) (ctrlmanager.Manager, error) {
 		return nil, fmt.Errorf("unable to create a manager, err: %v", err)
 	}
 
+	ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredService{})
+	ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfig{})
+	ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessor{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredServiceList{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfigList{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessorList{})
+
 	klog.Info("starting the control manager")
 	stopCh := utils.SetupSignalHandler()
 	go func() {
@@ -111,7 +119,7 @@ func buildCtrlManager(cfg *rest.Config) (ctrlmanager.Manager, error) {
 	}()
 	for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
 		klog.Warningf("Waiting for caching objects to informer")
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 	klog.Infof("caching objects to informer is successful")
 	return ctrlMgr, nil
