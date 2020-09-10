@@ -174,6 +174,10 @@ func (p *PathCache) watchChildren() error {
 	klog.V(6).Infof("[ ===== WATCHING ACTION ===== ] - ChildrenW : path [%s]", p.Path)
 	children, stat, ch, err := p.conn.ChildrenW(p.Path)
 	if err != nil {
+		if strings.Contains(p.Path, ConsumersPath) {
+			klog.V(6).Infof("Watching on path [%s]'s children has an error: %v", p.Path, err)
+			return err
+		}
 		klog.Errorf("Watching on path [%s]'s children has an error: %v", p.Path, err)
 		return err
 	}

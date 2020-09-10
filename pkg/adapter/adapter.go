@@ -90,7 +90,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 	for {
 		select {
 		case se := <-a.registryClient.ServiceEvents():
-			klog.Infof("Registry component which has been received by adapter: %s", se.Service.Name)
+			klog.V(6).Infof("Registry component which has been received by adapter: %s, type: %v", se.Service.Name, se.EventType)
 			switch se.EventType {
 			case types.ServiceAdded:
 				for _, h := range a.eventHandlers {
@@ -130,7 +130,7 @@ func (a *Adapter) Start(stop <-chan struct{}) error {
 				klog.Warningf("The event with %v type has not been support yet.", ae.EventType)
 			}
 		case ce := <-a.configClient.Events():
-			klog.Infof("Configuration component which has been received by adapter: %v", ce)
+			klog.V(6).Infof("Configuration component which has been received by adapter: %v", ce)
 			switch ce.EventType {
 			case types.ConfigEntryAdded:
 				for _, h := range a.eventHandlers {
