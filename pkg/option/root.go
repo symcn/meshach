@@ -33,7 +33,7 @@ func (r *RootOption) GetK8sConfig() (*rest.Config, error) {
 		return nil, errors.Wrap(err, "could not get k8s config")
 	}
 
-	return config, nil
+	return k8sclient.SetDefaultQPS(config), nil
 }
 
 // GetKubeInterface ...

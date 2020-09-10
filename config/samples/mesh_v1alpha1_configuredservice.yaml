@@ -1,7 +1,34 @@
 apiVersion: mesh.symcn.com/v1alpha1
 kind: ConfiguredService
 metadata:
-  name: configuredservice-sample
+  name: com.alibaba.dubbo.monitor.monitorservice
+  namespace: sym-admin
 spec:
-  # Add fields here
-  foo: bar
+  instances:
+  - host: 10.248.224.115
+    labels:
+      acl: "false"
+      anyhost: "true"
+      app_code: dsfMonitorApache
+      application: DubbedMonitorCenter
+      bean.name: com.alibaba.dubbo.monitor.MonitorService
+      deprecated: "false"
+      dubbo: 2.0.2
+      dynamic: "true"
+      generic: "false"
+      interface: com.alibaba.dubbo.monitor.MonitorService
+      methods: '*'
+      owner: zehong.chen
+      pid: "31545"
+      pro_code: dsf
+      release: 2.5.6
+      revision: 2.5.6
+      sdk_version: 2.7.2
+      side: provider
+      timestamp: "1598334023244"
+      zone: gz01
+    port:
+      name: dubbo-http
+      number: 29999
+      protocol: HTTP
+  originalName: com.alibaba.dubbo.monitor.MonitorService
