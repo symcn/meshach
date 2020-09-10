@@ -2,8 +2,10 @@ package handler
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/symcn/mesh-operator/api/v1alpha1"
 	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
@@ -24,6 +26,28 @@ type KubeSingleClusterEventHandler struct {
 
 // NewKubeSingleClusterEventHandler ...
 func NewKubeSingleClusterEventHandler(ctrlMgr ctrlmanager.Manager, converter component.Converter) (component.EventHandler, error) {
+
+	// add informer cache
+	ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredService{})
+	ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfig{})
+	ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessor{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredServiceList{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfigList{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessorList{})
+
+	klog.Info("starting the control manager")
+	stopCh := utils.SetupSignalHandler()
+	go func() {
+		if err := ctrlMgr.Start(stopCh); err != nil {
+			klog.Fatalf("start to run the controllers manager, err: %v", err)
+		}
+	}()
+	for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
+		klog.Warningf("Waiting for caching objects to informer")
+		time.Sleep(1 * time.Second)
+	}
+	klog.Infof("caching objects to informer is successful")
+
 	return &KubeSingleClusterEventHandler{
 		ctrlMgr:   ctrlMgr,
 		converter: converter,
