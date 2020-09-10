@@ -100,14 +100,6 @@ func buildCtrlManager(cfg *rest.Config) (ctrlmanager.Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a manager, err: %v", err)
 	}
-
-	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredService{})
-	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfig{})
-	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessor{})
-	// // ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredServiceList{})
-	// // ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfigList{})
-	// // ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessorList{})
-
 	return ctrlMgr, nil
 }
 
