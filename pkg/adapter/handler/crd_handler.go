@@ -60,7 +60,6 @@ func getConfiguredService(namespace, name string, c client.Client) (*v1.Configur
 	cs := &v1.ConfiguredService{}
 	err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, cs)
 	if err != nil {
-		klog.Errorf("Get a ConfiguredService {%s/%s} has an error:%v", namespace, name, err)
 		return nil, err
 	}
 

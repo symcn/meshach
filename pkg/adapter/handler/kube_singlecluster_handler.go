@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	"github.com/symcn/mesh-operator/pkg/adapter/component"
@@ -55,10 +56,11 @@ func (h *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEve
 		// loading cs CR from k8s cluster
 		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, h.ctrlMgr.GetClient())
 		if err != nil {
-			klog.Warningf("Can not find an existed cs {%s/%s} CR: %v, then create such cs instead.", cs.Namespace, cs.Name, err)
 			if errors.IsNotFound(err) {
 				return createConfiguredService(cs, h.ctrlMgr.GetClient())
 			}
+			// klog.Errorf("Can not find an existed cs {%s/%s} CR: %v, then create such cs instead.", cs.Namespace, cs.Name, err)
+			klog.Errorf("Get a ConfiguredService {%s/%s} has an error:%v", cs.Namespace, cs.Name, err)
 			return err
 		}
 		foundCs.Spec = cs.Spec
