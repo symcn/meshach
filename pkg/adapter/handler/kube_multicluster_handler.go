@@ -40,13 +40,13 @@ func NewKubeMultiClusterEventHandler(clustersMgr *k8smanager.ClusterManager) (co
 // AddService ...
 func (h *KubeMultiClusterEventHandler) AddService(event *types2.ServiceEvent) {
 	// klog.Infof("Kube multiple clusters event handler: Adding a service: %s", event.Service.Name)
-	klog.Warningf("Adding a service has not been implemented yet by multiple clusters handler.")
+	klog.V(6).Infof("Adding a service has not been implemented yet by multiple clusters handler.")
 	// kubeMceh .ReplaceInstances(event, configuratorFinder)
 }
 
 // AddInstance ...
 func (h *KubeMultiClusterEventHandler) AddInstance(event *types2.ServiceEvent) {
-	klog.Warningf("Adding an instance has not been implemented yet by multiple clusters handler.")
+	klog.V(6).Infof("Adding an instance has not been implemented yet by multiple clusters handler.")
 }
 
 // ReplaceInstances ...
