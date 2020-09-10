@@ -56,12 +56,12 @@ func NewKubeSingleClusterEventHandler(ctrlMgr ctrlmanager.Manager, converter com
 
 // AddService ...
 func (h *KubeSingleClusterEventHandler) AddService(e *types.ServiceEvent) {
-	klog.V(6).Infof("Adding a service has not been implemented yet by single clusters handler.")
+	klog.Warningf("Adding a service has not been implemented yet by single clusters handler.")
 }
 
 // AddInstance ...
 func (h *KubeSingleClusterEventHandler) AddInstance(e *types.ServiceEvent) {
-	klog.V(6).Infof("Adding an instance has not been implemented yet by single clusters handler.")
+	klog.Warningf("Adding an instance has not been implemented yet by single clusters handler.")
 }
 
 // ReplaceInstances ...

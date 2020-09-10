@@ -9,7 +9,6 @@ import (
 	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
 	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
 	"github.com/symcn/mesh-operator/pkg/option"
-	"github.com/symcn/mesh-operator/pkg/utils"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -102,18 +101,13 @@ func buildCtrlManager(cfg *rest.Config) (ctrlmanager.Manager, error) {
 		return nil, fmt.Errorf("unable to create a manager, err: %v", err)
 	}
 
-	klog.Info("starting the control manager")
-	stopCh := utils.SetupSignalHandler()
-	go func() {
-		if err := ctrlMgr.Start(stopCh); err != nil {
-			klog.Fatalf("start to run the controllers manager, err: %v", err)
-		}
-	}()
-	for !ctrlMgr.GetCache().WaitForCacheSync(stopCh) {
-		klog.Warningf("Waiting for caching objects to informer")
-		time.Sleep(1 * time.Second)
-	}
-	klog.Infof("caching objects to informer is successful")
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredService{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfig{})
+	// ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessor{})
+	// // ctrlMgr.GetCache().GetInformer(&v1alpha1.ConfiguredServiceList{})
+	// // ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceConfigList{})
+	// // ctrlMgr.GetCache().GetInformer(&v1alpha1.ServiceAccessorList{})
+
 	return ctrlMgr, nil
 }
 
