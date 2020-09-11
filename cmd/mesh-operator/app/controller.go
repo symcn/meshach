@@ -265,6 +265,12 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 		opt.EnableServiceAccessor,
 		"Enable serviceaccessor controller.",
 	)
+	cmd.PersistentFlags().BoolVar(
+		&opt.WatchIstioCRD,
+		"watch-istio-crd",
+		opt.WatchIstioCRD,
+		"reconcile configuredservice and serviceconfig when istio crd changed.",
+	)
 
 	return cmd
 }

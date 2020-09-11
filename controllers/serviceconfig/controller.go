@@ -137,10 +137,6 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
 		).
 		Watches(
-			&source.Kind{Type: &networkingv1beta1.ServiceEntry{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
-		).
-		Watches(
 			&source.Kind{Type: &networkingv1beta1.WorkloadEntry{}},
 			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
 		).
@@ -157,7 +153,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
 		).
 		WithEventFilter(predicate.Funcs{
-			CreateFunc: func(e event.CreateEvent) bool {
+			DeleteFunc: func(e event.DeleteEvent) bool {
 				_, ok := e.Object.(*meshv1alpha1.ServiceConfig)
 				if ok {
 					return true

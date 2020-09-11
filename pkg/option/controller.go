@@ -34,6 +34,7 @@ type ControllerOption struct {
 	EnableMeshConfig        bool
 	EnableServiceAccessor   bool
 	EnableServiceConfig     bool
+	WatchIstioCRD           bool
 }
 
 // DefaultControllerOption ...
@@ -63,5 +64,6 @@ func DefaultControllerOption() *ControllerOption {
 		EnableMeshConfig:        false,
 		EnableServiceAccessor:   false,
 		EnableServiceConfig:     false,
+		WatchIstioCRD:           true,
 	}
 }
