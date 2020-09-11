@@ -109,6 +109,13 @@ var testOpt = &option.ControllerOption{
 	MeshConfigName:          "mc-test-case",
 	MeshConfigNamespace:     "mesh-test",
 	SelectLabel:             "service",
+	EnableAppMeshConfig:     true,
+	EnableConfiguredService: true,
+	EnableIstioConfig:       true,
+	EnableMeshConfig:        true,
+	EnableServiceAccessor:   true,
+	EnableServiceConfig:     true,
+	WatchIstioCRD:           true,
 }
 
 func getTestMeshConfig() *meshv1alpha1.MeshConfig {

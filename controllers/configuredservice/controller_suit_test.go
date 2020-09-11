@@ -110,6 +110,13 @@ var testOpt = &option.ControllerOption{
 	MeshConfigName:          "mc-test-case",
 	MeshConfigNamespace:     "mesh-test",
 	SelectLabel:             "service",
+	EnableAppMeshConfig:     true,
+	EnableConfiguredService: true,
+	EnableIstioConfig:       true,
+	EnableMeshConfig:        true,
+	EnableServiceAccessor:   true,
+	EnableServiceConfig:     true,
+	WatchIstioCRD:           true,
 }
 
 func getTestMeshConfig() *meshv1alpha1.MeshConfig {
@@ -139,19 +146,52 @@ func getTestMeshConfig() *meshv1alpha1.MeshConfig {
 
 var (
 	blueSubset = &meshv1alpha1.Subset{
-		Name:   "blue",
+		Name: "blue",
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "aa",
+			},
+			MaxConnections: 10,
+			Timeout:        "10s",
+			MaxRetries:     2,
+		},
 		Labels: map[string]string{"test-group": "blue"},
 	}
 	greenSubset = &meshv1alpha1.Subset{
-		Name:   "green",
+		Name: "green",
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "aa",
+			},
+			MaxConnections: 10,
+			Timeout:        "10s",
+			MaxRetries:     2,
+		},
 		Labels: map[string]string{"test-group": "green"},
 	}
 	canarySubset = &meshv1alpha1.Subset{
-		Name:   "canary",
-		Labels: map[string]string{"test-group": "green"},
+		Name: "canary",
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "aa",
+			},
+			MaxConnections: 10,
+			Timeout:        "10s",
+			MaxRetries:     2,
+		},
+		Labels:   map[string]string{"test-group": "green"},
+		IsCanary: true,
 	}
 	redSubset = &meshv1alpha1.Subset{
-		Name:   "red",
+		Name: "red",
+		Policy: &meshv1alpha1.Policy{
+			LoadBalancer: map[string]string{
+				"simple": "aa",
+			},
+			MaxConnections: 10,
+			Timeout:        "10s",
+			MaxRetries:     2,
+		},
 		Labels: map[string]string{"test-group": "red"},
 	}
 )
