@@ -29,9 +29,7 @@ import (
 	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -125,10 +123,6 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meshv1alpha1.ServiceConfig{}).
 		Watches(
-			&source.Kind{Type: &networkingv1beta1.WorkloadEntry{}},
-			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
-		).
-		Watches(
 			&source.Kind{Type: &networkingv1beta1.VirtualService{}},
 			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ServiceConfig{}},
 		).
@@ -152,14 +146,5 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&source.Kind{Type: &networkingv1beta1.ServiceEntry{}},
 			&handler.EnqueueRequestForOwner{IsController: true, OwnerType: &meshv1alpha1.ConfiguredService{}},
 		).
-		WithEventFilter(predicate.Funcs{
-			DeleteFunc: func(e event.DeleteEvent) bool {
-				_, ok := e.Object.(*meshv1alpha1.ServiceConfig)
-				if ok {
-					return true
-				}
-				return false
-			},
-		}).
 		Complete(r)
 }
