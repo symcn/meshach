@@ -119,7 +119,7 @@ func getScopedAccessServices(namespace, name string, c client.Client) (*v1.Servi
 		return nil, err
 	}
 
-	klog.V(4).Infof("Got ServiceAccessor {%s/%s} successfully.", namespace, name)
+	klog.V(6).Infof("Got ServiceAccessor {%s/%s} successfully.", namespace, name)
 	return sa, nil
 }
 

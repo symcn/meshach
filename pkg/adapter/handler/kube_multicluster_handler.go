@@ -90,7 +90,7 @@ func (h *KubeMultiClusterEventHandler) DeleteService(event *types2.ServiceEvent)
 
 // DeleteInstance ...
 func (h *KubeMultiClusterEventHandler) DeleteInstance(event *types2.ServiceEvent) {
-	klog.Warningf("Deleting an instance has not been implemented yet by multiple clusters handler.")
+	klog.V(6).Infof("Deleting an instance has not been implemented yet by multiple clusters handler.")
 }
 
 // ReplaceAccessorInstances ...

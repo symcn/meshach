@@ -23,13 +23,10 @@ spec:
             - "-v"
             - "4"
             - "--enable-configuredservice"
-            - "true"
-            - "--leader-election-id"
-            - "mesh-operator-lock-configuredservice"
-            - "--max-concurrent-reconciles"
-            - "100"
-            - "--goroutine-threshold"
-            - "100000"
+            - "--leader-enable=false"
+            - "--watch-istio-crd=false"
+            # - "--leader-election-id"
+            # - "mesh-operator-lock-configuredservice"
           resources:
             limits:
               cpu: 2
@@ -63,9 +60,9 @@ spec:
             - "-v"
             - "4"
             - "--enable-serviceconfig"
-            - "true"
-            - "--leader-election-id"
-            - "mesh-operator-lock-serviceconfig"
+            - "--leader-enable=false"
+            # - "--leader-election-id"
+            # - "mesh-operator-lock-serviceconfig"
           resources:
             limits:
               cpu: 2
@@ -99,9 +96,9 @@ spec:
             - "-v"
             - "4"
             - "--enable-meshconfig"
-            - "true"
-            - "--leader-election-id"
-            - "mesh-operator-lock-meshconfig"
+            - "--leader-enable=false"
+            # - "--leader-election-id"
+            # - "mesh-operator-lock-meshconfig"
           resources:
             limits:
               cpu: 2
@@ -135,9 +132,9 @@ spec:
             - "-v"
             - "4"
             - "--enable-serviceaccessor"
-            - "true"
-            - "--leader-election-id"
-            - "mesh-operator-lock-serviceaccessor"
+            - "--leader-enable=false"
+            # - "--leader-election-id"
+            # - "mesh-operator-lock-serviceaccessor"
           resources:
             limits:
               cpu: 2
