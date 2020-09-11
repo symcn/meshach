@@ -38,7 +38,7 @@ type RegistryClient struct {
 	ccaches                map[string]*zookeeper.PathCache
 }
 
-// New Create a new client for zookeeper
+// New Create a registry client for a scenario using the zookeeper
 func New(opt option.Registry) (component.Registry, error) {
 	conn, _, err := zkClient.Connect(opt.Address, time.Duration(opt.Timeout)*time.Second)
 	if err != nil {
@@ -90,7 +90,7 @@ func (c *RegistryClient) Start() error {
 	return nil
 }
 
-// eventLoop Creating the caches for every provider
+// eventLoop Creating a cache for every provider
 func (c *RegistryClient) eventLoop() {
 	for event := range c.scache.Events() {
 		hostname := path.Base(event.Path)

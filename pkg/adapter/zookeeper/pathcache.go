@@ -123,7 +123,7 @@ func (p *PathCache) Stop() {
 	}()
 }
 
-// watch watch a specified path to make the node changed event can be handle by path cache.
+// watch watching a specified path to make the changed event can be handled by path cache.
 func (p *PathCache) watch(path string) error {
 	klog.V(6).Infof("[ ===== WATCHING ACTION ===== ] - GetW : path [%s]", path)
 
@@ -138,8 +138,7 @@ func (p *PathCache) watch(path string) error {
 	return nil
 }
 
-// watchAndAddChildren
-//
+// watchAndAddChildren The purposes of this method in fourfold:
 // 1.Watching this node's children
 // 2.Forwarding the component which has been send by zookeeper
 // 3.Watching every child's node via method GetW()
@@ -169,18 +168,15 @@ func (p *PathCache) watchAndAddChildren() error {
 	return nil
 }
 
-// watchChildren
+// watchChildren Watching the children's changing of this path, meanwhile fetching the children of this path
 func (p *PathCache) watchChildren() error {
 	klog.V(6).Infof("[ ===== WATCHING ACTION ===== ] - ChildrenW : path [%s]", p.Path)
 	children, stat, ch, err := p.conn.ChildrenW(p.Path)
 	if err != nil {
-		if strings.Contains(p.Path, ConsumersPath) {
-			klog.V(6).Infof("Watching on path [%s]'s children has an error: %v", p.Path, err)
-			return err
-		}
 		klog.Errorf("Watching on path [%s]'s children has an error: %v", p.Path, err)
 		return err
 	}
+
 	klog.V(6).Infof("The children of the watched path [%s]，stat: [%v] size: %d", p.Path, stat, len(children))
 	for _, child := range children {
 		klog.V(6).Infof("[SET CACHE] true pcaches[%s] %s", p.Path, child)
@@ -201,7 +197,7 @@ func (p *PathCache) watchChildren() error {
 	return nil
 }
 
-// onChildAdd watch this added child, then inform the client immediately.
+// onChildAdd watch this added child, then it will inform the client immediately.
 func (p *PathCache) onChildAdd(child string) {
 	err := p.watch(child)
 	if err != nil {
@@ -219,7 +215,7 @@ func (p *PathCache) onChildAdd(child string) {
 	go p.notify(event)
 }
 
-// onEvent Processing event from zookeeper.
+// onEvent Processing events come from zookeeper.
 func (p *PathCache) onEvent(event *zk.Event, isSvePath bool) {
 	klog.V(6).Infof("[===== RECEIVED ZK ORIGINAL EVENT =====]: [%s]:[%d]:[%s]:[%v]:[%s]",
 		p.owner, p.zkEventCounter, p.Path, event.Type, event.Path)
