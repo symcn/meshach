@@ -24,8 +24,10 @@ spec:
             - "4"
             - "--enable-configuredservice"
             - "--leader-enable=false"
-            - "--watch-istio-crd=false"
+            - "--watch-istio-crd=true"
             # - "--leader-election-id"
+            - "--qps=180.0"
+            - "--burst=200"
             # - "mesh-operator-lock-configuredservice"
           resources:
             limits:
@@ -61,6 +63,8 @@ spec:
             - "4"
             - "--enable-serviceconfig"
             - "--leader-enable=false"
+            - "--qps=80.0"
+            - "--burst=100"
             # - "--leader-election-id"
             # - "mesh-operator-lock-serviceconfig"
           resources:
@@ -97,6 +101,8 @@ spec:
             - "4"
             - "--enable-meshconfig"
             - "--leader-enable=false"
+            - "--qps=80.0"
+            - "--burst=100"
             # - "--leader-election-id"
             # - "mesh-operator-lock-meshconfig"
           resources:
@@ -133,6 +139,8 @@ spec:
             - "4"
             - "--enable-serviceaccessor"
             - "--leader-enable=false"
+            - "--qps=80.0"
+            - "--burst=100"
             # - "--leader-election-id"
             # - "mesh-operator-lock-serviceaccessor"
           resources:

@@ -35,6 +35,8 @@ func NewAdapterCmd(ropt *option.RootOption) *cobra.Command {
 			PrintFlags(cmd.Flags())
 			opt.EventHandlers.Kubeconfig = ropt.Kubeconfig
 			opt.EventHandlers.ConfigContext = ropt.ConfigContext
+			opt.EventHandlers.QPS = ropt.QPS
+			opt.EventHandlers.Burst = ropt.Burst
 			a, err := adapter.NewAdapter(opt)
 			if err != nil {
 				klog.Fatalf("unable to NewAdapter err: %v", err)

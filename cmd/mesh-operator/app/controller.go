@@ -57,6 +57,7 @@ func NewControllerCmd(ropt *option.RootOption) *cobra.Command {
 			if err != nil {
 				klog.Fatalf("unable to get kubeconfig err: %v", err)
 			}
+			klog.Infof("QPS: %f, Burst: %d", cfg.QPS, cfg.Burst)
 
 			// Set default manager options
 			rp := time.Minute * time.Duration(opt.SyncPeriod)

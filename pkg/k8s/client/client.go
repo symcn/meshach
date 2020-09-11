@@ -94,14 +94,14 @@ func NewClientConfig(kubeConfig []byte) (*rest.Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build client config from API config")
 	}
-	return SetDefaultQPS(cfg), nil
+	return SetDefaultQPS(cfg, 100.0, 120), nil
 }
 
 // SetDefaultQPS ...
-func SetDefaultQPS(cfg *rest.Config) *rest.Config {
+func SetDefaultQPS(cfg *rest.Config, qps float32, burst int) *rest.Config {
 	// Adjust our client's rate limits based on the number of controllers we are running.
-	cfg.QPS = 100.0
-	cfg.Burst = 120
+	cfg.QPS = qps
+	cfg.Burst = burst
 	return cfg
 }
 

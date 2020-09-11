@@ -37,6 +37,8 @@ type EventHandlers struct {
 
 	// you can add more options for other event handler you will utilize.
 	EnableDebugLog bool
+	QPS            float32
+	Burst          int
 }
 
 // DefaultAdapterOption ...

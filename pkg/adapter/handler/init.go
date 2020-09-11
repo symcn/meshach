@@ -75,7 +75,7 @@ func buildRestConfig(opt option.EventHandlers) (*rest.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to load the default kubeconfig, err: %v", err)
 	}
-	return k8sclient.SetDefaultQPS(cfg), nil
+	return k8sclient.SetDefaultQPS(cfg, opt.QPS, opt.Burst), nil
 }
 
 func buildClientSet(cfg *rest.Config) (*kubernetes.Clientset, error) {

@@ -41,6 +41,8 @@ func GetRootCmd(args []string) *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&opt.Kubeconfig, "kubeconfig", "c", "", "Kubernetes configuration file")
 	rootCmd.PersistentFlags().StringVar(&opt.ConfigContext, "context", "", "The name of the kubeconfig context to use")
 	rootCmd.PersistentFlags().StringVarP(&opt.Namespace, "namespace", "n", opt.Namespace, "Config namespace")
+	rootCmd.PersistentFlags().Float32Var(&opt.QPS, "qps", 0.0, "Maximum QPS to the master from this k8s client")
+	rootCmd.PersistentFlags().IntVar(&opt.Burst, "burst", 0, "Maximum burst for throttle")
 
 	// Make sure that klog logging variables are initialized so that we can
 	// update them from this file.

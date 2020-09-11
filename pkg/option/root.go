@@ -16,6 +16,8 @@ type RootOption struct {
 	Namespace        string
 	DefaultNamespace string
 	DevelopmentMode  bool
+	QPS              float32
+	Burst            int
 }
 
 // DefaultRootOption ...
@@ -23,6 +25,8 @@ func DefaultRootOption() *RootOption {
 	return &RootOption{
 		Namespace:       corev1.NamespaceAll,
 		DevelopmentMode: true,
+		QPS:             120,
+		Burst:           120,
 	}
 }
 
@@ -33,7 +37,7 @@ func (r *RootOption) GetK8sConfig() (*rest.Config, error) {
 		return nil, errors.Wrap(err, "could not get k8s config")
 	}
 
-	return k8sclient.SetDefaultQPS(config), nil
+	return k8sclient.SetDefaultQPS(config, r.QPS, r.Burst), nil
 }
 
 // GetKubeInterface ...
