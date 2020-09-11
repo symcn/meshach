@@ -86,7 +86,7 @@ var _ = Describe("VirtualService", func() {
 			for _, http := range found.Spec.Http {
 				if http.Name == "dubbo-http-route-canary" {
 					for _, route := range http.Route {
-						Expect(route.Weight).To(Equal(50))
+						Expect(route.Weight).To(Equal(int32(50)))
 					}
 				}
 			}
