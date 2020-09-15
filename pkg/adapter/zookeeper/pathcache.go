@@ -157,7 +157,8 @@ func (p *PathCache) watchAndAddChildren() error {
 
 	// caching every child into a map
 	for _, child := range children {
-		fp := path.Join(p.Path, child)
+		ch := child
+		fp := path.Join(p.Path, ch)
 		if ok := p.Cached[fp]; !ok {
 			go p.addChild(fp)
 		}
