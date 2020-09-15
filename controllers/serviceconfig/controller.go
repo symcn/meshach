@@ -55,22 +55,22 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	klog.Infof("Reconciling ServiceConfig: %s/%s", req.Namespace, req.Name)
 	ctx := context.TODO()
 
-	// Fetch the MeshConfig
-	err := r.getMeshConfig(ctx)
-	if err != nil {
-		klog.Errorf("Get cluster MeshConfig[%s/%s] error: %+v",
-			r.Opt.MeshConfigNamespace, r.Opt.MeshConfigName, err)
-		return ctrl.Result{}, err
-	}
-
 	// Fetch the ServiceConfig instance
 	instance := &meshv1alpha1.ServiceConfig{}
-	err = r.Get(ctx, req.NamespacedName, instance)
+	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			klog.V(6).Infof("Can't found ServiceConfig[%s/%s], skip...", req.Namespace, req.Name)
 			return ctrl.Result{}, nil
 		}
+		return ctrl.Result{}, err
+	}
+
+	// Fetch the MeshConfig
+	err = r.getMeshConfig(ctx)
+	if err != nil {
+		klog.Errorf("Get cluster MeshConfig[%s/%s] error: %+v",
+			r.Opt.MeshConfigNamespace, r.Opt.MeshConfigName, err)
 		return ctrl.Result{}, err
 	}
 

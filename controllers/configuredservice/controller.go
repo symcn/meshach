@@ -54,17 +54,9 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	klog.Infof("Reconciling ConfiguredService: %s/%s", req.Namespace, req.Name)
 	ctx := context.TODO()
 
-	// Fetch the MeshConfig
-	err := r.getMeshConfig(ctx)
-	if err != nil {
-		klog.Errorf("Get cluster MeshConfig[%s/%s] error: %+v",
-			r.Opt.MeshConfigNamespace, r.Opt.MeshConfigName, err)
-		return ctrl.Result{}, err
-	}
-
 	// Fetch the ConfiguredService instance
 	instance := &meshv1alpha1.ConfiguredService{}
-	err = r.Get(ctx, req.NamespacedName, instance)
+	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request foundect not found, could have been deleted after reconcile req.
@@ -74,6 +66,14 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, nil
 		}
 		// Error reading the foundect - requeue the req.
+		return ctrl.Result{}, err
+	}
+
+	// Fetch the MeshConfig
+	err = r.getMeshConfig(ctx)
+	if err != nil {
+		klog.Errorf("Get cluster MeshConfig[%s/%s] error: %+v",
+			r.Opt.MeshConfigNamespace, r.Opt.MeshConfigName, err)
 		return ctrl.Result{}, err
 	}
 
