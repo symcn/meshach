@@ -144,12 +144,21 @@ var _ = Describe("Controller", func() {
 
 	Describe("test configuredservice reconcile", func() {
 		Context("occurred meshconfig not found error when reconcile configuredservice", func() {
+			BeforeEach(func() {
+				err := reconciler.Create(context.Background(), normalCs)
+				Expect(err).NotTo(HaveOccurred())
+			})
 			It("can not found meshconfig object", func() {
-				result, err := reconciler.Reconcile(onlyServiceEntryReq)
+				result, err := reconciler.Reconcile(normalReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(`meshconfigs.mesh.symcn.com "mc-test-case" not found`))
 			}, timeout)
+
+			AfterEach(func() {
+				err := reconciler.Delete(context.Background(), normalCs)
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 
 		Context("occurred error when reconcile configuredservice", func() {

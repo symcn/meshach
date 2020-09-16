@@ -81,13 +81,13 @@ var _ = Describe("Controller", func() {
 		Context("error occured", func() {
 			It("cannot get meshconfig", func() {
 				r := Reconciler{
-					Client:     getFakeClient(),
+					Client:     getFakeClient(normalServiceConfig),
 					Log:        nil,
 					Scheme:     getFakeScheme(),
 					Opt:        testOpt,
 					MeshConfig: getTestMeshConfig(),
 				}
-				result, err := r.Reconcile(errReq)
+				result, err := r.Reconcile(normalReq)
 				Expect(result).To(Equal(reconcile.Result{}))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("meshconfigs.mesh.symcn.com \"mc-test-case\" not found"))
@@ -148,9 +148,6 @@ var _ = Describe("Controller", func() {
 			mockClient.EXPECT().
 				Get(gomock.Any(), gomock.Any(), gomock.Not(&meshv1alpha1.MeshConfig{})).
 				Return(errors.New("get serviceconfig error"))
-			mockClient.EXPECT().
-				Get(gomock.Any(), gomock.Any(), gomock.Eq(&meshv1alpha1.MeshConfig{})).
-				Return(nil)
 		}, timeout)
 
 		AfterEach(func() {
