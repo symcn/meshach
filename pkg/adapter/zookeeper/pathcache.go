@@ -187,9 +187,12 @@ func (p *PathCache) watchChildren() error {
 	// all of component was send from zookeeper will be forwarded into the channel of this path cache.
 	go p.forward(ch)
 
+	cch := make([]string, 0, len(children))
+	copy(cch, children)
+
 	event := PathCacheEvent{
 		EventType: PathCacheEventChildrenReplaced,
-		Paths:     children,
+		Paths:     cch,
 	}
 	go p.notify(event)
 
