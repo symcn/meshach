@@ -9,7 +9,7 @@ import (
 	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	. "github.com/symcn/mesh-operator/test"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
