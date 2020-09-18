@@ -119,7 +119,7 @@ func (h *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 	e *types.ServiceEvent,
 	getScopedServices func(s string) map[string]struct{}) {
 
-	klog.V(6).Infof("event handler for a single cluster: replacing the accessor's instances: %s", e.Service.Name)
+	// klog.V(6).Infof("event handler for a single cluster: replacing the accessor's instances: %s", e.Service.Name)
 	metrics.ReplacedAccessorInstancesCounter.Inc()
 
 	instances := e.Instances
