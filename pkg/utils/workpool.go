@@ -9,6 +9,7 @@ import (
 	"k8s.io/klog"
 )
 
+// WorkerPool workerPool interface
 type WorkerPool interface {
 	Schedule(task func())
 
@@ -22,6 +23,7 @@ type workerPool struct {
 	sem  chan struct{}
 }
 
+// NewWorkerPool build workpool object
 func NewWorkerPool(size int) WorkerPool {
 	return &workerPool{
 		work: make(chan func()),
@@ -83,6 +85,7 @@ func (p *workerPool) spawnWorker(task func()) {
 	}
 }
 
+// GoWithRecover go task with goroutine and recover
 func GoWithRecover(handler func(), recoverHandler func(r interface{})) {
 	go func() {
 		defer func() {
