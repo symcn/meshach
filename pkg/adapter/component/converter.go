@@ -10,7 +10,7 @@ import (
 // finally all services and configs will be convert to the unified models we have defined.
 type Converter interface {
 	// ToConfiguredService convert service to cs
-	ToConfiguredService(s *types2.Service) *v1.ConfiguredService
+	ToConfiguredService(s *types2.ServiceEvent) *v1.ConfiguredService
 
 	// ToServiceConfig
 	ToServiceConfig(cc *types2.ConfiguratorConfig) *v1.ServiceConfig

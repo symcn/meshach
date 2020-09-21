@@ -75,7 +75,7 @@ func (h *KubeSingleClusterEventHandler) ReplaceInstances(event *types.ServiceEve
 
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Convert a service event that notified by zookeeper to a Service CRD
-		cs := h.converter.ToConfiguredService(event.Service)
+		cs := h.converter.ToConfiguredService(event)
 
 		// loading cs CR from k8s cluster
 		foundCs, err := getConfiguredService(cs.Namespace, cs.Name, h.ctrlMgr.GetClient())
@@ -159,7 +159,7 @@ func (h *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 				if errors.IsNotFound(err) {
 					return createScopedAccessServices(sas, h.ctrlMgr.GetClient())
 				}
-				return nil
+				return err
 			}
 			foundSas.Spec = sas.Spec
 			return updateScopedAccessServices(foundSas, h.ctrlMgr.GetClient())

@@ -5,7 +5,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	"github.com/symcn/mesh-operator/pkg/adapter/constant"
 	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
 	"github.com/symcn/mesh-operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,15 +29,15 @@ type Flag struct {
 }
 
 // ToConfiguredService Convert service between these two formats
-func (dc *DubboConverter) ToConfiguredService(s *types2.Service) *v1.ConfiguredService {
+func (dc *DubboConverter) ToConfiguredService(s *types2.ServiceEvent) *v1.ConfiguredService {
 	// TODO Assuming every service can only provide an unique fixed port to adapt the dubbo case.
 	cs := &v1.ConfiguredService{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.FormatToDNS1123(s.Name),
+			Name:      utils.FormatToDNS1123(s.Service.Name),
 			Namespace: dc.DefaultNamespace,
 		},
 		Spec: v1.ConfiguredServiceSpec{
-			OriginalName: s.Name,
+			OriginalName: s.Service.Name,
 		},
 	}
 
@@ -47,11 +46,7 @@ func (dc *DubboConverter) ToConfiguredService(s *types2.Service) *v1.ConfiguredS
 		ins := &v1.Instance{}
 		ins.Host = utils.RemovePort(i.Host)
 		ins.Port = ToPort(i.Port)
-		ins.Labels = make(map[string]string)
-		for k, v := range i.Labels {
-			ins.Labels[k] = v
-		}
-		ins.Labels[constant.InstanceLabelZoneName] = constant.ZoneValue
+		ins.Labels = i.Labels
 		instances = append(instances, ins)
 	}
 	cs.Spec.Instances = instances

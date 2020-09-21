@@ -314,11 +314,6 @@ func (c *RegistryClient) replaceServiceInstances(hostname string, rawURLs []stri
 	}
 	s := c.addService(hostname, i)
 
-	for k := range instances {
-		instances[k].Service = s
-	}
-
-	s.Instances = instances
 	go c.notifyServiceEvent(&types.ServiceEvent{
 		EventType: types.ServiceInstancesReplace,
 		Service:   s,
@@ -419,8 +414,6 @@ func (c *RegistryClient) replaceAccessorInstances(hostname string, rawURLs []str
 	a := c.addAccessor(hostname)
 
 	for k := range instances {
-		instances[k].Service = a
-
 		// cache an accessor instance based on a scope key.
 		scopedKey := instances[k].Labels["app"]
 		_, ok := c.scopedAccessorsMapping[scopedKey]
@@ -431,8 +424,6 @@ func (c *RegistryClient) replaceAccessorInstances(hostname string, rawURLs []str
 		c.scopedAccessorsMapping[scopedKey][a.Name] = struct{}{}
 		c.scopeLocker.Unlock()
 	}
-
-	a.Instances = instances
 
 	go c.notifyAccessorEvent(&types.ServiceEvent{
 		EventType: types.ServiceInstancesReplace,

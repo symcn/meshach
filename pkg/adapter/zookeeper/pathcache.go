@@ -24,6 +24,7 @@ import (
 	"github.com/go-zookeeper/zk"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
+	"github.com/symcn/mesh-operator/pkg/utils"
 	"k8s.io/klog"
 )
 
@@ -34,7 +35,12 @@ var (
 	ConsumersPath    = "consumers"
 	IgnoredHostNames = []string{"metadata", "config"}
 	ConfiguratorPath = DubboRootPath + "/config/dubbo"
+	workPool         utils.WorkerPool
 )
+
+func init() {
+	workPool = utils.NewWorkerPool(10000)
+}
 
 // PathCacheEventType ...
 type PathCacheEventType int
@@ -94,7 +100,7 @@ func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*Pa
 		return nil, err
 	}
 
-	go func() {
+	workPool.ScheduleAuto(func() {
 		for {
 			select {
 			case child := <-p.addChildCh:
@@ -106,7 +112,7 @@ func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*Pa
 				return
 			}
 		}
-	}()
+	})
 
 	return p, nil
 }
@@ -132,9 +138,8 @@ func (p *PathCache) watch(path string) error {
 		klog.Errorf("Getting and watching on path [%s] has an error: %v.", path, err)
 		return err
 	}
-	// klog.V(6).Infof("GetW path: [%s], stat: [%v]", path, stat)
 
-	go p.forward(ch)
+	workPool.ScheduleAuto(func() { p.forward(ch) })
 	return nil
 }
 
@@ -150,19 +155,18 @@ func (p *PathCache) watchAndAddChildren() error {
 		klog.Errorf("Watching on path [%s]'s children has an error: %v", p.Path, err)
 		return err
 	}
-	children := make([]string, len(cch))
-	copy(children, cch)
+	children := deepCopySlice(cch)
 
 	// klog.V(6).Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.Path, stat, len(children), children)
 
 	// all of component was send from zookeeper will be forwarded into the channel of this path cache.
-	go p.forward(ch)
+	workPool.ScheduleAuto(func() { p.forward(ch) })
 
 	// caching every child into a map
 	for _, child := range children {
 		fp := path.Join(p.Path, child)
 		if ok := p.Cached[fp]; !ok {
-			go p.addChild(fp)
+			workPool.ScheduleAuto(func() { p.addChild(fp) })
 		}
 	}
 
@@ -179,23 +183,23 @@ func (p *PathCache) watchChildren() error {
 		klog.Errorf("Watching on path [%s]'s children has an error: %v", p.Path, err)
 		return err
 	}
-	children := make([]string, len(cch))
-	copy(children, cch)
+	children := deepCopySlice(cch)
 
 	// klog.V(6).Infof("The children of the watched path [%s]，stat: [%v] size: %d", p.Path, stat, len(children))
+	p.Cached = make(map[string]bool)
 	for _, child := range children {
 		klog.V(6).Infof("[SET CACHE] true pcaches[%s] %s", p.Path, child)
 		p.Cached[child] = true
 	}
 
 	// all of component was send from zookeeper will be forwarded into the channel of this path cache.
-	go p.forward(ch)
+	workPool.ScheduleAuto(func() { p.forward(ch) })
 
 	event := PathCacheEvent{
 		EventType: PathCacheEventChildrenReplaced,
 		Paths:     children,
 	}
-	go p.notify(event)
+	workPool.ScheduleAuto(func() { p.notify(event) })
 
 	metrics.PathCacheLengthGauge.With(prometheus.Labels{"path": p.Path}).Set(float64(len(p.Cached)))
 
@@ -217,7 +221,7 @@ func (p *PathCache) onChildAdd(child string) {
 		EventType: PathCacheEventAdded,
 		Path:      child,
 	}
-	go p.notify(event)
+	workPool.ScheduleAuto(func() { p.notify(event) })
 }
 
 // onEvent Processing events come from zookeeper.
@@ -257,7 +261,7 @@ func (p *PathCache) onChildDeleted(child string) {
 		EventType: PathCacheEventDeleted,
 		Path:      child,
 	}
-	go p.notify(event)
+	workPool.ScheduleAuto(func() { p.notify(event) })
 }
 
 // onNodeChanged
@@ -273,10 +277,10 @@ func (p *PathCache) onNodeChanged(path string) {
 	if err != nil {
 		klog.Errorf("GetW path [%s] has an error: %v", path, err)
 	} else {
-		go p.forward(ch)
+		workPool.ScheduleAuto(func() { p.forward(ch) })
 	}
 
-	go p.notify(event)
+	workPool.ScheduleAuto(func() { p.notify(event) })
 
 }
 
@@ -303,4 +307,16 @@ func Ignore(path string) bool {
 		}
 	}
 	return false
+}
+
+func deepCopySlice(src []string) (dst []string) {
+	if len(src) < 1 {
+		return nil
+	}
+	dst = make([]string, len(src))
+
+	for i := 0; i < len(src); i++ {
+		dst[i] = string(append([]byte(nil), []byte(src[i])...))
+	}
+	return dst
 }
