@@ -186,11 +186,12 @@ func (p *PathCache) watchChildren() error {
 	children := deepCopySlice(cch)
 
 	// klog.V(6).Infof("The children of the watched path [%s]，stat: [%v] size: %d", p.Path, stat, len(children))
-	p.Cached = make(map[string]bool)
+	cached := make(map[string]bool, len(children))
 	for _, child := range children {
 		klog.V(6).Infof("[SET CACHE] true pcaches[%s] %s", p.Path, child)
-		p.Cached[child] = true
+		cached[child] = true
 	}
+	p.Cached = cached
 
 	// all of component was send from zookeeper will be forwarded into the channel of this path cache.
 	workPool.ScheduleAuto(func() { p.forward(ch) })
