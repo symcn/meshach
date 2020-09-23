@@ -64,7 +64,7 @@ func (p *workerPool) ScheduleAuto(task func()) {
 	case p.sem <- struct{}{}:
 		go p.spawnWorker(task)
 	default:
-		klog.Infof("[syncpool] workerpool new goroutine")
+		// klog.V().Infof("[syncpool] workerpool new goroutine")
 		GoWithRecover(func() {
 			task()
 		}, nil)
