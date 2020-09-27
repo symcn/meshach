@@ -36,6 +36,7 @@ type RegistryClient struct {
 	scache                 *zookeeper.PathCache
 	pcaches                map[string]*zookeeper.PathCache
 	ccaches                map[string]*zookeeper.PathCache
+	autoFillNode           bool
 }
 
 // New Create a registry client for a scenario using the zookeeper
@@ -58,13 +59,14 @@ func New(opt option.Registry) (component.Registry, error) {
 		scache:                 nil,
 		pcaches:                make(map[string]*zookeeper.PathCache),
 		ccaches:                make(map[string]*zookeeper.PathCache),
+		autoFillNode:           true,
 	}, nil
 }
 
 // Start ...
 func (c *RegistryClient) Start() error {
 	// create a cache for every service
-	scache, err := zookeeper.NewPathCache(c.conn, zookeeper.DubboRootPath, "REGISTRY", true)
+	scache, err := zookeeper.NewPathCache(c.conn, zookeeper.DubboRootPath, "REGISTRY", true, c.autoFillNode)
 	if err != nil {
 		return err
 	}
@@ -102,7 +104,7 @@ func (c *RegistryClient) eventLoop() {
 		switch event.EventType {
 		case zookeeper.PathCacheEventAdded:
 			ppath := path.Join(event.Path, zookeeper.ProvidersPath)
-			pcache, err := zookeeper.NewPathCache(c.conn, ppath, "REGISTRY", false)
+			pcache, err := zookeeper.NewPathCache(c.conn, ppath, "REGISTRY", false, c.autoFillNode)
 			if err != nil {
 				klog.Errorf("Create a provider cache %s has an error: %v", ppath, err)
 				continue
@@ -126,7 +128,7 @@ func (c *RegistryClient) eventLoop() {
 			}()
 			// creating a path cache for every consumer
 			cpath := path.Join(event.Path, zookeeper.ConsumersPath)
-			ccache, err := zookeeper.NewPathCache(c.conn, cpath, "REGISTRY", false)
+			ccache, err := zookeeper.NewPathCache(c.conn, cpath, "REGISTRY", false, c.autoFillNode)
 			if err != nil {
 				continue
 			}

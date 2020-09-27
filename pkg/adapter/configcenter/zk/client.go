@@ -61,7 +61,7 @@ func (cc *ConfigClient) Start() error {
 	// cc.configEntries[constant.DefaultConfigName] = defaultConfig
 
 	if cc.conn != nil {
-		rpc, err := zookeeper.NewPathCache(cc.conn, zookeeper.ConfiguratorPath, "CONFIGURATION", true)
+		rpc, err := zookeeper.NewPathCache(cc.conn, zookeeper.ConfiguratorPath, "CONFIGURATION", true, false)
 		if err != nil {
 			return err
 		}

@@ -28,6 +28,16 @@ import (
 	"k8s.io/klog"
 )
 
+// Constants for ACL permissions
+const (
+	PermRead = 1 << iota
+	PermWrite
+	PermCreate
+	PermDelete
+	PermAdmin
+	PermAll = 0x1f
+)
+
 // Some default settings.
 var (
 	DubboRootPath    = "/dubbo"
@@ -56,6 +66,7 @@ type PathCache struct {
 	Cached         map[string]bool
 	owner          string
 	zkEventCounter int64
+	autoFillNode   bool // You can specify that this path cache fill a node automatically due to the absence of this node.
 }
 
 // PathCacheEvent ...
@@ -74,7 +85,7 @@ const (
 )
 
 // NewPathCache ...
-func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*PathCache, error) {
+func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool, autoFillNode bool) (*PathCache, error) {
 	klog.V(6).Infof("Create a cache for path: [%s]", path)
 
 	p := &PathCache{
@@ -87,6 +98,18 @@ func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool) (*Pa
 		stopCh:         make(chan bool),
 		owner:          owner,
 		zkEventCounter: 0,
+		autoFillNode:   autoFillNode,
+	}
+
+	// try to create this node firstly
+	if p.autoFillNode {
+		path, err := p.conn.Create(p.Path, nil, 0, worldACL(PermAll))
+		if err != nil {
+			klog.Warningf("Could not create the zNode with Path(%s): %v",
+				p.Path, err)
+		} else {
+			klog.V(4).Infof("Created a zNode with path (%s) due to this path's absent", path)
+		}
 	}
 
 	var err error
@@ -145,7 +168,7 @@ func (p *PathCache) watch(path string) error {
 
 // watchAndAddChildren The purposes of this method in fourfold:
 // 1.Watching this node's children
-// 2.Forwarding the component which has been send by zookeeper
+// 2.Forwarding the event which has been send by zookeeper
 // 3.Watching every child's node via method GetW()
 // 4.Caching every child so that we can receive the deletion event of this path later
 func (p *PathCache) watchAndAddChildren() error {
@@ -159,7 +182,7 @@ func (p *PathCache) watchAndAddChildren() error {
 
 	// klog.V(6).Infof("The children of the watched path [%s]，stat: [%v] size: %d:\n%v", p.Path, stat, len(children), children)
 
-	// all of component was send from zookeeper will be forwarded into the channel of this path cache.
+	// all of event was send by zookeeper will be forwarded into the inner channel of this path cache.
 	workPool.ScheduleAuto(func() { p.forward(ch) })
 
 	// caching every child into a map
@@ -320,4 +343,11 @@ func deepCopySlice(src []string) (dst []string) {
 		dst[i] = string(append([]byte(nil), []byte(src[i])...))
 	}
 	return dst
+}
+
+// WorldACL produces an ACL list containing a single ACL which uses the
+// provided permissions, with the scheme "world", and ID "anyone", which
+// is used by ZooKeeper to represent any user at all.
+func worldACL(perms int32) []zk.ACL {
+	return []zk.ACL{{perms, "world", "anyone"}}
 }
