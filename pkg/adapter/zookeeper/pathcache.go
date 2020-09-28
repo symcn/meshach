@@ -84,9 +84,10 @@ const (
 	PathCacheEventChildrenReplaced
 )
 
-// NewPathCache ...
+// NewPathCache we need a cache manager for a given path,
+// In some scenario it probably creates plenty of PathCaches by a registry client.
 func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool, autoFillNode bool) (*PathCache, error) {
-	klog.V(6).Infof("Create a cache for path: [%s]", path)
+	klog.V(6).Infof("Creating a cache for a given path: [%s]", path)
 
 	p := &PathCache{
 		conn:           conn,
@@ -101,15 +102,9 @@ func NewPathCache(conn *zk.Conn, path string, owner string, isSvcPath bool, auto
 		autoFillNode:   autoFillNode,
 	}
 
-	// try to create this node firstly
+	// trying to create this given node firstly to avoid to watch a non-exist node.
 	if p.autoFillNode {
-		path, err := p.conn.Create(p.Path, nil, 0, worldACL(PermAll))
-		if err != nil {
-			klog.Warningf("Could not create the zNode with Path(%s): %v",
-				p.Path, err)
-		} else {
-			klog.V(4).Infof("Created a zNode with path (%s) due to this path's absent", path)
-		}
+		create(p.conn, p.Path)
 	}
 
 	var err error
@@ -350,4 +345,48 @@ func deepCopySlice(src []string) (dst []string) {
 // is used by ZooKeeper to represent any user at all.
 func worldACL(perms int32) []zk.ACL {
 	return []zk.ACL{{perms, "world", "anyone"}}
+}
+
+// createRecursivelyIfNecessary ...
+func createRecursivelyIfNecessary(conn *zk.Conn, path string) {
+	// Strip trailing slashes.
+	for len(path) > 0 && path[len(path)-1] == '/' {
+		path = path[0 : len(path)-1]
+	}
+
+	elements := strings.Split(path, "/")
+	if len(elements) == 0 {
+		return
+	}
+
+	var ops []interface{}
+	var pathPrefix string
+	for i, e := range elements {
+		if i == 0 {
+			continue
+		}
+
+		ops = append(ops, &zk.CreateRequest{
+			Path: pathPrefix + "/" + e,
+			Data: nil,
+			Acl:  worldACL(PermAll),
+		})
+		pathPrefix = pathPrefix + "/" + e
+	}
+
+	if res, err := conn.Multi(ops...); err != nil {
+		klog.Errorf("Create the path recursively has an error: %v", err)
+	} else if len(res) != len(elements)-1 {
+		klog.Warningf("Just only a part of paths has been created: %s", path)
+	}
+
+	klog.V(6).Infof("Created the path %s recursively", path)
+}
+
+// create ...
+func create(conn *zk.Conn, path string) {
+	if _, err := conn.Create(path, nil, 0, worldACL(PermAll)); err != nil {
+		klog.Errorf("create path %s has an error:%v", path, err)
+	}
+	klog.V(6).Infof("Created the path %s", path)
 }
