@@ -344,7 +344,7 @@ func deepCopySlice(src []string) (dst []string) {
 // provided permissions, with the scheme "world", and ID "anyone", which
 // is used by ZooKeeper to represent any user at all.
 func worldACL(perms int32) []zk.ACL {
-	return []zk.ACL{{perms, "world", "anyone"}}
+	return []zk.ACL{{Perms: perms, Scheme: "world", ID: "anyone"}}
 }
 
 // createRecursivelyIfNecessary ...
