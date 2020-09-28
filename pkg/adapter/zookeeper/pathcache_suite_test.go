@@ -71,7 +71,7 @@ var testOpt = &option.Registry{
 type TestServer struct {
 	Port   int
 	Path   string
-	Srv    *server
+	Srv    *Server
 	Config ServerConfigServer
 }
 
@@ -99,7 +99,7 @@ type ServerConfig struct {
 	Servers                  []ServerConfigServer
 }
 
-type server struct {
+type Server struct {
 	stdout, stderr io.Writer
 	cmdString      string
 	cmdArgs        []string
@@ -109,7 +109,7 @@ type server struct {
 	cancelFunc context.CancelFunc
 }
 
-func (srv *server) Start() error {
+func (srv *Server) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	srv.cancelFunc = cancel
 
@@ -121,7 +121,7 @@ func (srv *server) Start() error {
 	return srv.cmd.Start()
 }
 
-func (srv *server) Stop() error {
+func (srv *Server) Stop() error {
 	srv.cancelFunc()
 	return srv.cmd.Wait()
 }
@@ -333,7 +333,8 @@ func requireNoError(t *testing.T, err error, msgAndArgs ...interface{}) {
 	}
 }
 
-func NewIntegrationTestServer(configPath string, stdout, stderr io.Writer) (*server, error) {
+// nolint: golint
+func NewIntegrationTestServer(configPath string, stdout, stderr io.Writer) (*Server, error) {
 	// allow external systems to configure this zk server bin path.
 	zkPath := os.Getenv("ZOOKEEPER_BIN_PATH")
 	if zkPath == "" {
@@ -350,7 +351,7 @@ func NewIntegrationTestServer(configPath string, stdout, stderr io.Writer) (*ser
 	// enable TTL
 	superString += ` -Dzookeeper.extendedTypesEnabled=true -Dzookeeper.emulate353TTLNodes=true`
 
-	return &server{
+	return &Server{
 		cmdString: filepath.Join(zkPath, "zkServer.sh"),
 		cmdArgs:   []string{"start-foreground", configPath},
 		cmdEnv:    []string{superString},

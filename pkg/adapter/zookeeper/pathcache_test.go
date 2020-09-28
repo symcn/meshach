@@ -14,15 +14,15 @@ var _ = Describe("Test case for creating a new PathCache", func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	// Connect a test cluster
-	//os.Setenv("ZOOKEEPER_BIN_PATH", "/Users/yangyongzhi/zookeeper-3.4.14/bin")
-	//ts, err := StartTestCluster(1, nil, nil)
-	//if err != nil {
+	// os.Setenv("ZOOKEEPER_BIN_PATH", "/Users/yangyongzhi/zookeeper-3.4.14/bin")
+	// ts, err := StartTestCluster(1, nil, nil)
+	// if err != nil {
 	//	klog.Errorf("Start a test cluster has an error: %v", err)
-	//}
-	//defer ts.Stop()
-	//Expect(err).NotTo(HaveOccurred())
-	//conn, _, err := ts.ConnectWithOptions(15 * time.Second)
-	//Expect(err).NotTo(HaveOccurred())
+	// }
+	// defer ts.Stop()
+	// Expect(err).NotTo(HaveOccurred())
+	// conn, _, err := ts.ConnectWithOptions(15 * time.Second)
+	// Expect(err).NotTo(HaveOccurred())
 
 	BeforeEach(func() {
 		klog.Infof("before process for each context")
