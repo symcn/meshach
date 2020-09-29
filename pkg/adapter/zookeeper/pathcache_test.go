@@ -92,6 +92,20 @@ var _ = Describe("Test case for creating a new PathCache", func() {
 		})
 	})
 
+	Describe("Test for creating a recursive node but its parent node hasn't exist", func() {
+		path := "/to/create"
+
+		Context("", func() {
+			It("", func() {
+				err := create(conn, path)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		AfterEach(func() {
+		})
+	})
+
 	AfterEach(func() {
 		klog.Infof("after process for each context")
 	})

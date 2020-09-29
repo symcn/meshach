@@ -348,7 +348,7 @@ func worldACL(perms int32) []zk.ACL {
 }
 
 // createRecursivelyIfNecessary ...
-func createRecursivelyIfNecessary(conn *zk.Conn, path string) {
+func createRecursivelyIfNecessary(conn *zk.Conn, path string) error {
 	// Strip trailing slashes.
 	for len(path) > 0 && path[len(path)-1] == '/' {
 		path = path[0 : len(path)-1]
@@ -356,7 +356,7 @@ func createRecursivelyIfNecessary(conn *zk.Conn, path string) {
 
 	elements := strings.Split(path, "/")
 	if len(elements) == 0 {
-		return
+		return nil
 	}
 
 	var ops []interface{}
@@ -376,17 +376,21 @@ func createRecursivelyIfNecessary(conn *zk.Conn, path string) {
 
 	if res, err := conn.Multi(ops...); err != nil {
 		klog.Errorf("Create the path recursively has an error: %v", err)
+		return err
 	} else if len(res) != len(elements)-1 {
 		klog.Warningf("Just only a part of paths has been created: %s", path)
 	}
 
 	klog.V(6).Infof("Created the path %s recursively", path)
+	return nil
 }
 
 // create ...
-func create(conn *zk.Conn, path string) {
+func create(conn *zk.Conn, path string) error {
 	if _, err := conn.Create(path, nil, 0, worldACL(PermAll)); err != nil {
-		klog.Errorf("create path %s has an error:%v", path, err)
+		klog.Errorf("creating path %s has an error:%v", path, err)
+		return err
 	}
-	klog.V(6).Infof("Created the path %s", path)
+	klog.V(6).Infof("created path %s", path)
+	return nil
 }
