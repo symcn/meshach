@@ -1,0 +1,34 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: dmall-inner
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+    - "sym-admin/*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: dmall-outer
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+    - "sym-admin/*"
