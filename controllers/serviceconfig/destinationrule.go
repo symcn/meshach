@@ -71,12 +71,12 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, sc *meshv1alp
 		// Check if this DestinationRule already exists
 		found, ok := foundMap[dr.Name]
 		if !ok {
-			if apierrors.IsAlreadyExists(err) {
-				return nil
-			}
 			klog.Infof("Creating a new DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
 			err = r.Create(ctx, dr)
 			if err != nil {
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
 				klog.Errorf("Create DestinationRule error: %+v", err)
 				return err
 			}

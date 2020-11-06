@@ -69,7 +69,8 @@ func (r *Reconciler) reconcileDestinationRule(ctx context.Context, cs *meshv1alp
 
 func (r *Reconciler) buildDestinationRule(cs *meshv1alpha1.ConfiguredService) *networkingv1beta1.DestinationRule {
 	var subsets []*v1beta1.Subset
-	for _, sub := range r.MeshConfig.Spec.GlobalSubsets {
+	actualSubsets := r.getSubset(context.Background(), cs)
+	for _, sub := range actualSubsets {
 		subset := &v1beta1.Subset{Name: sub.Name, Labels: sub.Labels}
 		if sub.Policy != nil {
 			subset.TrafficPolicy = &v1beta1.TrafficPolicy{

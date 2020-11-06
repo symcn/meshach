@@ -57,12 +57,12 @@ func (r *Reconciler) reconcileVirtualService(ctx context.Context, sc *meshv1alph
 		// Check if this VirtualService already exists
 		found, ok := foundMap[vs.Name]
 		if !ok {
-			if apierrors.IsAlreadyExists(err) {
-				return nil
-			}
 			klog.Infof("[serviceconfig] creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
 			err = r.Create(ctx, vs)
 			if err != nil {
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
 				klog.Errorf("[serviceconfig] create VirtualService [%s/%s], error: %+v", vs.Namespace, vs.Name, err)
 				return err
 			}
