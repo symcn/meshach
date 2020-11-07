@@ -46,10 +46,10 @@ Install CRD no validations:
 $ kubectl apply -f config/crd/simple
 ```
 
-Create sample Meshconfig:
+Create sample Meshconfig and default Sidecar:
 
 ```shell
-$ kubectl apply -f config/samples/mesh_v1alpha1_meshconfig.yaml
+$ kubectl apply -f config/samples/mesh_v1alpha1_meshconfig.yaml -f config/samples/istio_default_sidecar.yaml
 ```
 
 Deploy adapter and controller:
@@ -59,6 +59,30 @@ $ make deploy
 ```
 
 You can customize the deployment by modifying the `config/operator` and `config/adapter` kustomize config files.
+
+### Config
+
+#### Istio Config
+
+```yaml
+env:
+  - name: PILOT_PUSH_THROTTLE
+    value: "1000"
+  - name: PILOT_DEBOUNCE_AFTER
+    value: 100ms
+  - name: PILOT_DEBOUNCE_MAX
+    value: 5s
+  - name: PILOT_ENABLE_EDS_DEBOUNCE
+    value: "false"
+  - name: PILOT_ENABLE_SERVICEENTRY_SELECT_PODS
+    value: "false"
+  - name: PILOT_ENABLE_K8S_SELECT_WORKLOAD_ENTRIES
+    value: "false"
+  - name: PILOT_XDS_CACHE_SIZE
+    value: "50000"
+  - name: PILOT_ENABLE_HEADLESS_SERVICE_POD_LISTENERS
+    value: "false"
+```
 
 ## Getting support
 
