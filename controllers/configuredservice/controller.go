@@ -109,13 +109,13 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// }
 
 	// Distribute Istio Config
+	if err := r.reconcileWorkloadEntry(ctx, instance); err != nil {
+		return ctrl.Result{}, err
+	}
 	if err := r.reconcileDestinationRule(ctx, instance); err != nil {
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileVirtualService(ctx, instance); err != nil {
-		return ctrl.Result{}, err
-	}
-	if err := r.reconcileWorkloadEntry(ctx, instance); err != nil {
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileServiceEntry(ctx, instance); err != nil {
