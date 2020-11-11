@@ -186,7 +186,7 @@ var _ = Describe("Controller", func() {
 			})
 		})
 
-		Context("reconcile when only create serviceentry", func() {
+		Context("when only create serviceentry", func() {
 			BeforeEach(func() {
 				err := reconciler.Create(context.Background(), getTestMeshConfig())
 				Expect(err).NotTo(HaveOccurred())
@@ -217,7 +217,7 @@ var _ = Describe("Controller", func() {
 			})
 		})
 
-		Context("reconcile when create workloadentry", func() {
+		Context("when create workloadentry", func() {
 			BeforeEach(func() {
 				err := reconciler.Create(context.Background(), getTestMeshConfig())
 				Expect(err).NotTo(HaveOccurred())

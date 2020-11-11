@@ -46,7 +46,7 @@ var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 func (r *Reconciler) reconcileDestinationRule(ctx context.Context, cs *meshv1alpha1.ConfiguredService) error {
 	foundMap, err := r.getDestinationRuleMap(ctx, cs)
 	if err != nil {
-		klog.Errorf("[cs] %s/%s get DestinationRules error: %+v", cs.Namespace, cs.Name, err)
+		klog.Errorf("[cs] %s/%s list DestinationRules error: %+v", cs.Namespace, cs.Name, err)
 		return err
 	}
 
