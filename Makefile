@@ -1,4 +1,4 @@
-VERSION ?= v0.0.5
+VERSION ?= v0.0.6
 # Image URL to use all building/pushing image targets
 IMG_ADDR ?= symcn.tencentcloudcr.com/symcn/mesh-operator
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)

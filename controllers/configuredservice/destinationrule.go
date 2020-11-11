@@ -23,10 +23,12 @@ import (
 	"github.com/symcn/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -42,34 +44,78 @@ var lbMap = map[string]v1beta1.LoadBalancerSettings_SimpleLB{
 }
 
 func (r *Reconciler) reconcileDestinationRule(ctx context.Context, cs *meshv1alpha1.ConfiguredService) error {
-	dr := r.buildDestinationRule(cs)
-	// Set ServiceConfig instance as the owner and controller
-	if err := controllerutil.SetControllerReference(cs, dr, r.Scheme); err != nil {
-		klog.Errorf("[configuredservice] SetControllerReference error: %v", err)
+	foundMap, err := r.getDestinationRuleMap(ctx, cs)
+	if err != nil {
+		klog.Errorf("[cs] %s/%s get DestinationRules error: %+v", cs.Namespace, cs.Name, err)
 		return err
 	}
 
-	// Check if this DestinationRule already exists
-	found := &networkingv1beta1.DestinationRule{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: cs.Namespace, Name: cs.Name}, found)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			klog.Infof("[configuredservice] creating a default DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
+	actualSubsets := r.getSubset(context.Background(), cs)
+	// Skip if the service's subset is none
+	klog.V(6).Infof("[cs] destinationrule subsets length: %d", len(actualSubsets))
+
+	if len(actualSubsets) != 0 {
+		dr := r.buildDestinationRule(cs, actualSubsets)
+		// Set ServiceConfig instance as the owner and controller
+		if err := controllerutil.SetControllerReference(cs, dr, r.Scheme); err != nil {
+			klog.Errorf("[cs] SetControllerReference error: %v", err)
+			return err
+		}
+
+		// Check if this DestinationRule already exists
+		found, ok := foundMap[dr.Name]
+		if !ok {
+			klog.Infof("[cs] creating a default DestinationRule, Namespace: %s, Name: %s", dr.Namespace, dr.Name)
 			err = r.Create(ctx, dr)
 			if err != nil {
-				klog.Errorf("[configuredservice] create DestinationRule error: %+v", err)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				klog.Errorf("[cs] Create DestinationRule error: %+v", err)
 				return err
 			}
-			return nil
+		} else {
+			// Update DestinationRule
+			if compareDestinationRule(dr, found) {
+				klog.Infof("[cs] Update DestinationRule, Namespace: %s, Name: %s",
+					found.Namespace, found.Name)
+				err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+					// TODO get found
+					dr.Spec.DeepCopyInto(&found.Spec)
+					found.Finalizers = dr.Finalizers
+					found.Labels = dr.ObjectMeta.Labels
+
+					updateErr := r.Update(ctx, found)
+					if updateErr == nil {
+						klog.Infof("[cs] %s/%s update DestinationRule successfully",
+							dr.Namespace, dr.Name)
+						return nil
+					}
+					return updateErr
+				})
+
+				if err != nil {
+					klog.Warningf("[cs] Update DestinationRule [%s] spec failed, err: %+v", dr.Name, err)
+					return err
+				}
+			}
+			delete(foundMap, dr.Name)
 		}
-		klog.Errorf("[configuredservice] Get DestinationRule error: %+v", err)
+		// Delete old DestinationRules
+		for name, dr := range foundMap {
+			klog.Infof("[cs] Delete unused DestinationRule: %s", name)
+			err := r.Delete(ctx, dr)
+			if err != nil {
+				klog.Errorf("[cs] Delete unused DestinationRule error: %+v", err)
+				return err
+			}
+		}
 	}
 	return nil
 }
 
-func (r *Reconciler) buildDestinationRule(cs *meshv1alpha1.ConfiguredService) *networkingv1beta1.DestinationRule {
+func (r *Reconciler) buildDestinationRule(cs *meshv1alpha1.ConfiguredService, actualSubsets []*meshv1alpha1.Subset) *networkingv1beta1.DestinationRule {
 	var subsets []*v1beta1.Subset
-	actualSubsets := r.getSubset(context.Background(), cs)
 	for _, sub := range actualSubsets {
 		subset := &v1beta1.Subset{Name: sub.Name, Labels: sub.Labels}
 		if sub.Policy != nil {
@@ -103,10 +149,43 @@ func (r *Reconciler) buildDestinationRule(cs *meshv1alpha1.ConfiguredService) *n
 	}
 }
 
+func compareDestinationRule(new, old *networkingv1beta1.DestinationRule) bool {
+	if !equality.Semantic.DeepEqual(new.ObjectMeta.Finalizers, old.ObjectMeta.Finalizers) {
+		return true
+	}
+
+	if !equality.Semantic.DeepEqual(new.ObjectMeta.Labels, old.ObjectMeta.Labels) {
+		return true
+	}
+
+	if !equality.Semantic.DeepEqual(new.Spec, old.Spec) {
+		return true
+	}
+	return false
+}
+
 func getlb(s string) v1beta1.LoadBalancerSettings_SimpleLB {
 	lb, ok := lbMap[s]
 	if !ok {
 		lb = v1beta1.LoadBalancerSettings_RANDOM
 	}
 	return lb
+}
+
+func (r *Reconciler) getDestinationRuleMap(ctx context.Context, cs *meshv1alpha1.ConfiguredService) (map[string]*networkingv1beta1.DestinationRule, error) {
+	list := &networkingv1beta1.DestinationRuleList{}
+	labels := &client.MatchingLabels{r.Opt.SelectLabel: truncated(cs.Spec.OriginalName)}
+	opts := &client.ListOptions{Namespace: cs.Namespace}
+	labels.ApplyToList(opts)
+
+	err := r.List(ctx, list, opts)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]*networkingv1beta1.DestinationRule)
+	for i := range list.Items {
+		item := list.Items[i]
+		m[item.Name] = &item
+	}
+	return m, nil
 }

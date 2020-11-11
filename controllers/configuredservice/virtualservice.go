@@ -23,10 +23,12 @@ import (
 	"github.com/symcn/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -36,38 +38,80 @@ const (
 )
 
 func (r *Reconciler) reconcileVirtualService(ctx context.Context, cs *meshv1alpha1.ConfiguredService) error {
-	vs := r.buildVirtualService(cs)
-	// Set ConfiguredService instance as the owner and controller
-	if err := controllerutil.SetControllerReference(cs, vs, r.Scheme); err != nil {
-		klog.Errorf("SetControllerReference error: %v", err)
+	foundMap, err := r.getVirtualServicesMap(ctx, cs)
+	if err != nil {
+		klog.Errorf("[cs] %s/%s get VirtualService error: %+v", cs.Namespace, cs.Name, err)
 		return err
 	}
 
-	// Check if this VirtualService already exists
-	found := &networkingv1beta1.VirtualService{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: cs.Namespace, Name: cs.Name}, found)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			klog.Infof("[configuredservice] creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
-			err := r.Create(ctx, vs)
+	subsets := r.getSubset(context.Background(), cs)
+	// Skip if the service's subset is none
+	klog.V(6).Infof("[cs] virtualservice subsets length: %d", len(subsets))
+	if len(subsets) != 0 {
+		vs := r.buildVirtualService(cs, subsets)
+		// Set ConfiguredService instance as the owner and controller
+		if err := controllerutil.SetControllerReference(cs, vs, r.Scheme); err != nil {
+			klog.Errorf("[cs] SetControllerReference error: %v", err)
+			return err
+		}
+
+		// Check if this VirtualService already exists
+		found, ok := foundMap[vs.Name]
+		if !ok {
+			klog.Infof("[cs] creating a new VirtualService, Namespace: %s, Name: %s", vs.Namespace, vs.Name)
+			err = r.Create(ctx, vs)
 			if err != nil {
-				klog.Errorf("[configuredservice] create VirtualService [%s/%s], error: %+v", vs.Namespace, vs.Name, err)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				klog.Errorf("[cs] create VirtualService [%s/%s], error: %+v", vs.Namespace, vs.Name, err)
 				return err
 			}
-			return nil
+		} else {
+			// Update VirtualService
+			if compareVirtualService(vs, found) {
+				klog.Infof("[cs] Update VirtualService, Namespace: %s, Name: %s",
+					found.Namespace, found.Name)
+				err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+					vs.Spec.DeepCopyInto(&found.Spec)
+					found.Finalizers = vs.Finalizers
+					found.Labels = vs.ObjectMeta.Labels
+
+					updateErr := r.Update(ctx, found)
+					if updateErr == nil {
+						klog.Infof("[cs] %s/%s update VirtualService successfully",
+							vs.Namespace, vs.Name)
+						return nil
+					}
+					return updateErr
+				})
+
+				if err != nil {
+					klog.Warningf("[cs] Update VirtualService [%s] spec failed, err: %+v", vs.Name, err)
+					return err
+				}
+			}
+			delete(foundMap, vs.Name)
 		}
-		klog.Errorf("[configuredservice] get cs [%s/%s] error: %+v", vs.Namespace, vs.Name, err)
+		// Delete old VirtualServices
+		for name, vs := range foundMap {
+			klog.Infof("[cs] Delete unused VirtualService: %s", name)
+			err := r.Delete(ctx, vs)
+			if err != nil {
+				klog.Errorf("[cs] Delete unused VirtualService error: %+v", err)
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
-func (r *Reconciler) buildVirtualService(cs *meshv1alpha1.ConfiguredService) *networkingv1beta1.VirtualService {
+func (r *Reconciler) buildVirtualService(cs *meshv1alpha1.ConfiguredService, subsets []*meshv1alpha1.Subset) *networkingv1beta1.VirtualService {
 	httpRoute := []*v1beta1.HTTPRoute{}
-	actualSubsets := r.getSubset(context.Background(), cs)
-	if len(actualSubsets) > 0 {
+	if len(subsets) > 0 {
 		for _, subset := range r.MeshConfig.Spec.GlobalSubsets {
-			http := r.buildHTTPRoute(cs, subset, actualSubsets)
+			http := r.buildHTTPRoute(cs, subset, subsets)
 			httpRoute = append(httpRoute, http)
 		}
 	}
@@ -195,6 +239,39 @@ func (r *Reconciler) getSubset(ctx context.Context, cs *meshv1alpha1.ConfiguredS
 		}
 	}
 	return subsets
+}
+
+func (r *Reconciler) getVirtualServicesMap(ctx context.Context, cs *meshv1alpha1.ConfiguredService) (map[string]*networkingv1beta1.VirtualService, error) {
+	list := &networkingv1beta1.VirtualServiceList{}
+	labels := &client.MatchingLabels{r.Opt.SelectLabel: truncated(cs.Spec.OriginalName)}
+	opts := &client.ListOptions{Namespace: cs.Namespace}
+	labels.ApplyToList(opts)
+
+	err := r.List(ctx, list, opts)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]*networkingv1beta1.VirtualService)
+	for i := range list.Items {
+		item := list.Items[i]
+		m[item.Name] = &item
+	}
+	return m, nil
+}
+
+func compareVirtualService(new, old *networkingv1beta1.VirtualService) bool {
+	if !equality.Semantic.DeepEqual(new.ObjectMeta.Finalizers, old.ObjectMeta.Finalizers) {
+		return true
+	}
+
+	if !equality.Semantic.DeepEqual(new.ObjectMeta.Labels, old.ObjectMeta.Labels) {
+		return true
+	}
+
+	if !equality.Semantic.DeepEqual(new.Spec, old.Spec) {
+		return true
+	}
+	return false
 }
 
 func mapContains(std, obj, renameMap map[string]string) bool {

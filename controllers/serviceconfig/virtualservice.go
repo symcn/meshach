@@ -133,11 +133,15 @@ func (r *Reconciler) buildVirtualService(svc *meshv1alpha1.ServiceConfig, actual
 
 func (r *Reconciler) buildHTTPRoute(svc *meshv1alpha1.ServiceConfig, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) *v1beta1.HTTPRoute {
 	var buildRoutes []*v1beta1.HTTPRouteDestination
-	klog.V(6).Infof("%s length of actual subsets: %d, global subsets: %d", svc.Name, len(actualSubsets), len(r.MeshConfig.Spec.GlobalSubsets))
+
+	klog.V(6).Infof("%s length of actual subsets: %d, global subsets: %d",
+		svc.Name, len(actualSubsets), len(r.MeshConfig.Spec.GlobalSubsets))
+
 	reroute := len(actualSubsets) < len(r.MeshConfig.Spec.GlobalSubsets)
 	for _, subset := range actualSubsets {
 		klog.V(6).Infof("%s actual subset name: %s, %+v", svc.Name, subset.Name, subset.Labels)
 	}
+
 	switch {
 	case len(svc.Spec.Route) > 0 && !subset.IsCanary && onlyMissingCanary(actualSubsets, r.MeshConfig.Spec.GlobalSubsets):
 		klog.Infof("dynamic route service: %s, subset：%s", svc.Name, subset.Name)

@@ -24,6 +24,7 @@ import (
 	"github.com/symcn/mesh-operator/pkg/option"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
@@ -112,14 +113,19 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err := r.reconcileWorkloadEntry(ctx, instance); err != nil {
 		return ctrl.Result{}, err
 	}
-	if err := r.reconcileDestinationRule(ctx, instance); err != nil {
-		return ctrl.Result{}, err
-	}
-	if err := r.reconcileVirtualService(ctx, instance); err != nil {
-		return ctrl.Result{}, err
-	}
 	if err := r.reconcileServiceEntry(ctx, instance); err != nil {
 		return ctrl.Result{}, err
+	}
+
+	sc := &meshv1alpha1.ServiceConfig{}
+	err = r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, sc)
+	if apierrors.IsNotFound(err) {
+		if err := r.reconcileDestinationRule(ctx, instance); err != nil {
+			return ctrl.Result{}, err
+		}
+		if err := r.reconcileVirtualService(ctx, instance); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Reconcile AppMeshConfig
