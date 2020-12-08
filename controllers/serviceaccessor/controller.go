@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -85,7 +85,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		instance := &list.Items[i]
 		// Get namespace of app pods
 		namespaces := r.getAppNamespace(instance.Name)
-		for namespace := range namespaces {
+		for _, namespace := range namespaces {
 			klog.Infof("create sidecar in namespace: %s", namespace)
 			r.reconcileSidecar(ctx, namespace, instance)
 		}
@@ -95,10 +95,10 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) reconcileSidecar(ctx context.Context, namespace string, cr *meshv1alpha1.ServiceAccessor) error {
-	sidecar := r.buildSidecar(namespace, cr.Name, cr)
+func (r *Reconciler) reconcileSidecar(ctx context.Context, namespace string, sa *meshv1alpha1.ServiceAccessor) error {
+	sidecar := r.buildSidecar(namespace, sa)
 	// NOTE: can not set Reference cross difference namespaces
-	// if err := controllerutil.SetControllerReference(cr, sidecar, r.scheme); err != nil {
+	// if err := controllerutil.SetControllerReference(sa, sidecar, r.scheme); err != nil {
 	// 	klog.Errorf("SetControllerReference error: %v", err)
 	// 	return err
 	// }
@@ -168,24 +168,24 @@ func (r *Reconciler) buildHosts(namespace string, accessHosts []string) []string
 	return hosts
 }
 
-func (r *Reconciler) buildEgress(cr *meshv1alpha1.ServiceAccessor) []*v1beta1.IstioEgressListener {
-	hosts := r.buildHosts(cr.Namespace, cr.Spec.AccessHosts)
+func (r *Reconciler) buildEgress(sa *meshv1alpha1.ServiceAccessor) []*v1beta1.IstioEgressListener {
+	hosts := r.buildHosts(sa.Namespace, sa.Spec.AccessHosts)
 	return []*v1beta1.IstioEgressListener{{
 		Hosts: hosts,
 	}}
 }
 
-func (r *Reconciler) buildSidecar(namespace, name string, cr *meshv1alpha1.ServiceAccessor) *networkingv1beta1.Sidecar {
-	egress := r.buildEgress(cr)
+func (r *Reconciler) buildSidecar(namespace string, sa *meshv1alpha1.ServiceAccessor) *networkingv1beta1.Sidecar {
+	egress := r.buildEgress(sa)
 	return &networkingv1beta1.Sidecar{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      name,
+			Name:      sa.Name,
 			Namespace: namespace,
 		},
 		Spec: v1beta1.Sidecar{
 			WorkloadSelector: &v1beta1.WorkloadSelector{
 				Labels: map[string]string{
-					r.MeshConfig.Spec.SidecarSelectLabel: name,
+					r.MeshConfig.Spec.SidecarSelectLabel: sa.Name,
 				},
 			},
 			Egress: egress,
@@ -211,8 +211,8 @@ func compareSidecar(new, old *networkingv1beta1.Sidecar) bool {
 	return false
 }
 
-func (r *Reconciler) getAppNamespace(appName string) map[string]struct{} {
-	namespaces := make(map[string]struct{})
+func (r *Reconciler) getAppNamespace(appName string) []string {
+	var namespaces []string
 	pods := &corev1.PodList{}
 	labels := &client.MatchingLabels{r.MeshConfig.Spec.SidecarSelectLabel: appName}
 	opts := &client.ListOptions{}
@@ -225,7 +225,7 @@ func (r *Reconciler) getAppNamespace(appName string) map[string]struct{} {
 
 	if len(pods.Items) > 0 {
 		for _, pod := range pods.Items {
-			namespaces[pod.Namespace] = struct{}{}
+			namespaces = append(namespaces, pod.Namespace)
 		}
 	} else {
 		klog.Warningf("No pods founds, skip create Sidecar[%s]", appName)
