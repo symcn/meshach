@@ -39,7 +39,7 @@ func (r *Reconciler) reconcileSidecar(ctx context.Context, cs *meshv1alpha1.Conf
 
 	namespaces := r.getAppNamespace(appName)
 	for _, ns := range namespaces {
-		var found *networkingv1beta1.Sidecar
+		found := &networkingv1beta1.Sidecar{}
 		err := r.Get(ctx, types.NamespacedName{Namespace: ns, Name: appName}, found)
 		// Check if this Sidecar already exists
 		if err != nil {
