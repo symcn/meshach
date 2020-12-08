@@ -42,19 +42,18 @@ func (r *Reconciler) reconcileSidecar(ctx context.Context, cs *meshv1alpha1.Conf
 		var found *networkingv1beta1.Sidecar
 		err := r.Get(ctx, types.NamespacedName{Namespace: ns, Name: appName}, found)
 		// Check if this Sidecar already exists
-		if apierrors.IsNotFound(err) {
-			sidecar := r.buildSidecar(ns, appName)
-			klog.Infof("[cs] creating a default Sidecar, Namespace: %s, Name: %s", sidecar.Namespace, sidecar.Name)
-			err = r.Create(ctx, sidecar)
-			if err != nil {
-				if apierrors.IsAlreadyExists(err) {
-					return nil
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				sidecar := r.buildSidecar(ns, appName)
+				klog.Infof("[cs] creating a default Sidecar, Namespace: %s, Name: %s", sidecar.Namespace, sidecar.Name)
+				createErr := r.Create(ctx, sidecar)
+				if createErr != nil {
+					klog.Errorf("[cs] Create Sidecar error: %+v", createErr)
+					return createErr
 				}
-				klog.Errorf("[cs] Create Sidecar error: %+v", err)
-				return err
 			}
-		} else if err != nil {
 			klog.Errorf("[cs] Get Sidecar error: %+v", err)
+			return err
 		}
 	}
 	return nil
