@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	"crypto/sha1"
+
 	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	utils "github.com/symcn/mesh-operator/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
@@ -196,7 +198,11 @@ func (r *Reconciler) getInstanceWeight(ctx context.Context, cr *meshv1alpha1.Con
 // To match label charactor limit
 func truncated(s string) string {
 	if len(s) > 62 {
-		return strings.Trim(s[len(s)-62:], ".")
+		h := sha1.New()
+		h.Write([]byte(s))
+		bs := h.Sum(nil)
+		return fmt.Sprintf("%x", bs)
+		// return strings.Trim(s[len(s)-62:], ".")
 	}
 	return strings.Trim(s, ".")
 }

@@ -5,4 +5,4 @@ resources:
 images:
 - name: controller
   newName: symcn.tencentcloudcr.com/symcn/mesh-operator
-  newTag: v0.0.7
+  newTag: v0.0.8
