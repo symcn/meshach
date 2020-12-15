@@ -25,7 +25,7 @@ import (
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -134,7 +134,8 @@ func (r *Reconciler) buildVirtualService(cs *meshv1alpha1.ConfiguredService, sub
 
 func (r *Reconciler) buildHTTPRoute(cs *meshv1alpha1.ConfiguredService, subset *meshv1alpha1.Subset, actualSubsets []*meshv1alpha1.Subset) *v1beta1.HTTPRoute {
 	var buildRoutes []*v1beta1.HTTPRouteDestination
-	if subset.IsCanary && !subset.In(actualSubsets) {
+	switch {
+	case subset.IsCanary && !subset.In(actualSubsets):
 		for i, actual := range actualSubsets {
 			route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: cs.Name}}
 			route.Destination.Subset = actual.Name
@@ -144,7 +145,33 @@ func (r *Reconciler) buildHTTPRoute(cs *meshv1alpha1.ConfiguredService, subset *
 			}
 			buildRoutes = append(buildRoutes, route)
 		}
-	} else {
+	case !subset.IsCanary && !subset.In(actualSubsets):
+		route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: cs.Name}}
+		route.Destination.Subset = subset.Name
+		route.Weight = 0
+		buildRoutes = append(buildRoutes, route)
+
+		l := len(actualSubsets)
+		for _, actual := range actualSubsets {
+			if actual.IsCanary {
+				l--
+				continue
+			}
+		}
+
+		for i, actual := range actualSubsets {
+			if actual.IsCanary {
+				continue
+			}
+			route := &v1beta1.HTTPRouteDestination{Destination: &v1beta1.Destination{Host: cs.Name}}
+			route.Destination.Subset = actual.Name
+			route.Weight = int32(100 / l)
+			if i == len(actualSubsets)-1 && len(actualSubsets) > 1 {
+				route.Weight = 100 - int32(100/l)
+			}
+			buildRoutes = append(buildRoutes, route)
+		}
+	default:
 		buildRoutes = defaultDestination(cs.Name, subset.Name)
 	}
 
