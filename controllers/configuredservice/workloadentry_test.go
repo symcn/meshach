@@ -28,7 +28,7 @@ import (
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -284,16 +284,12 @@ var _ = Describe("WorkloadEntry", func() {
 		Context("test truncated", func() {
 			It("truncate when string length exceeds 62", func() {
 				s := make([]byte, 66)
-				want := make([]byte, 62)
+				want := []byte("a4e77d9c0c9344921a0ac998b442ad572afdc5fb")
 				for i := range s {
 					s[i] = 'a'
 				}
-				for i := range want {
-					want[i] = 'a'
-				}
 				result := truncated(string(s))
 				Expect(result).To(Equal(string(want)))
-				Expect(len(result)).To(Equal(62))
 			})
 		})
 	})
