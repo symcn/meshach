@@ -13,6 +13,7 @@ type ControllerOption struct {
 	PprofEnabled            bool
 	GoroutineThreshold      int
 	MaxConcurrentReconciles int
+	InitDefaultSidecars     bool
 
 	// Dubbo proxy settings
 	ProxyHost          string
@@ -65,5 +66,6 @@ func DefaultControllerOption() *ControllerOption {
 		EnableServiceAccessor:   false,
 		EnableServiceConfig:     false,
 		WatchIstioCRD:           true,
+		InitDefaultSidecars:     false,
 	}
 }

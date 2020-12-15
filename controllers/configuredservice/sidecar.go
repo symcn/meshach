@@ -22,6 +22,7 @@ import (
 	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +32,11 @@ import (
 )
 
 func (r *Reconciler) reconcileSidecar(ctx context.Context, cs *meshv1alpha1.ConfiguredService) error {
+	if !r.Opt.InitDefaultSidecars {
+		r.initDefaultSidecarsByDeploy(ctx)
+		r.Opt.InitDefaultSidecars = true
+	}
+
 	// Get namespace of app pods
 	appName := r.getAppName(cs)
 	if appName == "" {
@@ -57,6 +63,27 @@ func (r *Reconciler) reconcileSidecar(ctx context.Context, cs *meshv1alpha1.Conf
 		}
 	}
 	return nil
+}
+
+func (r *Reconciler) initDefaultSidecarsByDeploy(ctx context.Context) {
+	opts := &client.ListOptions{}
+	deps := &appv1.DeploymentList{}
+	err := r.List(ctx, deps, opts)
+
+	if err != nil {
+		klog.Errorf("[cs] get Deployments error: %+v", err)
+	}
+
+	for _, dep := range deps.Items {
+		if appName, ok := dep.GetLabels()[r.MeshConfig.Spec.SidecarSelectLabel]; ok {
+			s := r.buildSidecar(dep.Namespace, appName)
+			klog.Infof("[cs] creating a default Sidecar, Namespace: %s, Name: %s", s.Namespace, s.Name)
+			createErr := r.Create(ctx, s)
+			if createErr != nil {
+				klog.Errorf("[cs] Create Sidecar error: %+v", createErr)
+			}
+		}
+	}
 }
 
 func (r *Reconciler) buildSidecar(ns, appName string) *networkingv1beta1.Sidecar {
