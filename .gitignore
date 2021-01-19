@@ -1,6 +1,7 @@
 .DS_Store
 config/adapter
 __debug_bin
+go.sum
 # Compiled class file
 *.class
 
