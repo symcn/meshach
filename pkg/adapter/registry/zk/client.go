@@ -415,16 +415,20 @@ func (c *RegistryClient) replaceAccessorInstances(hostname string, rawURLs []str
 	}
 	a := c.addAccessor(hostname)
 
+	c.scopeLocker.Lock()
+	defer c.scopeLocker.Unlock()
 	for k := range instances {
 		// cache an accessor instance based on a scope key.
 		scopedKey := instances[k].Labels["app"]
+		if scopedKey == "" {
+			continue
+		}
+
 		_, ok := c.scopedAccessorsMapping[scopedKey]
-		c.scopeLocker.Lock()
 		if !ok {
 			c.scopedAccessorsMapping[scopedKey] = make(map[string]struct{})
 		}
 		c.scopedAccessorsMapping[scopedKey][a.Name] = struct{}{}
-		c.scopeLocker.Unlock()
 	}
 
 	go c.notifyAccessorEvent(&types.ServiceEvent{
@@ -452,5 +456,8 @@ func makeHostname(hostname string, instance *types.Instance) string {
 
 // GetCachedScopedMapping ...
 func (c *RegistryClient) GetCachedScopedMapping(scopedKey string) map[string]struct{} {
+	c.scopeLocker.Lock()
+	defer c.scopeLocker.Unlock()
+
 	return c.scopedAccessorsMapping[scopedKey]
 }
