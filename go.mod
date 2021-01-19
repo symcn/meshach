@@ -12,16 +12,18 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.3.1
+	github.com/golangci/golangci-lint v1.35.2 // indirect
 	github.com/nacos-group/nacos-sdk-go v0.3.2
-	github.com/onsi/ginkgo v1.14.0
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/ginkgo v1.14.1
+	github.com/onsi/gomega v1.10.2
 	github.com/operator-framework/operator-sdk v0.17.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1
-	github.com/spf13/cobra v1.0.0
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	go.opencensus.io v0.22.2
-	golang.org/x/sys v0.0.0-20200819171115-d785dc25833f // indirect
+	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
+	golang.org/x/tools v0.0.0-20210115202250-e0d201561e39 // indirect
 	google.golang.org/grpc v1.28.1
 	istio.io/api v0.0.0-20200521171657-32375f234cc1
 	istio.io/client-go v0.0.0-20200518164621-ef682e2929e5

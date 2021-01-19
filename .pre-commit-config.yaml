@@ -1,3 +1,4 @@
+repos:
 - repo: git://github.com/dnephin/pre-commit-golang
   rev: master
   hooks:
@@ -6,4 +7,3 @@
     - id: validate-toml
     - id: no-go-testing
     - id: golangci-lint
-    - id: go-critic
