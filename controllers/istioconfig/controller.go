@@ -20,8 +20,8 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	"github.com/symcn/mesh-operator/pkg/option"
+	meshv1alpha1 "github.com/symcn/meshach/api/v1alpha1"
+	"github.com/symcn/meshach/pkg/option"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

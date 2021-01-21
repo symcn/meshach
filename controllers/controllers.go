@@ -1,13 +1,13 @@
 package controllers
 
 import (
-	"github.com/symcn/mesh-operator/controllers/appmeshconfig"
-	"github.com/symcn/mesh-operator/controllers/configuredservice"
-	"github.com/symcn/mesh-operator/controllers/istioconfig"
-	"github.com/symcn/mesh-operator/controllers/meshconfig"
-	"github.com/symcn/mesh-operator/controllers/serviceaccessor"
-	"github.com/symcn/mesh-operator/controllers/serviceconfig"
-	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/meshach/controllers/appmeshconfig"
+	"github.com/symcn/meshach/controllers/configuredservice"
+	"github.com/symcn/meshach/controllers/istioconfig"
+	"github.com/symcn/meshach/controllers/meshconfig"
+	"github.com/symcn/meshach/controllers/serviceaccessor"
+	"github.com/symcn/meshach/controllers/serviceconfig"
+	"github.com/symcn/meshach/pkg/option"
 	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 )

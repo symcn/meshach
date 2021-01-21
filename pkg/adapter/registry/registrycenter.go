@@ -3,8 +3,8 @@ package registry
 import (
 	"fmt"
 
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/option"
 	"k8s.io/klog"
 )
 

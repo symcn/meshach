@@ -4,9 +4,9 @@ import (
 	"net"
 
 	"github.com/ghodss/yaml"
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	v1 "github.com/symcn/meshach/api/v1alpha1"
+	types2 "github.com/symcn/meshach/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )

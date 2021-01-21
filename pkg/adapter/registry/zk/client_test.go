@@ -3,7 +3,7 @@ package zk
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/component"
 	"k8s.io/klog"
 )
 

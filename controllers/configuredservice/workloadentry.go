@@ -23,8 +23,8 @@ import (
 
 	"crypto/sha1"
 
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	utils "github.com/symcn/mesh-operator/pkg/utils"
+	meshv1alpha1 "github.com/symcn/meshach/api/v1alpha1"
+	utils "github.com/symcn/meshach/pkg/utils"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"

@@ -3,8 +3,8 @@ package adapter
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	_ "github.com/symcn/mesh-operator/pkg/adapter/configcenter/zk"
-	_ "github.com/symcn/mesh-operator/pkg/adapter/registry/zk"
+	_ "github.com/symcn/meshach/pkg/adapter/configcenter/zk"
+	_ "github.com/symcn/meshach/pkg/adapter/registry/zk"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 

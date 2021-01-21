@@ -5,11 +5,11 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/convert"
-	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
-	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
-	k8smanager "github.com/symcn/mesh-operator/pkg/k8s/manager"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/convert"
+	"github.com/symcn/meshach/pkg/adapter/metrics"
+	types2 "github.com/symcn/meshach/pkg/adapter/types"
+	k8smanager "github.com/symcn/meshach/pkg/k8s/manager"
 	"k8s.io/klog"
 )
 

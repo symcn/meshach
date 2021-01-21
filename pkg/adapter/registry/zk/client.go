@@ -8,14 +8,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/symcn/mesh-operator/pkg/adapter/constant"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/adapter/constant"
+	"github.com/symcn/meshach/pkg/adapter/types"
 
 	zkClient "github.com/go-zookeeper/zk"
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/registry"
-	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
-	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/registry"
+	"github.com/symcn/meshach/pkg/adapter/zookeeper"
+	"github.com/symcn/meshach/pkg/option"
 	"k8s.io/klog"
 )
 

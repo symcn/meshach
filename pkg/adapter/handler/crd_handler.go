@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	// "github.com/ghodss/yaml"
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	v1 "github.com/symcn/meshach/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"

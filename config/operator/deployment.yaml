@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mesh-operator-configuredservice
+  name: meshach-configuredservice
   namespace: sym-admin
 spec:
   selector:
     matchLabels:
-      name: mesh-operator-configuredservice
+      name: meshach-configuredservice
   replicas: 1
   template:
     metadata:
       labels:
-        name: mesh-operator-configuredservice
+        name: meshach-configuredservice
     spec:
       containers:
-        - name: mesh-operator-configuredservice
+        - name: meshach-configuredservice
           image: controller:latest
           imagePullPolicy: Always
           args:
@@ -28,7 +28,7 @@ spec:
             # - "--leader-election-id"
             - "--qps=180.0"
             - "--burst=200"
-            # - "mesh-operator-lock-configuredservice"
+            # - "meshach-lock-configuredservice"
           resources:
             limits:
               cpu: 2
@@ -41,20 +41,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mesh-operator-serviceconfig
+  name: meshach-serviceconfig
   namespace: sym-admin
 spec:
   selector:
     matchLabels:
-      name: mesh-operator-serviceconfig
+      name: meshach-serviceconfig
   replicas: 1
   template:
     metadata:
       labels:
-        name: mesh-operator-serviceconfig
+        name: meshach-serviceconfig
     spec:
       containers:
-        - name: mesh-operator-serviceconfig
+        - name: meshach-serviceconfig
           image: controller:latest
           imagePullPolicy: Always
           args:
@@ -66,7 +66,7 @@ spec:
             - "--qps=80.0"
             - "--burst=100"
             # - "--leader-election-id"
-            # - "mesh-operator-lock-serviceconfig"
+            # - "meshach-lock-serviceconfig"
           resources:
             limits:
               cpu: 2
@@ -79,20 +79,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mesh-operator-meshconfig
+  name: meshach-meshconfig
   namespace: sym-admin
 spec:
   selector:
     matchLabels:
-      name: mesh-operator-meshconfig
+      name: meshach-meshconfig
   replicas: 1
   template:
     metadata:
       labels:
-        name: mesh-operator-meshconfig
+        name: meshach-meshconfig
     spec:
       containers:
-        - name: mesh-operator-meshconfig
+        - name: meshach-meshconfig
           image: controller:latest
           imagePullPolicy: Always
           args:
@@ -104,7 +104,7 @@ spec:
             - "--qps=80.0"
             - "--burst=100"
             # - "--leader-election-id"
-            # - "mesh-operator-lock-meshconfig"
+            # - "meshach-lock-meshconfig"
           resources:
             limits:
               cpu: 2
@@ -117,20 +117,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mesh-operator-serviceaccessor
+  name: meshach-serviceaccessor
   namespace: sym-admin
 spec:
   selector:
     matchLabels:
-      name: mesh-operator-serviceaccessor
+      name: meshach-serviceaccessor
   replicas: 1
   template:
     metadata:
       labels:
-        name: mesh-operator-serviceaccessor
+        name: meshach-serviceaccessor
     spec:
       containers:
-        - name: mesh-operator-serviceaccessor
+        - name: meshach-serviceaccessor
           image: controller:latest
           imagePullPolicy: Always
           args:
@@ -142,7 +142,7 @@ spec:
             - "--qps=80.0"
             - "--burst=100"
             # - "--leader-election-id"
-            # - "mesh-operator-lock-serviceaccessor"
+            # - "meshach-lock-serviceaccessor"
           resources:
             limits:
               cpu: 2

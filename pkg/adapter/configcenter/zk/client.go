@@ -6,12 +6,12 @@ import (
 
 	"github.com/ghodss/yaml"
 	zkClient "github.com/go-zookeeper/zk"
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/adapter/zookeeper"
-	"github.com/symcn/mesh-operator/pkg/option"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/configcenter"
+	"github.com/symcn/meshach/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/adapter/zookeeper"
+	"github.com/symcn/meshach/pkg/option"
+	"github.com/symcn/meshach/pkg/utils"
 	"k8s.io/klog"
 )
 

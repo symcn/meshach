@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/symcn/mesh-operator/cmd/mesh-operator/app"
-	_ "github.com/symcn/mesh-operator/pkg/adapter/configcenter/zk"
-	_ "github.com/symcn/mesh-operator/pkg/adapter/registry/zk"
+	"github.com/symcn/meshach/cmd/meshach/app"
+	_ "github.com/symcn/meshach/pkg/adapter/configcenter/zk"
+	_ "github.com/symcn/meshach/pkg/adapter/registry/zk"
 )
 
 func main() {

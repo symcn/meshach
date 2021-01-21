@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/symcn/mesh-operator/pkg/healthcheck"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	"github.com/symcn/meshach/pkg/healthcheck"
+	"github.com/symcn/meshach/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

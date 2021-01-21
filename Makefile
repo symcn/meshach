@@ -1,10 +1,10 @@
 VERSION ?= v0.0.8
 # Image URL to use all building/pushing image targets
-IMG_ADDR ?= symcn.tencentcloudcr.com/symcn/mesh-operator
+IMG_ADDR ?= symcn.tencentcloudcr.com/symcn/meshach
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 # This repo's root import path (under GOPATH).
-ROOT := github.com/mesh-operator
+ROOT := github.com/meshach
 
 GO_VERSION := 1.14.2
 ARCH     ?= $(shell go env GOARCH)
@@ -25,16 +25,16 @@ all: manager
 # Run tests
 test: generate fmt vet manifests
 	# cd controllers && ginkgo -r --v --randomizeAllSpecs --randomizeSuites --failOnPending -cover -coverprofile=coverage.txt --trace --race --progress -outputdir=.
-	go test -v --coverprofile=coverage.txt github.com/symcn/mesh-operator/controllers/...
+	go test -v --coverprofile=coverage.txt github.com/symcn/meshach/controllers/...
 
 # Build manager binary
 manager: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o bin/mesh-operator -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
-	-X  $(ROOT)/pkg/version.BuildDate=$(BUILD_DATE)" cmd/mesh-operator/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o bin/meshach -ldflags "-s -w -X  $(ROOT)/pkg/version.Release=$(VERSION) -X  $(ROOT)/pkg/version.Commit=$(COMMIT)   \
+	-X  $(ROOT)/pkg/version.BuildDate=$(BUILD_DATE)" cmd/meshach/main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	go run ./cmd/mesh-operator/main.go -n sym-admin ctl -v 4
+	go run ./cmd/meshach/main.go -n sym-admin ctl -v 4
 
 # Install CRDs into a cluster
 install: manifests
@@ -58,7 +58,7 @@ undeploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=mesh-operator-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=meshach-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:

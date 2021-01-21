@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/symcn/mesh-operator/pkg/version"
+	"github.com/symcn/meshach/pkg/version"
 )
 
 // NewCmdVersion returns a cobra command for fetching versions

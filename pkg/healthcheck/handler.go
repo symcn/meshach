@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/symcn/mesh-operator/pkg/router"
+	"github.com/symcn/meshach/pkg/router"
 )
 
 // Check is a health/readiness check.

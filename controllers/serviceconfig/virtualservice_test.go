@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	// . "github.com/symcn/mesh-operator/test"
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	// . "github.com/symcn/meshach/test"
+	meshv1alpha1 "github.com/symcn/meshach/api/v1alpha1"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

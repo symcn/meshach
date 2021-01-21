@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mesh-operator
+  name: meshach
   namespace: sym-admin
 spec:
   template:

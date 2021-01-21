@@ -1,11 +1,11 @@
 package component
 
 import (
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
+	v1 "github.com/symcn/meshach/api/v1alpha1"
+	types2 "github.com/symcn/meshach/pkg/adapter/types"
 )
 
-// Converter a series of operation for convert mesh-operator's model to CRD
+// Converter a series of operation for convert meshach's model to CRD
 // it allows that there are differences between various registry such as zk, nanos, etc.
 // finally all services and configs will be convert to the unified models we have defined.
 type Converter interface {

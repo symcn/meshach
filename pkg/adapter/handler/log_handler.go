@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/types"
 	"k8s.io/klog"
 )
 

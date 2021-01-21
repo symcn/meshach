@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
-	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/meshach/pkg/option"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
