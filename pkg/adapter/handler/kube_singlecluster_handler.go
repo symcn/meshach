@@ -2,15 +2,17 @@ package handler
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/symcn/mesh-operator/api/v1alpha1"
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	"github.com/symcn/meshach/api/v1alpha1"
+	v1 "github.com/symcn/meshach/api/v1alpha1"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/metrics"
+	"github.com/symcn/meshach/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/utils"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
@@ -141,6 +143,7 @@ func (h *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 		for s := range scopedMapping {
 			accessedServices = append(accessedServices, s)
 		}
+		sort.Strings(accessedServices)
 
 		sas := &v1.ServiceAccessor{
 			ObjectMeta: metav1.ObjectMeta{
@@ -161,11 +164,15 @@ func (h *KubeSingleClusterEventHandler) ReplaceAccessorInstances(
 				}
 				return err
 			}
+			if equality.Semantic.DeepEqual(foundSas.Spec, sas.Spec) {
+				// not changed, return directly
+				return nil
+			}
 			foundSas.Spec = sas.Spec
+			sas.Spec.DeepCopyInto(&foundSas.Spec)
 			return updateScopedAccessServices(foundSas, h.ctrlMgr.GetClient())
 		})
 	}
-
 }
 
 // AddConfigEntry ...

@@ -1,6 +1,6 @@
 package component
 
-import "github.com/symcn/mesh-operator/pkg/adapter/types"
+import "github.com/symcn/meshach/pkg/adapter/types"
 
 // EventHandler described all component comes from adapter needs to be handle by various event handler.
 type EventHandler interface {

@@ -3,7 +3,7 @@ package handler
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	v1 "github.com/symcn/meshach/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 )

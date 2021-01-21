@@ -11,8 +11,8 @@ import (
 
 	"github.com/DeanThompson/ginpprof"
 	"github.com/gin-gonic/gin"
-	"github.com/symcn/mesh-operator/pkg/metrics"
-	"github.com/symcn/mesh-operator/pkg/version"
+	"github.com/symcn/meshach/pkg/metrics"
+	"github.com/symcn/meshach/pkg/version"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/trace"
 	"k8s.io/klog"

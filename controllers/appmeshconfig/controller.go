@@ -20,8 +20,8 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	"github.com/symcn/mesh-operator/pkg/option"
+	meshv1alpha1 "github.com/symcn/meshach/api/v1alpha1"
+	"github.com/symcn/meshach/pkg/option"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

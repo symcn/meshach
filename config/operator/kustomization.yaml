@@ -4,5 +4,5 @@ resources:
 - deployment.yaml
 images:
 - name: controller
-  newName: symcn.tencentcloudcr.com/symcn/mesh-operator
+  newName: symcn.tencentcloudcr.com/symcn/meshach
   newTag: v0.0.8

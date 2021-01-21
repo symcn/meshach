@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
+	k8sclient "github.com/symcn/meshach/pkg/k8s/client"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

@@ -19,7 +19,7 @@ package configuredservice
 import (
 	"context"
 
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	meshv1alpha1 "github.com/symcn/meshach/api/v1alpha1"
 	v1beta1 "istio.io/api/networking/v1beta1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	appv1 "k8s.io/api/apps/v1"

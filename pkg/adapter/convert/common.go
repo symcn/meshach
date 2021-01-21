@@ -1,10 +1,10 @@
 package convert
 
 import (
-	v1 "github.com/symcn/mesh-operator/api/v1alpha1"
-	"github.com/symcn/mesh-operator/pkg/adapter/constant"
-	types2 "github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	v1 "github.com/symcn/meshach/api/v1alpha1"
+	"github.com/symcn/meshach/pkg/adapter/constant"
+	types2 "github.com/symcn/meshach/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/utils"
 	"k8s.io/klog"
 )
 

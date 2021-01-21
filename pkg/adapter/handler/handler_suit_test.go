@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/convert"
-	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/convert"
+	k8sclient "github.com/symcn/meshach/pkg/k8s/client"
+	"github.com/symcn/meshach/pkg/utils"
 	"k8s.io/klog"
 	"path/filepath"
 	ctrlmanager "sigs.k8s.io/controller-runtime/pkg/manager"
@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	meshv1alpha1 "github.com/symcn/meshach/api/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"

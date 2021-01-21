@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
-	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/meshach/pkg/option"
 	"io"
 	"io/ioutil"
 	"math/rand"

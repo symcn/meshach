@@ -2,7 +2,7 @@ package option
 
 import (
 	"github.com/pkg/errors"
-	k8sclient "github.com/symcn/mesh-operator/pkg/k8s/client"
+	k8sclient "github.com/symcn/meshach/pkg/k8s/client"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

@@ -21,7 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	meshv1alpha1 "github.com/symcn/mesh-operator/api/v1alpha1"
+	meshv1alpha1 "github.com/symcn/meshach/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

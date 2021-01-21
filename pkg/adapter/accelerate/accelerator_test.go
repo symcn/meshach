@@ -2,8 +2,8 @@ package accelerate
 
 import (
 	. "github.com/onsi/ginkgo"
-	"github.com/symcn/mesh-operator/pkg/adapter/handler"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/adapter/handler"
+	"github.com/symcn/meshach/pkg/adapter/types"
 	"k8s.io/klog"
 )
 

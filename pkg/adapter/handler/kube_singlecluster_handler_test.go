@@ -3,7 +3,7 @@ package handler
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/adapter/types"
 	"k8s.io/klog"
 )
 

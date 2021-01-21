@@ -23,8 +23,8 @@ import (
 
 	"github.com/go-zookeeper/zk"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/symcn/mesh-operator/pkg/adapter/metrics"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	"github.com/symcn/meshach/pkg/adapter/metrics"
+	"github.com/symcn/meshach/pkg/utils"
 	"k8s.io/klog"
 )
 

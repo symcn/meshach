@@ -1,5 +1,5 @@
 domain: symcn.com
-repo: github.com/symcn/mesh-operator
+repo: github.com/symcn/meshach
 resources:
 - group: mesh
   kind: AppMeshConfig

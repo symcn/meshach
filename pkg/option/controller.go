@@ -47,7 +47,7 @@ func DefaultControllerOption() *ControllerOption {
 		GinLogEnabled:           true,
 		GinLogSkipPath:          []string{"/ready", "/live"},
 		EnableLeaderElection:    true,
-		LeaderElectionID:        "mesh-operator-lock",
+		LeaderElectionID:        "meshach-lock",
 		LeaderElectionNamespace: "sym-admin",
 		PprofEnabled:            true,
 		GoroutineThreshold:      10000,

@@ -1,8 +1,8 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/symcn/mesh-operator)](https://goreportcard.com/report/github.com/symcn/mesh-operator)
-[![codecov](https://codecov.io/gh/symcn/mesh-operator/branch/master/graph/badge.svg)](https://codecov.io/gh/symcn/mesh-operator)
-[![Actions Status](https://github.com/symcn/mesh-operator/workflows/go-build/badge.svg)](https://github.com/symcn/mesh-operator/actions?query=workflow%3Ago-build)
-[![Actions Status](https://github.com/symcn/mesh-operator/workflows/pre-commit/badge.svg)](https://github.com/symcn/mesh-operator/actions?query=workflow%3Apre-commit)
-# mesh-operator
+[![Go Report Card](https://goreportcard.com/badge/github.com/symcn/meshach)](https://goreportcard.com/report/github.com/symcn/meshach)
+[![codecov](https://codecov.io/gh/symcn/meshach/branch/master/graph/badge.svg)](https://codecov.io/gh/symcn/meshach)
+[![Actions Status](https://github.com/symcn/meshach/workflows/go-build/badge.svg)](https://github.com/symcn/meshach/actions?query=workflow%3Ago-build)
+[![Actions Status](https://github.com/symcn/meshach/workflows/pre-commit/badge.svg)](https://github.com/symcn/meshach/actions?query=workflow%3Apre-commit)
+# meshach
 It is in charge of all things about implementation of Service Mesh.
 
 What are our tasks?

@@ -18,9 +18,9 @@ package app
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/symcn/mesh-operator/pkg/adapter"
-	"github.com/symcn/mesh-operator/pkg/option"
-	"github.com/symcn/mesh-operator/pkg/utils"
+	"github.com/symcn/meshach/pkg/adapter"
+	"github.com/symcn/meshach/pkg/option"
+	"github.com/symcn/meshach/pkg/utils"
 	"k8s.io/klog"
 )
 

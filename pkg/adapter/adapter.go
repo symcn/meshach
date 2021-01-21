@@ -1,7 +1,7 @@
 package adapter
 
 import (
-	"github.com/symcn/mesh-operator/pkg/adapter/accelerate"
+	"github.com/symcn/meshach/pkg/adapter/accelerate"
 	// terminal: $ go tool pprof http://localhost:6066/debug/pprof/{heap,allocs,block,cmdline,goroutine,mutex,profile,threadcreate,trace}
 	// web:
 	// 1、http://localhost:8081/ui
@@ -12,13 +12,13 @@ import (
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/symcn/mesh-operator/pkg/adapter/component"
-	"github.com/symcn/mesh-operator/pkg/adapter/configcenter"
-	"github.com/symcn/mesh-operator/pkg/adapter/constant"
-	"github.com/symcn/mesh-operator/pkg/adapter/handler"
-	"github.com/symcn/mesh-operator/pkg/adapter/registry"
-	"github.com/symcn/mesh-operator/pkg/adapter/types"
-	"github.com/symcn/mesh-operator/pkg/option"
+	"github.com/symcn/meshach/pkg/adapter/component"
+	"github.com/symcn/meshach/pkg/adapter/configcenter"
+	"github.com/symcn/meshach/pkg/adapter/constant"
+	"github.com/symcn/meshach/pkg/adapter/handler"
+	"github.com/symcn/meshach/pkg/adapter/registry"
+	"github.com/symcn/meshach/pkg/adapter/types"
+	"github.com/symcn/meshach/pkg/option"
 	"k8s.io/klog"
 )
 
