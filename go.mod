@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/validator/v10 v10.8.0 // indirect
 	github.com/go-zookeeper/zk v1.0.2
 	github.com/gofrs/uuid v3.3.0+incompatible
-	github.com/gogo/protobuf v1.3.1
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
