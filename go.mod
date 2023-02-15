@@ -14,7 +14,6 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/nacos-group/nacos-sdk-go v0.3.2
@@ -23,7 +22,7 @@ require (
 	github.com/onsi/gomega v1.10.2
 	github.com/operator-framework/operator-sdk v0.17.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/ugorji/go v1.2.6 // indirect
